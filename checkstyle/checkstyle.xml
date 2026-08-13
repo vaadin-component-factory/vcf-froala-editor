@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Thin, intentionally small Checkstyle config: ONLY the semantic rules that
+  Spotless cannot enforce. Spotless already normalizes all layout/formatting,
+  import hygiene, whitespace, and the license header — do NOT duplicate those
+  here. Everything in this file is severity=error (it gates the build).
+
+  Judgment-based readability (blank lines between logical phases, WHY-not-WHAT
+  comments) is NOT mechanizable — use the /code-readability skill for that.
+
+  Add more modules only if they are (a) deterministic and (b) not handled by
+  Spotless. A few optional candidates are commented out at the bottom.
+-->
+<module name="Checker">
+    <property name="severity" value="error"/>
+
+    <module name="TreeWalker">
+
+        <!-- One-liner if/else/for/while/do must use { } blocks. -->
+        <module name="NeedBraces"/>
+
+        <!-- Nested types must be declared at the bottom of the owning class. -->
+        <module name="InnerTypeLast"/>
+
+        <!-- Optional, deterministic, not covered by Spotless — opt in if wanted:
+        <module name="OneStatementPerLine"/>
+        <module name="FallThrough"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="EqualsHashCode"/>
+        <module name="EmptyStatement"/>
+        -->
+
+    </module>
+
+</module>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Reactor root: aggregates the standalone add-on, the demo app and the e2e
+     module.
+
+     Spring Boot is consumed as a BOM (import), NOT as the parent, so the project
+     stays free to adopt its own parent later. Consequence: Spring Boot no longer
+     manages plugin versions / lifecycle defaults, so this root pins them in
+     <pluginManagement> (spring-boot-maven-plugin version + repackage execution,
+     surefire, failsafe) for the child modules (demo, e2e) to inherit.
+
+     NOTE: the `component` module deliberately does NOT inherit this parent — it
+     is standalone (Spring-free, vaadin-core only) so it can be built/published to
+     the Vaadin Directory on its own. It is still listed under <modules> for the
+     aggregate build, but inherits none of the management below; it carries its
+     own (see component/pom.xml). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.vaadin.componentfactory</groupId>
+    <artifactId>vcf-froala-editor-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Froala Editor for Vaadin Flow (parent)</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <vaadin.version>24.10.9</vaadin.version>
+        <spring-boot.version>3.5.15</spring-boot.version>
+        <maven-surefire.version>3.5.6</maven-surefire.version>
+
+        <spotless.plugin.version>3.9.0</spotless.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+        <checkstyle.version>13.10.0</checkstyle.version>
+        <!-- Adopting on an existing codebase? Set this to e.g. origin/main so
+             Spotless only formats/checks files changed vs that ref. Empty =
+             apply everywhere. -->
+        <spotless.ratchetFrom></spotless.ratchetFrom>
+    </properties>
+
+    <modules>
+        <module>component</module>
+        <module>demo</module>
+        <module>e2e</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-bom</artifactId>
+                <version>${vaadin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Spring Boot as a BOM (not parent): manages dependency versions only. -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <!-- Code-checks: Spotless (auto-formatting + gate) and a thin Checkstyle.
+             Declared as real <plugins> so `demo` and `e2e` inherit them. The
+             `component` module has no parent and inherits nothing, so it carries
+             its own copy — keep the two in sync. -->
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.plugin.version}</version>
+                <configuration>
+                    <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
+                    <java>
+                        <eclipse>
+                            <file>${maven.multiModuleProjectDirectory}/eclipse/VaadinJavaConventions.xml</file>
+                        </eclipse>
+                        <endWithNewline/>
+                        <removeUnusedImports/>
+                        <importOrder>
+                            <file>${maven.multiModuleProjectDirectory}/eclipse/vaadin.importorder</file>
+                        </importOrder>
+                        <forbidWildcardImports/>
+                        <licenseHeader>
+                            <file>${maven.multiModuleProjectDirectory}/eclipse/license-header.txt</file>
+                        </licenseHeader>
+                    </java>
+                    <typescript>
+                        <includes>
+                            <include>src/**/*.js</include>
+                            <include>src/**/*.ts</include>
+                            <include>frontend/**/*.js</include>
+                            <include>frontend/**/*.ts</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
+                        </prettier>
+                    </typescript>
+                    <css>
+                        <includes>
+                            <include>src/**/*.css</include>
+                            <include>frontend/**/*.css</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
+                        </prettier>
+                    </css>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotless-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <violationSeverity>error</violationSeverity>
+                    <failOnViolation>true</failOnViolation>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <!-- Pinned because Spring Boot is a BOM, not the parent. The demo
+                     declares spring-boot-maven-plugin (inheriting the version +
+                     repackage execution); the e2e module's failsafe inherits its
+                     version here. -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-surefire.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

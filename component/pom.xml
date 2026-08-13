@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The add-on itself. STANDALONE on purpose: no <parent>, its own BOM imports
+     and properties, so `mvn install` works here in isolation and the artifact
+     can be published to the Vaadin Directory. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.vaadin.componentfactory</groupId>
+    <artifactId>vcf-froala-editor</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Froala Editor for Vaadin Flow</name>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <vaadin.version>24.10.9</vaadin.version>
+
+        <spotless.plugin.version>3.9.0</spotless.plugin.version>
+        <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
+        <checkstyle.version>13.10.0</checkstyle.version>
+        <spotless.ratchetFrom></spotless.ratchetFrom>
+        <!-- Where the shared eclipse/ + checkstyle/ config lives. Relative to this
+             module rather than ${maven.multiModuleProjectDirectory}, because that
+             property points at THIS module when the add-on is built standalone
+             (`cd component && mvn install`). -->
+        <codechecks.config.dir>${project.basedir}/..</codechecks.config.dir>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-bom</artifactId>
+                <version>${vaadin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- Spring-free on purpose: the official Vaadin add-on guide says an add-on
+         depends on vaadin-core only and stays framework-agnostic, so it forces
+         nothing on consumers. Anything Spring-shaped (the license-key
+         @ConfigurationProperties binding, services) lives in the demo — or later
+         in a separate optional `-spring` module. -->
+    <dependencies>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-core</artifactId>
+        </dependency>
+    </dependencies>
+
+    <!-- Code-checks. This module has NO <parent>, so it inherits nothing from the
+         reactor root — the Spotless/Checkstyle setup is duplicated here on
+         purpose. Keep it in sync with the root pom. -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.plugin.version}</version>
+                <configuration>
+                    <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
+                    <java>
+                        <eclipse>
+                            <file>${codechecks.config.dir}/eclipse/VaadinJavaConventions.xml</file>
+                        </eclipse>
+                        <endWithNewline/>
+                        <removeUnusedImports/>
+                        <importOrder>
+                            <file>${codechecks.config.dir}/eclipse/vaadin.importorder</file>
+                        </importOrder>
+                        <forbidWildcardImports/>
+                        <licenseHeader>
+                            <file>${codechecks.config.dir}/eclipse/license-header.txt</file>
+                        </licenseHeader>
+                    </java>
+                    <typescript>
+                        <includes>
+                            <include>src/**/*.js</include>
+                            <include>src/**/*.ts</include>
+                            <include>frontend/**/*.js</include>
+                            <include>frontend/**/*.ts</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${codechecks.config.dir}/.prettierrc</configFile>
+                        </prettier>
+                    </typescript>
+                    <css>
+                        <includes>
+                            <include>src/**/*.css</include>
+                            <include>frontend/**/*.css</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${codechecks.config.dir}/.prettierrc</configFile>
+                        </prettier>
+                    </css>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotless-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>${checkstyle.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>${checkstyle.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <configLocation>${codechecks.config.dir}/checkstyle/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <violationSeverity>error</violationSeverity>
+                    <failOnViolation>true</failOnViolation>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
