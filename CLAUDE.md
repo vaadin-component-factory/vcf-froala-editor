@@ -108,6 +108,9 @@ optimized bundle rather than a precompiled one.
   it) or say you don't know. Being uncertain is fine; guessing confidently is not.
 - **Commits:** one commit per logical phase or feature; run the tests before
   committing, and don't commit on the user's behalf unless asked.
+- **Never push.** Pushing, opening PRs and anything else that leaves this machine
+  is the maintainer's step, always — not something to offer or do, even when the
+  commits are ready and a remote exists.
 - **Tests & long-running ops:** run new/changed tests first; only run the full
   suite once those pass. Don't wrap waits in `until … done` sleep loops (they can
   stall) — poll periodically and check whether a background job has died.
