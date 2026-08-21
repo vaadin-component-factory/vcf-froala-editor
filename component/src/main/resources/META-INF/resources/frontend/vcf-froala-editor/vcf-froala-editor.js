@@ -18,7 +18,6 @@ class FroalaEditorElement extends SlotStylesMixin(
             ElementMixin(
                 FocusMixin(
                     PolylitMixin(LitElement))))))
-    // FocusMixin is explicitly not used, as it would mess up the focused attribute
 {
 
     // can be overridden by the server using #setConfig
