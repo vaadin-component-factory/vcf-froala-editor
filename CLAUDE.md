@@ -108,6 +108,15 @@ optimized bundle rather than a precompiled one.
   it) or say you don't know. Being uncertain is fine; guessing confidently is not.
 - **Commits:** one commit per logical phase or feature; run the tests before
   committing, and don't commit on the user's behalf unless asked.
+- **Agent review is part of every phase, before the commit.** Not optional and not
+  something to wait to be asked for: once a phase's code is written and the tests
+  are green, dispatch parallel review agents (see the model table below) *before*
+  offering the commit, and report what they found. Use several agents on separate
+  axes rather than one general one — for a component wrapper that means at minimum
+  the framework/API axis, the wrapped-library axis, and the test-quality axis
+  (do the tests prove the behaviour, or do they pass around it?). Findings that
+  belong to a later phase get a `TODO` in the code pointing at that phase, not a
+  silent fix.
 - **Never push.** Pushing, opening PRs and anything else that leaves this machine
   is the maintainer's step, always — not something to offer or do, even when the
   commits are ready and a remote exists.
