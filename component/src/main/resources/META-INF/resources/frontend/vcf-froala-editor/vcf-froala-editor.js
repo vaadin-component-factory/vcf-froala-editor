@@ -6,6 +6,7 @@ import {ElementMixin} from '@vaadin/component-base/src/element-mixin.js';
 import {PolylitMixin} from '@vaadin/component-base/src/polylit-mixin.js';
 import {FieldMixin} from '@vaadin/field-base/src/field-mixin.js';
 import {FocusMixin} from '@vaadin/a11y-base/src/focus-mixin.js';
+import {DisabledMixin} from '@vaadin/a11y-base/src/disabled-mixin.js';
 import {ThemableMixin} from '@vaadin/vaadin-themable-mixin/vaadin-themable-mixin.js';
 import {inputFieldShared} from '@vaadin/vaadin-lumo-styles/mixins/input-field-shared.js';
 import {SlotStylesMixin} from '@vaadin/component-base/src/slot-styles-mixin.js';
@@ -17,7 +18,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         ThemableMixin(
             ElementMixin(
                 FocusMixin(
-                    PolylitMixin(LitElement))))))
+                    DisabledMixin(
+                        PolylitMixin(LitElement)))))))
 {
 
     // can be overridden by the server using #setConfig
@@ -26,6 +28,13 @@ class FroalaEditorElement extends SlotStylesMixin(
     // will be overridden by the server on attachment time
     initialConfig = {};
 
+    // set by the server before the editor initializes; passed to Froala as its `key` option
+    licenseKey = null;
+
+    // Froala builds asynchronously, so its modules (edit, html, ...) must not be touched before its `initialized`
+    // event has fired -- `this.editor` being assigned is not enough
+    _editorInitialized = false;
+
     _lastSyncedValue = "";
     _lastSyncedValueTimestamp = 0;
     _valueChangeMode = "change";
@@ -33,16 +42,12 @@ class FroalaEditorElement extends SlotStylesMixin(
     _valueChangeTimeout = 2_000;
 
     static properties = {
-        disabled: {
-            type: Boolean,
-            reflectToAttribute: true
-        },
+        // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync -- do not redeclare it here.
+        // `focused` is an attribute that FocusMixin toggles directly; declaring it as a reflected property would let
+        // Lit overwrite what the mixin just set.
         readonly: {
             type: Boolean,
-            reflectToAttribute: true
-        },
-        focused: {
-            type: Boolean,
+            value: false,
             reflectToAttribute: true
         }
     }
@@ -105,9 +110,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     ready() {
         super.ready();
 
-        // implement tooltip support later - might make sense to allow more distinct tooltip handling
-        // than just one tooltip, for instance for buttons and so on, especially, since hugerte brings some
-        // own tooltips
+        // TODO Phase 2: tooltip support. Froala has its own Tooltip and Popups modules, so decide there whether the
+        // host exposes a single Vaadin tooltip or delegates to Froala's. The commented wiring below is the Vaadin half.
+        // (The earlier reasoning here was carried over from the HugeRTE reference and does not describe Froala.)
         // this._tooltipController = new TooltipController(this);
         // this.addController(this._tooltipController);
         // this._tooltipController.setShouldShow(target => {
@@ -117,19 +122,38 @@ class FroalaEditorElement extends SlotStylesMixin(
         // });
     }
 
-    firstUpdated() {
+    async firstUpdated(changedProperties) {
+        // PolylitMixin builds its `this.$` id map here, so the super call is not optional
+        super.firstUpdated(changedProperties);
+
+        await this._initEditor();
     }
 
     async connectedCallback() {
         super.connectedCallback();
 
-        // not sure if this might be an issue, if called here already, since "render" has not yet happend
-        // if so, add a check for "has been rendered" for reattachments and also add a call of init editor to
-        // first update.
-        await this._initEditor();
+        // The editor is initialized from firstUpdated, not from here, so that properties the server sets in the same
+        // response (licenseKey, value) are applied before Froala reads them -- the license key in particular is only
+        // read once, at init. On a re-attach the element has already rendered, so firstUpdated will not run again and
+        // this is the only place left to re-create the editor.
+        if (this.hasUpdated) {
+            await this._initEditor();
+        }
     }
 
     disconnectedCallback() {
+        // FocusMixin, ControllerMixin and Vaadin's ResizeMixin all call super first and tear down afterwards
+        super.disconnectedCallback();
+
+        // Every one of these outlives the element otherwise: an interval keeps firing against a destroyed editor, and
+        // a re-attach starts a second one on top of it.
+        clearInterval(this._valueChangeHandleForInterval);
+        clearTimeout(this._valueChangeHandleForTimeout);
+        clearTimeout(this._throttleHandle);
+        delete this._valueChangeHandleForInterval;
+        delete this._valueChangeHandleForTimeout;
+        delete this._throttleHandle;
+
         if (this.editor) {
             this.editor.destroy();
             this.editorElement.remove();
@@ -138,24 +162,39 @@ class FroalaEditorElement extends SlotStylesMixin(
             delete this.editor;
         }
 
-        if (this.resizeObserver) {
-            this.resizeObserver.disconnect();
-            delete this.resizeObserver;
-        }
-
-        super.disconnectedCallback();
+        this._editorInitialized = false;
     }
 
     async _initEditor() {
+        // Lit does not check isConnected before running firstUpdated, and Flow can attach and detach an element before
+        // that first update flushes. Without this guard we would build an editor for a host that already had its one
+        // and only disconnectedCallback, and nothing would ever destroy it.
+        if (!this.isConnected) {
+            return;
+        }
+
         if (!this.editor) {
             this.editorElement = document.createElement('div');
+
+            // Froala adopts the content of the element it initializes on, so seeding it here is what applies the
+            // server's initial value -- there is no init option for the content.
+            this.editorElement.innerHTML = this._lastSyncedValue;
             this.append(this.editorElement); // will be put into the default slot
 
-            // TODO init the editor
-            // TODO init initial value assignment
-            // TODO init timeout and interval value change modes
             this.editor = new FroalaEditor(this.editorElement, {
+                key: this.licenseKey ?? undefined,
                 events: {
+                    'initialized': () => {
+                        this._editorInitialized = true;
+
+                        // anything touching editor modules has to wait for this event, so re-apply what the server may
+                        // already have set while Froala was still building
+                        this.updateReadonlyMode();
+
+                        if (this.valueChangeMode === "interval") {
+                            this.startValueChangeInterval();
+                        }
+                    },
                     'blur': () => {
                         this.onValueChangeIfMode("blur");
                         this.dispatchEvent(new CustomEvent('blur'));
@@ -165,6 +204,7 @@ class FroalaEditorElement extends SlotStylesMixin(
                     },
                     'contentChanged': () => {
                         this.onValueChangeIfMode("change");
+                        this.restartValueChangeTimeoutIfMode();
                     }
                 }
             });
@@ -198,27 +238,52 @@ class FroalaEditorElement extends SlotStylesMixin(
      * delta, update the "old value" property and send an event to the server.
      */
     onValueChange() {
-        let now = Date.now();
-        if (this._lastSyncedValueTimestamp < now - 50) { // explicit throttle to prevent too many events fired at all
-            this._lastSyncedValueTimestamp = now;
+        const now = Date.now();
+        const sinceLastSync = now - this._lastSyncedValueTimestamp;
 
-            const currentValue = this.editor?.html?.get() ?? this._lastSyncedValue;
-
-            // init lib
-            const dmp = new diff_match_patch();
-            const patch = dmp.patch_make(this._lastSyncedValue, currentValue);
-            const delta = dmp.patch_toText(patch);
-
-            this._lastSyncedValue = currentValue;
-
-            if (delta) {
-                this.dispatchEvent(new CustomEvent("_value-delta", {
-                    detail: {
-                        delta
-                    }
-                }));
-            }
+        // explicit throttle to prevent too many events fired at all. It defers rather than drops: a blur or a timeout
+        // flush landing inside the window has no later change to carry it, so dropping it would lose the last edit.
+        if (sinceLastSync < 50) {
+            clearTimeout(this._throttleHandle);
+            this._throttleHandle = setTimeout(() => this.onValueChange(), 50 - sinceLastSync);
+            return;
         }
+
+        clearTimeout(this._throttleHandle);
+        this._lastSyncedValueTimestamp = now;
+
+        const currentValue = this.editor?.html?.get() ?? this._lastSyncedValue;
+
+        // init lib
+        const dmp = new diff_match_patch();
+        const patch = dmp.patch_make(this._lastSyncedValue, currentValue);
+        const delta = dmp.patch_toText(patch);
+
+        this._lastSyncedValue = currentValue;
+
+        if (delta) {
+            this.dispatchEvent(new CustomEvent("_value-delta", {
+                detail: {
+                    delta
+                }
+            }));
+        }
+    }
+
+    /**
+     * Sends the full current value to the server, bypassing the delta channel. The server calls this when a delta did
+     * not apply, which means the two sides drifted apart and only a full value can bring them back together.
+     */
+    resyncValue() {
+        clearTimeout(this._throttleHandle);
+        this._lastSyncedValue = this.editor?.html?.get() ?? this._lastSyncedValue;
+        this._lastSyncedValueTimestamp = Date.now();
+
+        this.dispatchEvent(new CustomEvent("_value-resync", {
+            detail: {
+                value: this._lastSyncedValue
+            }
+        }));
     }
 
     set valueChangeMode(newValueChangeMode) {
@@ -278,6 +343,20 @@ class FroalaEditorElement extends SlotStylesMixin(
         delete this._valueChangeHandleForInterval;
     }
 
+    /// Restarts the debounce timer, if the current mode is "timeout". Any change before it elapses restarts it, so
+    /// the value is synced once the user pauses.
+    restartValueChangeTimeoutIfMode() {
+        if (this.valueChangeMode !== "timeout") {
+            return;
+        }
+
+        clearTimeout(this._valueChangeHandleForTimeout);
+        this._valueChangeHandleForTimeout = setTimeout(() => {
+            delete this._valueChangeHandleForTimeout;
+            this.onValueChange();
+        }, this.valueChangeTimeout);
+    }
+
     startValueChangeInterval() {
         if (this._valueChangeHandleForInterval) {
             this.stopValueChangeInterval();
@@ -292,30 +371,22 @@ class FroalaEditorElement extends SlotStylesMixin(
      * @param html
      */
     replaceSelectionContent(html) {
-        console.warn("on selection replace")
-        // this.editor.selection.setContent(html);
+        // TODO Phase 2: `this.editor.html.insert(html, clean, doSplit)` is the Froala equivalent -- it inserts at the
+        // selection, replacing it when there is one. Verified in froala-editor 5.4.0 index.d.ts:2256; Froala's
+        // FroalaSelection has no setContent, that was TinyMCE API from the HugeRTE reference. Deferred because the
+        // clean/doSplit flags are configuration decisions that belong with the option API.
+        console.warn("replaceSelectionContent is not implemented yet")
         this.onValueChange();
     }
 
     focus() {
         super.focus();
-        this.editor.events.focus();
+        this.editor?.events.focus();
     }
 
-    // TBD: necessary for froala?
-    // setEnabled(enabled) {
-    //     // Debounce is needed if mode is attempted to be changed more than once
-    //     // during the attach
-    //     if (this.readonlyTimeout) {
-    //         clearTimeout(this.readonlyTimeout);
-    //     }
-    //
-    //     this.readonlyTimeout = setTimeout(() => {
-    //         this.editor.mode.set(enabled ? 'design' : 'readonly');
-    //     }, 20);
-    // }
-
-    // TBD: necessary for froala?
+    // TODO Phase 2: no confirmed Froala need -- this is an iframe-era TinyMCE workaround for toolbar positioning
+    // inside a dialog. Froala positions through its own Position/Popups modules, DOM-relative. Verify against those
+    // before implementing anything here; delete this block if the toolbar behaves inside vaadin-dialog.
     // isInDialog() {
     //     let inDialog = false;
     //     let parent = this.parentElement;
@@ -337,9 +408,19 @@ class FroalaEditorElement extends SlotStylesMixin(
         }
     }
 
+    /// Applies `disabled` / `readonly` to the editor. Froala has no mode API -- `edit.off()` drops the
+    /// contenteditable attribute and disables the toolbar, `edit.on()` restores both.
     updateReadonlyMode() {
-        console.warn("tbd update readonly / disabled")
-        // this.editor?.mode.set((this.disabled || this.readonly) ? 'readonly' : 'design');
+        if (!this._editorInitialized) {
+            // re-applied from the `initialized` handler, so a component that starts out disabled is not lost
+            return;
+        }
+
+        if (this.disabled || this.readonly) {
+            this.editor.edit.off();
+        } else {
+            this.editor.edit.on();
+        }
     }
 
     static get is() {
