@@ -232,6 +232,52 @@ That number was human-days ÷ ~3, not a bottom-up estimate, and was corrected on
 
 ---
 
+## Known issues
+
+### Frontend formatting is not in the build gate (2026-08-20)
+
+The `<typescript>` and `<css>` prettier steps were removed from both poms. **Cause,
+reproduced:** Spotless starts the prettier node server with
+
+    npm start --scripts-prepend-node-path=true -- --node-server-instance-id=<id>
+
+`--scripts-prepend-node-path` was removed in **npm 7**. npm 11 only warns
+("Unknown cli config ... will stop working in the next major version"), but **npm 12**
+— `latest` since 2026-07-29 — aborts:
+
+    npm error code EUNKNOWNCONFIG
+    npm error Unknown cli flag: --scripts-prepend-node-path
+
+`serve.js` then never runs, so the `server-<id>.port` file it is supposed to write
+never appears, and Spotless gives up after a **2-minute timeout** with
+`ServerStartException: Starting server failed. (...)` — a message that carries no
+cause, and that neither `-e` nor `-X` expands. It looks like a hang; it is a timeout.
+
+Ruled out along the way: proxy, `NODE_ENV`, node version (26.4.0 verified working),
+`ignore-scripts`, node shims, and the npm install itself (`NpmInstall` passes only
+`--no-audit --no-fund`, which is why that step always succeeded while only the
+server start failed).
+
+**Not fixable by upgrading:** `spotless-lib` 4.10.0 (2026-08-17, the newest) still
+passes the flag.
+
+**Upstream:** [diffplug/spotless#3024](https://github.com/diffplug/spotless/issues/3024)
+— "prettier incompatibility with npm 12", opened 2026-08-19, still open. It already
+identifies the same root cause and contains the npm 11 vs. npm 12 comparison, so
+there is nothing to add; just watch it. Note it also reports that Spotless *retries
+every minute* rather than failing once, which is why the symptom reads as a hang.
+
+- [ ] Re-add both prettier blocks once it is fixed — `vcf-froala-editor.js`
+      is going to be the most-edited file in the repo and deserves a gate. `.prettierrc`
+      is deliberately kept at the project root for that return.
+- [ ] Alternative if upstream stalls: pin an npm < 12 for Spotless only, via the
+      step's `<npmExecutable>`. Note that Vaadin's bundled node
+      (`~/.vaadin/node`, node 22 / npm 10) ships **no `npm` launcher** — only the
+      `node` binary and `lib/node_modules/npm/bin/npm-cli.js` — so this needs a real
+      npm installation, not that directory.
+
+---
+
 ## Open questions
 
 - **Froala 4.6.2 or 5.x?** 5.x has been GA since 2026-01-15 (5.3.1 current). Is NST

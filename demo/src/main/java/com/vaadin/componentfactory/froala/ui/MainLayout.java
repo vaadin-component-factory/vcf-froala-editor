@@ -35,8 +35,7 @@ public class MainLayout extends AppLayout {
         addToNavbar(new DrawerToggle(), new H1("Froala Editor for Vaadin Flow"));
 
         SideNav nav = new SideNav();
-        nav.addItem(new SideNavItem("Hello", HelloWorldView.class));
-        nav.addItem(new SideNavItem("Greeting", GreetingView.class));
+        nav.addItem(new SideNavItem("Basic", BasicView.class));
         addToDrawer(nav);
     }
 }
