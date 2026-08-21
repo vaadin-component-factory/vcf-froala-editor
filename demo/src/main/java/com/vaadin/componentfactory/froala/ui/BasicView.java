@@ -15,26 +15,22 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import org.apache.commons.text.WordUtils;
+import org.jspecify.annotations.NonNull;
+
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import org.apache.commons.text.WordUtils;
-import org.jspecify.annotations.NonNull;
 
 @Route("")
 @AnonymousAllowed
-@NpmPackage(value = "froala-editor", version = "5.4.0")
-@CssImport("froala-editor/css/froala_editor.pkgd.min.css")
-@JsModule("froala-editor/js/froala_editor.pkgd.min.js")
 public class BasicView extends VerticalLayout {
 
     public BasicView() {
@@ -42,20 +38,21 @@ public class BasicView extends VerticalLayout {
         setAlignItems(Alignment.STRETCH);
 
         FroalaEditor editor = new FroalaEditor("Test editor");
+        editor.setId("editor");
         editor.setHelperText("Hello World, it's-a-me, Malario");
 
         FroalaViewer viewer = new FroalaViewer();
+        viewer.setId("viewer");
         viewer.getStyle().setBorder("2px dashed gray").setBorderRadius("5px");
 
         HorizontalLayout toolbar = createToolbar(editor, viewer);
 
-
         add(toolbar, editor, viewer);
-//        editor.setMinHeight("500px");
-//        editor.setMaxHeight("750px");
+        // editor.setMinHeight("500px");
+        // editor.setMaxHeight("750px");
         editor.setHeight("500px");
         viewer.setMinHeight("250px");
-//        setFlexGrow(1, editor, viewer);
+        // setFlexGrow(1, editor, viewer);
 
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
     }
@@ -63,14 +60,45 @@ public class BasicView extends VerticalLayout {
     private @NonNull HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
         HorizontalLayout toolbar = new HorizontalLayout();
         toolbar.setAlignItems(Alignment.BASELINE);
-        toolbar.add(new Button("Focus", _unused -> editor.focus()));
+        Button focus = new Button("Focus", _unused -> editor.focus());
+        focus.setId("focus-button");
+        toolbar.add(focus);
 
-        Select<ValueChangeMode> valueChangeMode = new Select<>("Value Change Mode", event -> editor.setValueChangeMode(event.getValue()));
+        Select<ValueChangeMode> valueChangeMode = new Select<>("Value Change Mode",
+                event -> editor.setValueChangeMode(event.getValue()));
         valueChangeMode.setItems(ValueChangeMode.values());
-        valueChangeMode.setItemLabelGenerator(item -> WordUtils.capitalizeFully(item.name()));
+        // the underscore has to go first, capitalizeFully only splits on whitespace -- ON_BLUR would read "On_blur"
+        valueChangeMode.setItemLabelGenerator(item -> WordUtils.capitalizeFully(item.name().replace('_', ' ')));
         valueChangeMode.setValue(editor.getValueChangeMode());
+        valueChangeMode.setId("value-change-mode");
         toolbar.add(valueChangeMode);
 
+        // The controls below exist for the e2e tests as much as for the demo: readonly, disabled and detach are
+        // behaviours the browser has to prove, and a test cannot reach the server-side API on its own.
+        Checkbox readOnly = new Checkbox("Read-only", event -> editor.setReadOnly(event.getValue()));
+        readOnly.setId("readonly-toggle");
+        toolbar.add(readOnly);
+
+        Checkbox enabled = new Checkbox("Enabled", event -> editor.setEnabled(event.getValue()));
+        enabled.setValue(editor.isEnabled());
+        enabled.setId("enabled-toggle");
+        toolbar.add(enabled);
+
+        Button toggleAttached = new Button("Toggle attached", _unused -> toggleAttached(editor));
+        toggleAttached.setId("attach-toggle");
+        toolbar.add(toggleAttached);
+
         return toolbar;
+    }
+
+    /// Detaches the editor from this view, or re-attaches it in its original position. Exercises the round trip the
+    /// delta design depends on: on detach the server pushes the accumulated value into the element, on attach the
+    /// client rebuilds Froala from it.
+    private void toggleAttached(FroalaEditor editor) {
+        if (editor.getParent().isPresent()) {
+            remove(editor);
+        } else {
+            addComponentAtIndex(1, editor);
+        }
     }
 }
