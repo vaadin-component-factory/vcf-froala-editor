@@ -33,6 +33,21 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Both of these were reaching the demo only as *optional* transitive
+             dependencies (commons-text via commons-configuration2, jspecify via
+             Vaadin), so a Vaadin upgrade could drop them without warning.
+             Declared explicitly because the demo's own code uses them. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+
         <!-- ===== Test stack ===== JUnit base plus the browserless layer (Karibu,
              license-free on Vaadin 24) beside the views it drives. The browser
              e2e layer lives in the separate `e2e/` module. -->
