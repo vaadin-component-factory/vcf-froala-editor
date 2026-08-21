@@ -23,48 +23,100 @@ original wording lives in `docs/customer-request.md`.
 green, and committed on `main` (three commits: scaffolding, project docs,
 customer request + estimate). No remote is configured yet.
 
-The `GreetingComponent` / `GreetingView` / `GreetingService` classes are
-placeholders that prove the wiring. Phase 1 replaces them.
+The `GreetingComponent` / `GreetingView` / `GreetingService` placeholders are gone
+as of `b5627df`; `GreetingViewIT` is the last one left (Phase 1).
 
 ---
 
-## Phase 1 — Minimal working Froala wrapper
+## Phase 1 — Minimal working Froala wrapper `[~]`
 
 Goal: a `FroalaEditor` component that renders, round-trips HTML, and is covered by
 one browserless and one e2e test.
 
-- [ ] Decide the integration shape: a project-owned LitElement/TS connector that
-      instantiates Froala, vs. driving Froala from Flow via the Element API.
-      Record the decision and why.
-- [ ] `@NpmPackage("froala-editor", version = "4.6.2")` + `@JsModule` for the
-      connector; import Froala's CSS via `@CssImport`/`@StyleSheet`
-- [ ] `FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String>` (or
-      `CustomField<String>`) so it behaves like a normal Vaadin field: `getValue`,
-      `setValue`, `addValueChangeListener`, Binder support
-- [ ] **Delta-based value transfer** (NST requirement: large HTML must not be sent
-      whole on every change). Prior art to port: `parttio/hugerte-for-flow`,
-      **Apache-2.0**, same license as this add-on — reuse is clean with attribution.
-      Its mechanism, verified 2026-08-13:
-      - client keeps `_lastSyncedValue`; on change `dmp.patch_make(last, current)`
-        → `patch_toText` → `_value-delta` CustomEvent, plus a 50 ms throttle
-      - server `applyDelta(old, delta)` = `patchFromText` + `patchApply`, ~10 lines
-      - `org.bitbucket.cowwoc:diff-match-patch:1.2` (Java) + npm
-        `diff-match-patch@1.0.5`. Both resolve; both are old but the algorithm is
-        stable — note them as a small supply-chain item, not a blocker.
-      Three things to do better than the reference:
-      - it **discards the patch-apply result flags** (`results[1]`), so a patch
-        that does not apply cleanly corrupts the value silently. Check them and
-        fall back to a **full resync** on failure.
-      - **server → client is still full HTML** there; `setValue()` of a large
-        document ships everything. Decide whether NST needs that direction too.
-      - its config layer uses Jackson 3 (`tools.jackson`, Vaadin 25) — **not**
-        portable to this Vaadin 24 stack. Only the delta code ports.
-- [ ] `setLicenseKey(String)` + a static default (see `CLAUDE.md` — **no Spring in
-      `component/`**)
-- [ ] Replace the Greeting placeholders in `demo/` with a `FroalaEditorView`
-- [ ] Karibu test: value round-trip / server-side state only (no JS runs there)
+**State as of 2026-08-21** — first draft is in (`b5627df`), the wrapper renders and
+round-trips through the delta channel. What is left is the license key, the tests,
+and a green gate. Two things landed that were not planned here at all: the
+`ValueChangeMode` enum and `FroalaViewer` (see below).
+
+Decided and done:
+
+- [x] **Integration shape: a project-owned Lit element**, not Flow-side Element API
+      calls. `vcf-froala-editor.js` is a `LitElement` composed with Vaadin's own
+      field mixins (`FieldMixin`, `ThemableMixin`, `ElementMixin`, `FocusMixin`,
+      `PolylitMixin`, `SlotStylesMixin`) and instantiates Froala on a plain `<div>`
+      in its default slot. **Why:** the field parts (label / helper / error-message
+      / required-indicator) and the Lumo `inputFieldShared` styles come for free, so
+      the editor looks and validates like a native Vaadin field; and every
+      Froala-specific call stays in one file, which is what Phase 5 needs.
+- [x] `@NpmPackage` + `@JsModule` + `@CssImport` on `FroalaEditor` —
+      **`froala-editor` 5.4.0**, not the 4.6.2 the customer named (see Phase 5)
+- [x] `FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String>`,
+      plus `HasValidator`, `HasValidationProperties`, `HasLabel`, `HasHelper`,
+      `HasSize`, `HasStyle`, `Focusable`, `InputNotifier`
+- [x] Demo view: `BasicView` replaces the Greeting placeholder, wired into
+      `MainLayout`'s side nav
+- [x] `ValueChangeMode` (`ON_CHANGE` / `ON_BLUR` / `TIMEOUT` / `INTERVAL`) +
+      `ClientSideReference` — **not originally planned.** Flow's own
+      `com.vaadin.flow.data.value.ValueChangeMode` does not fit: the trigger is a
+      Froala event (`contentChanged`, `blur`), not DOM input, so the modes and their
+      client-side string representations are our own. Naming clash with the Flow
+      enum is accepted and documented in the javadoc.
+- [x] `FroalaViewer` — **not originally planned.** A read-only `fr-view` host so an
+      app can render Froala HTML outside the editor with Froala's own CSS.
+
+Open:
+
+- [~] **Delta-based value transfer** (NST requirement: large HTML must not be sent
+      whole on every change). Client → server works: the connector keeps
+      `_lastSyncedValue`, builds a `patch_make`/`patch_toText` delta on change with
+      a 50 ms throttle, and fires `_value-delta`; the server applies it in
+      `FroalaEditor.applyDelta` and calls `setModelValue(…, true)` so the change
+      event reads as client-originated. Ported from `parttio/hugerte-for-flow`
+      (Apache-2.0, same license — reuse is clean with attribution).
+      `org.bitbucket.cowwoc:diff-match-patch:1.2` + npm `diff-match-patch@1.0.5`.
+      Still to do, of the three improvements over the reference:
+      - [ ] **`applyDelta` discards the patch-apply flags (`results[1]`)** — same
+            defect as the original, so a patch that does not apply cleanly corrupts
+            the value silently. Check them and **fall back to a full resync**.
+            Confirmed as a real gap on 2026-08-21, not a deliberate shortcut.
+      - [x] **server → client stays full HTML — deliberate.** The delta handler sets
+            only the *model* value, never the presentation value, so a client-side
+            edit sends nothing back. The full value is pushed once, on detach
+            (`setPresentationValue(getValue())`), so the next attach starts in sync.
+            No server→client delta channel needed unless NST reports a case where a
+            programmatic `setValue()` of a huge document is on a hot path.
+      - [x] the reference's Jackson-3 config layer is not portable to Vaadin 24 —
+            not ported, only the delta code was.
+- [ ] **`setLicenseKey(String)` + a static default.** Not started; nothing in the
+      component references `apiKey` yet. This is the customer's named requirement
+      (see `CLAUDE.md` — **no Spring in `component/`**; the Spring binding is Phase 3).
+- [ ] Karibu test: value round-trip / server-side state only (no JS runs there).
+      The scaffolding test was deleted with the placeholders, so the browserless
+      layer currently has **zero** tests.
 - [ ] Playwright IT: type into the real editor, assert the value reaches the server
-- [ ] Delete `GreetingComponent`, `GreetingView`, `GreetingService`, and their tests
+- [~] Delete the placeholders — `GreetingComponent`, `GreetingView` and
+      `GreetingService` are gone, but **`GreetingViewIT` is still there** and points
+      at the deleted `greeting` route, so `mvn clean verify -Pproduction` fails on it.
+- [ ] **Green build gate.** Two independent breakages as of 2026-08-21:
+      `GreetingViewIT` above, and Spotless.Java failing in `component/` on
+      formatting plus the missing license header in `ClientSideReference.java` and
+      `ValueChangeMode.java` (`mvn spotless:apply`).
+
+Carried into the connector as marked TODOs, tracked here so they are not lost:
+
+- [ ] `ValueChangeMode.TIMEOUT` is selectable but does nothing — no
+      `startValueChangeTimeout`, `_valueChangeHandleForTimeout` is never assigned.
+      `ON_CHANGE`, `ON_BLUR` and `INTERVAL` work.
+- [ ] Initial value assignment at editor init
+- [ ] `readonly` / `disabled` → Froala's `mode.set('readonly'|'design')`;
+      `updateReadonlyMode()` is a stub
+- [ ] Server-side editor configuration (`initialConfig` / `rawInitialConfig` are
+      declared but never read; the `setConfig` the comment names does not exist).
+      Overlaps Phase 2 — decide there whether Phase 1 gets a raw-JSON escape hatch
+      or waits for the typed API.
+- [ ] Tooltip support (`ready()` has the controller wiring commented out)
+- [ ] `replaceSelectionContent` is a stub
+- [ ] `focus()` calls `this.editor.events.focus()` without a null check
 
 Removing the last placeholder is the definition of done for this phase.
 
@@ -132,8 +184,13 @@ customer request's "upcoming 5.x" is out of date. The plugin surface is purely
 additive (42 → 49, nothing removed), so this is a target-version decision, not a
 migration project.
 
-- [ ] Decide the target: build against 5.x from day 1 (recommended) vs. 4.6.2
-      because NST is pinned there
+- [x] **Decided 2026-08-21: 5.x from day 1.** The code is on `froala-editor`
+      **5.4.0** — newer than the 5.3.1 measured in `docs/customer-request.md`, so
+      the surface numbers there (302 options, 49 plugins, 39 locales) are unverified
+      for 5.4. Re-measure before Phase 2 hardens the option API.
+- [ ] Confirm with NST that 5.x is acceptable, or budget the +2–4 d to also support
+      4.6.2. The customer request names 4.6.2 explicitly, so this is *our* decision
+      until they sign off on it.
 - [ ] Keep the connector's Froala-specific surface behind one TS file so a major
       swap stays localized
 - [ ] If both majors must be supported: one artifact with a version switch, or
@@ -280,9 +337,9 @@ every minute* rather than failing once, which is why the symptom reads as a hang
 
 ## Open questions
 
-- **Froala 4.6.2 or 5.x?** 5.x has been GA since 2026-01-15 (5.3.1 current). Is NST
-  pinned to 4.6.2, or can the connector target 5.x directly? This is the single
-  biggest open decision — it shapes the option API.
+- **Froala 4.6.2 or 5.x?** Answered on our side — the connector targets **5.4.0**
+  (Phase 5). Still needs NST's sign-off: are they pinned to 4.6.2, and if so, do
+  they want one artifact supporting both majors?
 - Does NST expect "full/maximum feature set" literally, or is the MVP cut above
   acceptable for the first release? The difference is ~3 months of work.
 - Which Vaadin version does the NST application actually run? This project targets
