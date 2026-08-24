@@ -198,15 +198,19 @@ Each has a `TODO Phase 2` at its place in the connector:
       re-parenting a component into a `Dialog` or `Popover`, which the demo's
       `OverlayView` does, is exactly such a detach plus attach.
 
-      The cost is real and accepted: every re-parent rebuilds the editor and loses
-      Froala's undo stack, caret and scroll position; the value survives through the
-      presentation push on detach. The purely client-side DOM move (dragging an
-      element to a new parent without the server involved) is handled rather than
-      broken — the element instance survives it, so `_lastSyncedValue` does too and
-      `_initEditor` re-seeds from it. Original reasoning below.
+      **A detach restores the value, and only the value.** Undo stack, caret and
+      scroll position start fresh after a re-parent. That is not a trade we made and
+      could unmake: Flow owns the disconnect, the element is gone by the time the
+      connector hears about it, and nothing says whether the component will come back
+      — so there is no state we could responsibly hold on to. The case where a user
+      would notice is moving an editor between a dialog and the page, which is an edge
+      case, and the maintainer closed it on that basis (2026-08-25). The purely
+      client-side DOM move (dragging an element to a new parent without the server
+      involved) is handled rather than broken — the element instance survives it, so
+      `_lastSyncedValue` does too and `_initEditor` re-seeds from it. Prior art below.
 
-      **Decide whether to destroy Froala on detach at all.** The connector currently
-      calls `editor.destroy()` in `disconnectedCallback`. The maintainer's own
+      **Prior art, for a revisit if a concrete case turns up.** The connector calls
+      `editor.destroy()` in `disconnectedCallback`. The maintainer's own
       `stefanuebe/vaadin-fullcalendar` (`v6_master`, `full-calendar.ts`) does the
       opposite on purpose: `disconnectedCallback` only releases observers and
       draggables, the widget instance survives, and `connectedCallback` falls through
