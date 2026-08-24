@@ -48,8 +48,10 @@ public class FroalaTestView extends VerticalLayout {
     public static final String INITIAL_VALUE = "<p>seeded by the server</p>";
     public static final String INITIAL_TEXT = "seeded by the server";
 
-    /// Not a real license key and never will be -- this project runs Froala unlicensed. It only has to be a string the
-    /// test can find again in Froala's own options, which proves our end of the wiring.
+    /**
+     * Not a real license key and never will be -- this project runs Froala unlicensed. It only has to be a string the
+     * test can find again in Froala's own options, which proves our end of the wiring.
+     */
     public static final String LICENSE_KEY = "it-dummy-license-key";
 
     public FroalaTestView() {
@@ -85,6 +87,9 @@ public class FroalaTestView extends VerticalLayout {
         enabled.setValue(editor.isEnabled());
         enabled.setId("enabled-toggle");
 
+        Button resetValue = new Button("Reset value", event -> editor.setValue(INITIAL_VALUE));
+        resetValue.setId("reset-value");
+
         Button toggleAttached = new Button("Toggle attached", event -> {
             if (editor.getParent().isPresent()) {
                 remove(editor);
@@ -94,7 +99,7 @@ public class FroalaTestView extends VerticalLayout {
         });
         toggleAttached.setId("attach-toggle");
 
-        add(focus, valueChangeMode, readOnly, enabled, toggleAttached, editor, viewer);
+        add(focus, valueChangeMode, readOnly, enabled, resetValue, toggleAttached, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

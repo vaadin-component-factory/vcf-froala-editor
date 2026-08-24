@@ -107,6 +107,22 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void setValue_reachesTheClientEvenWhenItRepeatsTheLastServerValue() {
+        editableArea().click();
+        editableArea().type(" typed on top");
+        page.locator("#viewer").click();
+        assertThat(page.locator("#viewer")).containsText("typed on top");
+
+        // The button sets exactly the value the server pushed at load. The client still believes it holds that value
+        // -- client edits travel as deltas and never touch the property -- so a plain property update would be
+        // dropped on the way out and the typed text would stay on screen.
+        page.locator("#reset-value").click();
+
+        assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT);
+        assertThat(editableArea()).not().containsText("typed on top");
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();

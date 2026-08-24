@@ -112,9 +112,10 @@ public class BasicView extends VerticalLayout {
         return toolbar;
     }
 
-    /// Detaches the editor from this view, or re-attaches it in its original position. Exercises the round trip the
-    /// delta design depends on: on detach the server pushes the accumulated value into the element, on attach the
-    /// client rebuilds Froala from it.
+    /**
+     * Detaches the editor from this view, or re-attaches it in its original position. Exercises the round trip the
+     * delta design depends on: the value the client accumulated has to survive the rebuild.
+     */
     private void toggleAttached(FroalaEditor editor) {
         if (editor.getParent().isPresent()) {
             froalaReattachParent = (HasComponents) editor.getParent().get();

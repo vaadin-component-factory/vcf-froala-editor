@@ -41,7 +41,7 @@ remaining test gaps are recorded per requirement.
 
 **State as of 2026-08-24** — done. The wrapper renders, round-trips through the
 delta channel, takes a license key, and `mvn clean verify -Pproduction` is green
-with 9 browserless and 16 e2e tests. Two things landed that were not planned here at
+with 11 browserless and 17 e2e tests. Two things landed that were not planned here at
 all: the `ValueChangeMode` enum and `FroalaViewer` (see below).
 
 Everything still marked open below is either explicitly deferred or belongs to a
@@ -132,8 +132,8 @@ Open:
       demo bug — `WordUtils.capitalizeFully("ON_BLUR")` renders `On_blur`, because it
       only splits on whitespace.
 - [x] All placeholders deleted, `GreetingViewIT` included.
-- [x] **Green build gate.** `mvn clean verify -Pproduction` passes: 9 browserless
-      + 16 e2e tests, Spotless and Checkstyle clean in all four modules.
+- [x] **Green build gate.** `mvn clean verify -Pproduction` passes: 11 browserless
+      + 17 e2e tests, Spotless and Checkstyle clean in all four modules.
 
 Carried into the connector as marked TODOs, tracked here so they are not lost:
 
@@ -312,27 +312,76 @@ The two remaining boxes above are the open test debt of this phase. `TIMEOUT` /
 `INTERVAL` is the one worth doing next, and `page.clock()` is the reason it has not
 been.
 
-### Current work — the maintainer's findings (2026-08-24)
+### The maintainer's findings (2026-08-24) — worked
 
-`docs/issues/findings.md` is the active queue. It is **gitignored and maintainer
-owned**: read it, do not edit it, and report back in chat rather than ticking items
-off in the file. Items 1–3 are done and committed; 4–11 are open.
-
-Two of them already have an answer, given in chat and repeated here so it is not lost:
+`docs/issues/findings.md` is the maintainer's queue. It is **gitignored and maintainer
+owned**: read it, do not edit it, report back in chat. All eleven items are answered;
+what follows is the part worth keeping.
 
 - **4 / 5 — `hasUpdated` and `isConnected` are never assigned because neither is
   ours.** `hasUpdated` is Lit's own reactive-element flag, `isConnected` is the
-  standard DOM `Node` property. Both are read-only from our side. What `hasUpdated`
-  is *for* is documented at the call site in the connector.
-- **6 — `setValue` not reaching the client after a client-side edit is real, and the
-  mechanism is understood.** `AbstractSinglePropertyField` compares the new value
-  against the *model* value, and a client edit updated the model without updating the
-  presentation value (that is VT-6, deliberate). Setting the same string the model
-  already holds is therefore a no-op: no property write, nothing sent, and the client
-  keeps whatever the user typed. The maintainer linked
-  `parttio/hugerte-for-flow` issue 30, which describes the same thing. Reproduction is
-  in the findings file with a screenshot. This is the cost side of the model-only
-  update and needs a deliberate fix, not a patch — start here.
+  standard DOM `Node` property. Both are read-only from our side. What each one is
+  *for* is documented at its call site in the connector.
+- **6 — `setValue` did not reach the client after a client-side edit.** Fixed; see
+  VT-11 and the decision below.
+- **7 — documented, not changed**, as the maintainer asked. Their reading is the one
+  in the code now: the listener is what would open a second update path if `value` ever
+  became a notifying Lit property, and it is why we do not need our own value-change
+  listener management.
+- **8 — `isInDialog` removed.** No positioning problem is observable under `/overlay`;
+  it was an iframe-era TinyMCE workaround and Froala positions through its own
+  Position/Popups modules.
+- **9 / 10 / 11 — done.** Markdown doc comments (`///`) converted back to `/** */`,
+  changelog-voiced comments cut down to the reason they exist, both FIXMEs resolved.
+
+#### Decision: how a server value reaches the browser (finding 6)
+
+The bug had **two** layers of the same de-duplication, one on each side:
+
+1. The server-side `value` property still held the value the *server* last set,
+   because a client edit deliberately never writes it (VT-6). Flow drops a property
+   write whose value the property already holds, so `setValue(x)` after the user typed
+   on top of `x` produced no write at all.
+2. Even with a write, the **browser** keeps its own copy of the state tree and ignores
+   a property update whose value that copy already holds — stale for the same reason.
+
+Fix: `setPresentationValue` detects exactly that case and pushes over a JS call
+instead, which has no such comparison (VT-11). Everything else stays as it was —
+`setModelValue` in the delta handler, the detach listener, the property as the normal
+transport.
+
+One deviation from the upstream shape: the guard's "is the browser there" half is an
+own `liveOnClient` flag, not `isAttached()`. Measured — `isAttached()` answers `true`
+inside a detach listener (Flow fires those before clearing the node's parent), so it
+does not mean what it reads like, and the push it lets through is deferred to the next
+attach and overwrites the value set in the meantime. `hugerte` reuses its
+`isInitialized` field here, which already existed for `checkAlreadyInitialized()`; we
+have no such field yet — but its `beforeClientResponse` timing is adopted regardless.
+That timing exists for their config guard, not for the push, and makes no measurable
+difference here; phase 2's configuration API is the point at which it would start to
+matter, and a flag that flips too early is not worth rediscovering then. Both cases are
+tested in `FroalaEditorKaribuTest`. See VT-11.
+
+**This is otherwise the fix `parttio/hugerte-for-flow` already ships** (issue 30, closed;
+`HugeRte.setPresentationValue`), down to the guard. Deliberately adopted rather than
+invented: the two add-ons share the delta design, so they should share the answer and
+there is one shape to re-check when Vaadin moves.
+
+Rejected on the way, worth writing down so it is not tried again:
+
+- **`clear()` then `setValue(x)`.** Suggested in the issue thread and reported there
+  as not working. Both writes collapse into one round trip, so the browser only ever
+  sees the final value — which its copy of the tree already holds.
+- **Keeping the server-side property in step with every client edit** via
+  `ElementPropertyMap.setProperty(name, value, false)`, Flow's own path for a
+  client-originated property. It works and removes the need for the detach listener,
+  but it costs a dependency on a Flow internal *and* breaks the invariant the guard
+  above rests on: once the property tracks the editor, the drop case can no longer be
+  detected from the server, so every `setValue` has to push unconditionally. The
+  invariant is worth more than the tidier mirror.
+- **`@Synchronize` on `value`.** The public way to keep both sides in step, and the
+  reason Vaadin's own fields never see this bug — but it asks the browser to send the
+  full value on every change, which defeats the delta channel outright.
 
 ---
 
@@ -348,6 +397,9 @@ Goal: expose Froala's options through Java instead of leaking raw JSON.
 - [ ] Escape hatch: `setOption(String, Object)` for anything not yet typed —
       cheaper than chasing Froala's full option surface up front
 - [ ] Demo view exercising each mode
+- [ ] Whatever guards "this option can no longer be changed" must reuse
+      `FroalaEditor.liveOnClient`, which already flips in `beforeClientResponse` for
+      exactly that purpose (VT-11) — do not add a second flag with attach timing
 
 ---
 

@@ -15,8 +15,8 @@ guarantees here are mostly about *not* breaking.
 - **LC-2** The initial value is applied by seeding the host element's `innerHTML`
   before constructing Froala, which adopts the content of the element it initializes
   on. Froala has no init option for content.
-  *Verified:* `FroalaEditorIT.initialValue_isInTheEditorOnLoad` — `BasicView` sets its
-  value before the first attach, and the assertion is scoped to Froala's own editing
+  *Verified:* `FroalaEditorIT.initialValue_isInTheEditorOnLoad` — `FroalaTestView` sets
+  its value before the first attach, and the assertion is scoped to Froala's own editing
   surface, so the value can only have arrived through the seeding.
   `detachAndReattach_keepsTheValueAndKeepsWorking` covers the re-attach path through
   the same code.
@@ -66,8 +66,8 @@ guarantees here are mostly about *not* breaking.
 - **LC-9** A **Flow-driven** detach and re-attach produces a **new element**, not a
   reconnected one. Measured 2026-08-24: marking the element from the browser,
   toggling attachment and reading the marker back finds it gone. So the re-attached
-  editor is built by `firstUpdated` on a fresh element, and its value comes from the
-  presentation-value push of LC-6 / VT-7 — nothing survives on the client.
+  editor is built by `firstUpdated` on a fresh element, seeded from the `value`
+  property the detach listener brought in step (VT-7) — nothing survives on the client.
   *Verified:* by the measurement above; the probe was temporary and is not in the
   suite. LC-8's test covers the observable outcome.
 - **LC-10** `connectedCallback`'s `hasUpdated` branch therefore covers a different

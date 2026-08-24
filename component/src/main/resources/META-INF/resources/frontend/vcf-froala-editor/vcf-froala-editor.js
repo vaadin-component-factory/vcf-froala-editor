@@ -131,14 +131,13 @@ class FroalaEditorElement extends SlotStylesMixin(
     async connectedCallback() {
         super.connectedCallback();
 
-        // `hasUpdated` is false on a first connect. The editor is then left to firstUpdated, so that properties the
-        // server sets in the same response (licenseKey, value) are applied before Froala reads them -- the license key
-        // in particular is only read once, at init.
+        // `hasUpdated` is Lit's own flag: false until the element has rendered once. On a first connect the editor is
+        // left to firstUpdated, so that properties the server sets in the same response (licenseKey, value) are applied
+        // before Froala reads them -- the license key in particular is only read once, at init.
         //
-        // It is true when an element that has already rendered is connected again. That is NOT what a Flow detach and
-        // re-attach does: measured 2026-08-24, Flow discards the element and builds a new one, whose firstUpdated runs
-        // again. This branch covers a client side DOM move of the same element, where Lit will not run firstUpdated a
-        // second time and nothing else would rebuild the editor.
+        // A re-connect of an already rendered element means a client side DOM move: Lit does not run firstUpdated a
+        // second time, so nothing else would rebuild the editor. A Flow detach and re-attach does not land here, it
+        // discards the element and builds a new one.
         if (this.hasUpdated) {
             await this._initEditor();
         }
@@ -148,8 +147,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         // FocusMixin, ControllerMixin and Vaadin's ResizeMixin all call super first and tear down afterwards
         super.disconnectedCallback();
 
-        // Every one of these outlives the element otherwise: an interval keeps firing against a destroyed editor, and
-        // a re-attach starts a second one on top of it.
+        // these outlive the element otherwise: an interval keeps firing against a destroyed editor, and a re-attach
+        // starts a second one on top of it
         clearInterval(this._valueChangeHandleForInterval);
         clearTimeout(this._valueChangeHandleForTimeout);
         clearTimeout(this._throttleHandle);
@@ -158,8 +157,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         delete this._throttleHandle;
 
         if (this.editor) {
-            // the clean up has to happen even if destroy throws: leaving `this.editor` set would make _initEditor's
-            // guard skip a dead instance forever, and the field would never work again after a re-attach
+            // the clean up has to happen even if destroy throws: a leftover `this.editor` would make _initEditor skip
+            // the rebuild and the field would stay dead
             try {
                 this.editor.destroy();
             } finally {
@@ -174,9 +173,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     async _initEditor() {
-        // Lit does not check isConnected before running firstUpdated, and Flow can attach and detach an element before
-        // that first update flushes. Without this guard we would build an editor for a host that already had its one
-        // and only disconnectedCallback, and nothing would ever destroy it.
+        // `isConnected` is the DOM's own flag. Lit does not check it before running firstUpdated, and Flow can attach
+        // and detach an element before that first update flushes -- the editor would then belong to a host that
+        // already had its one and only disconnectedCallback, and nothing would ever destroy it.
         if (!this.isConnected) {
             return;
         }
@@ -249,8 +248,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         const now = Date.now();
         const sinceLastSync = now - this._lastSyncedValueTimestamp;
 
-        // explicit throttle to prevent too many events fired at all. It defers rather than drops: a blur or a timeout
-        // flush landing inside the window has no later change to carry it, so dropping it would lose the last edit.
+        // Throttle, so a burst of changes does not become a burst of round trips. It defers rather than drops: a blur
+        // or a timeout flush landing inside the window has no later change to carry it.
         if (sinceLastSync < 50) {
             clearTimeout(this._throttleHandle);
             this._throttleHandle = setTimeout(() => this.onValueChange(), 50 - sinceLastSync);
@@ -351,8 +350,10 @@ class FroalaEditorElement extends SlotStylesMixin(
         delete this._valueChangeHandleForInterval;
     }
 
-    /// Restarts the debounce timer, if the current mode is "timeout". Any change before it elapses restarts it, so
-    /// the value is synced once the user pauses.
+    /**
+     * Restarts the debounce timer, if the current mode is "timeout". Any change before it elapses restarts it, so the
+     * value is synced once the user pauses.
+     */
     restartValueChangeTimeoutIfMode() {
         if (this.valueChangeMode !== "timeout") {
             return;
@@ -392,23 +393,6 @@ class FroalaEditorElement extends SlotStylesMixin(
         this.editor?.events.focus();
     }
 
-    // TODO Phase 2: no confirmed Froala need -- this is an iframe-era TinyMCE workaround for toolbar positioning
-    // inside a dialog. Froala positions through its own Position/Popups modules, DOM-relative. Verify against those
-    // before implementing anything here; delete this block if the toolbar behaves inside vaadin-dialog.
-    // isInDialog() {
-    //     let inDialog = false;
-    //     let parent = this.parentElement;
-    //     while (parent != null) {
-    //         if (parent.tagName.indexOf("VAADIN-DIALOG") === 0) {
-    //             inDialog = true;
-    //             break;
-    //         }
-    //         parent = parent.parentElement;
-    //     }
-    //
-    //     return inDialog;
-    // }
-
     updated(changedProperties) {
         super.updated(changedProperties);
         if (changedProperties.has("disabled") || changedProperties.has("readonly")) {
@@ -416,8 +400,10 @@ class FroalaEditorElement extends SlotStylesMixin(
         }
     }
 
-    /// Applies `disabled` / `readonly` to the editor. Froala has no mode API -- `edit.off()` drops the
-    /// contenteditable attribute and disables the toolbar, `edit.on()` restores both.
+    /**
+     * Applies `disabled` / `readonly` to the editor. Froala has no mode API -- `edit.off()` drops the contenteditable
+     * attribute and disables the toolbar, `edit.on()` restores both.
+     */
     updateReadonlyMode() {
         if (!this._editorInitialized) {
             // re-applied from the `initialized` handler, so a component that starts out disabled is not lost

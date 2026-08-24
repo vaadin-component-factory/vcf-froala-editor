@@ -31,7 +31,8 @@ half is meaningful alone. Ported from `parttio/hugerte-for-flow` (Apache-2.0).
 
 - **VT-5** Server → client transfer is **full HTML, not a delta.** `setValue()` sets
   the element's `value` property; the connector's setter replaces the editor content
-  through `editor.html.set()`.
+  through `editor.html.set()`. One case cannot use the property and writes it from a JS
+  call instead — see VT-11.
   *Verified:* `FroalaEditorKaribuTest.setValue_reachesTheClientProperty` (property
   only — Karibu runs no JavaScript, so `html.set` itself is unverified).
 - **VT-6** A client-originated change updates the **model** value only, never the
@@ -41,9 +42,11 @@ half is meaningful alone. Ported from `parttio/hugerte-for-flow` (Apache-2.0).
   writes to the element's `value` property from inside the browser and asserts zero
   across a sentence's worth of typing, while still asserting the round trip happened.
   This is the guard for the requirement the whole delta design exists for.
-- **VT-7** The full value is pushed to the client exactly once per detach
-  (`addDetachListener` → `setPresentationValue`), so a re-attached editor starts from
-  the server's value.
+- **VT-7** The `value` property lags behind the editor for as long as the component
+  is attached (that is VT-6). It is brought in step exactly once, in
+  `addDetachListener` → `setPresentationValue`, which is enough: Flow replays a node's
+  properties when it is attached again, and that is what seeds the rebuilt editor
+  (LC-2).
   *Verified:* `FroalaEditorIT.detachAndReattach_keepsTheValueAndKeepsWorking`.
 
 ## Drift
@@ -69,6 +72,61 @@ a lost update, a programmatic `setValue` racing a keystroke, a bug.
 - **VT-10** A resync clears the pending throttle timer, so the flushed full value is
   not followed by a stale delta.
   *Verified:* unverified.
+- **VT-11** `setValue()` reaches the editor **even when it repeats a value the server
+  set before**. That single case cannot travel through the property: VT-6 leaves the
+  property on the value the server set last, Flow drops a write whose value the
+  property already holds, and the browser — whose own copy of the state tree is stale
+  for the same reason — would ignore the update even if it were sent.
+  `setPresentationValue` detects exactly this case and writes the property from a JS
+  call instead, which carries no such comparison:
+
+  ```java
+  boolean clientNeedsExplicitPush = liveOnClient
+          && Objects.equals(newPresentationValue, getElement().getProperty("value"));
+  ...
+  getElement().executeJs("this.value = $0", newPresentationValue);
+  ```
+
+  The push deliberately goes through the connector's own `value` setter rather than a
+  method of its own, so a reader of the connector sees one entry point for a server
+  value, not two.
+
+  The comparison is exhaustive because the server-side property and the browser's copy
+  of the state tree move in lockstep — both change only on a server push, neither is
+  touched by a client edit. So "equals the property" is the same statement as "the
+  browser would drop it".
+
+  `liveOnClient` is an own flag rather than `isAttached()`, which cannot express this:
+  **measured — `isAttached()` answers `true` inside a detach listener**, because Flow
+  fires those from `StateNode.setParent` *before* it clears the node's parent, so the
+  node is still reachable from the tree. And the push VT-7's detach-time call would then
+  ask for is **not** dropped: Flow defers it to the next attach, where it arrives after
+  the property replay and overwrites whatever the server set while the component was
+  away. Measured with `isAttached()` in place — the deferred call carries the value from
+  the detach moment, not the current one.
+  *Verified:* `FroalaEditorKaribuTest.detach_doesNotQueueAValuePushForTheNextAttach`,
+  which fails with `isAttached()` and passes with the flag, and
+  `setValueRepeatingTheLastServerValue_queuesAnExplicitClientPush`, so the guard is not
+  vacuously satisfied.
+
+  The flag flips in `beforeClientResponse`, not directly on attach, so that other attach
+  listeners still see a component the browser does not know about yet. That is the
+  reason `hugerte` states in its own code — *"we do this in before client response to
+  allow other attach listeners to do their configs as well"* — where it protects the
+  `checkAlreadyInitialized()` config guard.
+
+  For the push guard itself the timing is unobservable, in both directions: the guard
+  needs the property to lag behind the model, which only a client-originated
+  `setModelValue` produces, and VT-7 restores equality on every detach — so right after
+  an attach the two are equal and the first `setValue` cannot satisfy it either way.
+  Measured: `add` followed by `setValue` queues no push. The timing is adopted anyway,
+  because phase 2's configuration API is expected to need exactly the guard `hugerte`
+  built it for, and a flag that flips too early is not something to discover then.
+  *Verified:*
+  `FroalaEditorIT.setValue_reachesTheClientEvenWhenItRepeatsTheLastServerValue`,
+  which types on top of the seeded value and then re-sets exactly that seeded value.
+  Reported as maintainer finding 6; same defect and same fix as
+  parttio/hugerte-for-flow#30 (closed).
 
 ## Known gaps
 

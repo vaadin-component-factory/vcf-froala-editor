@@ -29,12 +29,15 @@ import org.springframework.context.ApplicationContext;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.spring.SpringServlet;
 
 import static com.github.mvysny.kaributesting.v10.LocatorJ._get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Browserless UI-unit test using Karibu Testing (license-free) — runs the view in the JVM, no browser.
@@ -128,5 +131,65 @@ class FroalaEditorKaribuTest {
         // zero used to pass here and then throw in the client's own setter, so the failure surfaced in the browser
         // instead of at the call site
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(0));
+    }
+
+    @Test
+    void setValueRepeatingTheLastServerValue_queuesAnExplicitClientPush() {
+        VerticalLayout layout = new VerticalLayout();
+        UI.getCurrent().add(layout);
+
+        ProbeEditor editor = new ProbeEditor();
+        layout.add(editor);
+        editor.setValue("<p>A</p>");
+        editor.simulateClientEdit("<p>B</p>");
+        drainPendingJavaScript();
+
+        editor.setValue("<p>A</p>");
+
+        // Same value the property already holds, so Flow sends no property update and the browser would ignore one
+        // anyway -- this is the case that needs the explicit push (finding 6).
+        assertTrue(hasPendingValuePush());
+    }
+
+    @Test
+    void detach_doesNotQueueAValuePushForTheNextAttach() {
+        VerticalLayout layout = new VerticalLayout();
+        UI.getCurrent().add(layout);
+
+        ProbeEditor editor = new ProbeEditor();
+        layout.add(editor);
+        editor.setValue("<p>A</p>");
+        drainPendingJavaScript();
+
+        // The detach listener calls setPresentationValue with the value the property already holds, which is exactly
+        // the shape the explicit push reacts to. A push queued here is not dropped: Flow defers it to the next attach,
+        // where it would overwrite whatever the server set in between. isAttached() is no guard against it -- it
+        // still answers true inside a detach listener.
+        layout.remove(editor);
+        editor.setValue("<p>B</p>");
+        layout.add(editor);
+
+        assertFalse(hasPendingValuePush());
+    }
+
+    private void drainPendingJavaScript() {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        UI.getCurrent().getInternals().dumpPendingJavaScriptInvocations();
+    }
+
+    /** The invocations only exist once the before-client-response tasks have run, so run them first. */
+    private boolean hasPendingValuePush() {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+
+        return UI.getCurrent().getInternals().containsPendingJavascript("this.value = $0");
+    }
+
+    /**
+     * Exposes the client-originated model update the delta listener performs, which no browserless test can trigger.
+     */
+    private static class ProbeEditor extends FroalaEditor {
+        void simulateClientEdit(String value) {
+            setModelValue(value, true);
+        }
     }
 }
