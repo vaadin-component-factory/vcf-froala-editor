@@ -15,6 +15,11 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.popover.Popover;
 import org.apache.commons.text.WordUtils;
 import org.jspecify.annotations.NonNull;
 
@@ -33,19 +38,25 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 @AnonymousAllowed
 public class BasicView extends VerticalLayout {
 
+    private final HorizontalLayout toolbar;
+    private final FroalaEditor editor;
+    private final FroalaViewer viewer;
+
+    private HasComponents froalaReattachParent = this;
+
     public BasicView() {
         setSizeFull();
         setAlignItems(Alignment.STRETCH);
 
-        FroalaEditor editor = new FroalaEditor("Test editor");
+        editor = new FroalaEditor("Test editor");
         editor.setId("editor");
-        editor.setHelperText("Hello World, it's-a-me, Malario");
+        editor.setHelperText("Just a helper text");
 
-        FroalaViewer viewer = new FroalaViewer();
+        viewer = new FroalaViewer();
         viewer.setId("viewer");
         viewer.getStyle().setBorder("2px dashed gray").setBorderRadius("5px");
 
-        HorizontalLayout toolbar = createToolbar(editor, viewer);
+        toolbar = createToolbar(editor, viewer);
 
         add(toolbar, editor, viewer);
         // editor.setMinHeight("500px");
@@ -96,9 +107,22 @@ public class BasicView extends VerticalLayout {
     /// client rebuilds Froala from it.
     private void toggleAttached(FroalaEditor editor) {
         if (editor.getParent().isPresent()) {
-            remove(editor);
+            froalaReattachParent = (HasComponents) editor.getParent().get();
+            editor.removeFromParent();
         } else {
-            addComponentAtIndex(1, editor);
+            froalaReattachParent.addComponentAtIndex(froalaReattachParent.indexOf(toolbar) + 1, editor);
         }
+    }
+
+    public FroalaEditor getEditor() {
+        return editor;
+    }
+
+    public FroalaViewer getViewer() {
+        return viewer;
+    }
+
+    public HorizontalLayout getToolbar() {
+        return toolbar;
     }
 }

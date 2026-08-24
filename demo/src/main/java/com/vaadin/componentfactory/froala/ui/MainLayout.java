@@ -36,6 +36,7 @@ public class MainLayout extends AppLayout {
 
         SideNav nav = new SideNav();
         nav.addItem(new SideNavItem("Basic", BasicView.class));
+        nav.addItem(new SideNavItem("Overlays", OverlayView.class));
         addToDrawer(nav);
     }
 }
