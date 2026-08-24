@@ -451,8 +451,9 @@ assertion.
       passed to Froala (it has its own `theme` option and a `dark` variant). Note
       the commented `ThemeDetectionMixin` import in the connector — that is the
       Vaadin side of detecting the active theme, kept as the marker for this item.
-      Froala's popups render outside the host, so check what a Vaadin overlay needs
-      before assuming shadow-DOM styling is enough.
+      Froala's chrome lives in the light DOM, which the add-on's own `@CssImport`
+      stylesheet already reaches, so this is CSS work in a file that exists rather
+      than a styling-boundary problem.
 - [ ] Accessibility: keyboard navigation, ARIA, focus handling
 - [ ] HTML sanitization — decide client-side (Froala) vs. server-side
       (jsoup/OWASP) vs. both. **Server-side is the trust boundary**; client-only
@@ -584,17 +585,19 @@ Reported by the maintainer against the demo, whose `MainLayout` is an `AppLayout
 a `DrawerToggle`.
 
 What is known about the element: it carries the CSS class **`fr-quick-insert`** and,
-once created, sits **below `.fr-box`** — not inside our host element, which is why our
-own styles do not reach it and why this is not solvable by styling the component from
-the inside.
+once created, sits **below `.fr-box`**. Reaching it is not the problem — the add-on
+already ships a light-DOM stylesheet (`vcf-froala-editor.css`, `@CssImport` without
+`themeFor`, which lands in the global scope) and that file already styles `.fr-box`
+and `.fr-wrapper` the same way.
 
-**Not fixable in Froala** — it is a dependency, not our code. So there are two
-outcomes and the decision is open:
+**Not fixable in Froala** — it is a dependency, not our code, so whatever we do has to
+work from the outside. Two outcomes, decision open:
 
-- [ ] Find our own answer — reposition or re-parent `.fr-quick-insert`, or give it a
-      stacking context that survives the drawer. Whatever it is, it has to keep
-      working when the drawer opens and closes and when the editor is inside an
-      overlay (see the `/overlay` demo view).
+- [ ] Find our own answer — most likely CSS in the stylesheet we already ship
+      (stacking context, `z-index`, `position`), otherwise repositioning or
+      re-parenting `.fr-quick-insert`. Whatever it is, it has to keep working when the
+      drawer opens and closes and when the editor is inside an overlay (see the
+      `/overlay` demo view).
 - [ ] Or declare it a **known limitation** and document it in the README, with the
       workaround of not using the quick-insert plugin under `AppLayout`.
 
