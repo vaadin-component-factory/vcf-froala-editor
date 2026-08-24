@@ -573,6 +573,34 @@ every minute* rather than failing once, which is why the symptom reads as a hang
       `node` binary and `lib/node_modules/npm/bin/npm-cli.js` — so this needs a real
       npm installation, not that directory.
 
+### Froala's quick-insert popup is hidden under `AppLayout` (2026-08-24)
+
+Froala's inline action popup — the `+` that appears at the start of an empty line —
+does not work when the editor sits inside a Vaadin `AppLayout`. The **drawer appears
+to hide it**. With the drawer hidden, Froala computes the position correctly, so this
+is a positioning/stacking problem, not a broken popup.
+
+Reported by the maintainer against the demo, whose `MainLayout` is an `AppLayout` with
+a `DrawerToggle`.
+
+What is known about the element: it carries the CSS class **`fr-quick-insert`** and,
+once created, sits **below `.fr-box`** — not inside our host element, which is why our
+own styles do not reach it and why this is not solvable by styling the component from
+the inside.
+
+**Not fixable in Froala** — it is a dependency, not our code. So there are two
+outcomes and the decision is open:
+
+- [ ] Find our own answer — reposition or re-parent `.fr-quick-insert`, or give it a
+      stacking context that survives the drawer. Whatever it is, it has to keep
+      working when the drawer opens and closes and when the editor is inside an
+      overlay (see the `/overlay` demo view).
+- [ ] Or declare it a **known limitation** and document it in the README, with the
+      workaround of not using the quick-insert plugin under `AppLayout`.
+
+Either way this needs an e2e test against a fixture view that puts the editor in an
+`AppLayout` — there is none today, every fixture view is a plain `VerticalLayout`.
+
 ---
 
 ## Open questions
