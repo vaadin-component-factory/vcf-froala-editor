@@ -177,16 +177,33 @@ Each has a `TODO Phase 2` at its place in the connector:
       positioning inside a dialog. Froala positions DOM-relative through
       `Position`/`Popups`, so verify there is a problem at all before implementing;
       delete the block if the toolbar behaves inside `vaadin-dialog`.
-- [x] **Decided 2026-08-24: keep destroying Froala on detach.** The alternative
-      cannot pay off here. A Flow detach discards the HTML element, so there is no
-      element left for a surviving Froala instance to live on — and re-parenting a
-      component into a `Dialog` or `Popover`, which the demo's `OverlayView` does, is
-      exactly such a detach plus attach. Keeping the instance alive would only help if
-      the *same* element were disconnected and reconnected, which is a client-side DOM
-      move. The cost is real and accepted: every re-parent rebuilds the editor and
-      loses Froala's undo stack, caret and scroll position; the value survives through
-      the presentation push on detach. Reopen only if a concrete case appears where
-      that rebuild is visible enough to matter. Original reasoning below.
+- [x] **Decided 2026-08-24: keep destroying Froala on detach.** Two independent
+      reasons, both checked rather than assumed.
+
+      **1. Froala does not clean up after itself.** Verified against the installed
+      5.4.0 bundle: `FroalaEditor.INSTANCES` is a global static array, `_init` does
+      `INSTANCES.push(this)`, and the only place that removes an entry is `destroy()`
+      (`INSTANCES.splice(INSTANCES.indexOf(this), 1)`, together with `$oel.off(...)`,
+      `removeData('froala.editor')` and `core.destroy()`). No `MutationObserver`
+      watches the editor's own element — the two in the bundle belong to the Yjs sync
+      and the AI ghost plugin. So skipping `destroy()` does not just leak the instance
+      and its detached DOM: **other live editors keep reaching into it**, because
+      global handlers iterate `INSTANCES` — a `mousedown` handler calls
+      `INSTANCES[i].popups.areVisible()` and `$el.find('.fr-marker')`, image and video
+      resizing triggers `image.hideResizer` on every other instance, and drag handling
+      scans all instances for `.fr-dragging`.
+
+      **2. The alternative cannot pay off anyway.** A Flow detach discards the HTML
+      element, so there is no element left for a surviving instance to live on — and
+      re-parenting a component into a `Dialog` or `Popover`, which the demo's
+      `OverlayView` does, is exactly such a detach plus attach.
+
+      The cost is real and accepted: every re-parent rebuilds the editor and loses
+      Froala's undo stack, caret and scroll position; the value survives through the
+      presentation push on detach. The purely client-side DOM move (dragging an
+      element to a new parent without the server involved) is handled rather than
+      broken — the element instance survives it, so `_lastSyncedValue` does too and
+      `_initEditor` re-seeds from it. Original reasoning below.
 
       **Decide whether to destroy Froala on detach at all.** The connector currently
       calls `editor.destroy()` in `disconnectedCallback`. The maintainer's own
@@ -440,44 +457,12 @@ every minute* rather than failing once, which is why the symptom reads as a hang
 
 ## Open questions
 
-Each of these needs an answer from NST, not from us. They are written out in full on
-purpose: the shorthand ("which mentions?") is meaningless to anyone who has not read
-Froala's plugin list.
+Questions **for the customer** live in `docs/customer-request.md`, next to the request
+that raised them — mentions, templates, scope, Vaadin version, feature priority. Do
+not duplicate them here.
 
-- **What does NST mean by "mentions"?** Their request lists it as a wanted feature,
-  and Froala offers two unrelated things under that word.
-  1. *In-document mentions* — typing `@` while writing opens a name picker and
-     inserts a reference into the document. **Froala has no plugin for this.** It
-     would be ours to build: trigger detection in the editor, a dropdown, and a
-     server-side feed of candidate users.
-  2. *Mentions inside review comments* — `@name` in a comment thread on the
-     document. This one ships, in Froala's `collaborative` plugin
-     (`mentionableUsers`), but that plugin is a collaboration stack: it pulls in
-     Yjs, a `docId`, `commentsUrl` and `suggestionsUrl` endpoints, and a role model.
-  The two differ by roughly an order of magnitude in work, and the second one
-  changes the architecture. Ask before Phase 4 is scoped.
-- **What does NST mean by "templates"?** Also on their list. **Froala has no
-  document-template feature** — the `RegisterTemplate` / `ICON_TEMPLATES` /
-  `POPUP_TEMPLATES` names in its API are markup for Froala's own icons and popups,
-  not prepared documents. So this is ours to build either way, and the cost depends
-  entirely on the reading:
-  - "insert a stored HTML snippet at the caret" — small, a list plus an insert call.
-  - "a document skeleton with placeholders that get filled in" — a variable
-    substitution system, much larger.
-- **Does NST expect the full feature set literally, or is a first cut acceptable?**
-  Their wording is "maximum feature set". Everything in Phase 4 versus a first
-  release covering formatting, media, upload and localization is months apart.
-- **Which Vaadin version does the NST application run?** This project targets 24,
-  the platform floor. If NST is on 25, the Vaadin, Karibu and Java versions have to
-  move together — see the coupling rules in `CLAUDE.md`.
-- **Are track changes and mentions needed on day one?** They are the two most
-  expensive items in Phase 4.
-- **Who provides a Froala license key for CI?** Froala is commercial software and
-  the add-on ships no key. Without one, the editor renders with Froala's unlicensed
-  watermark — including in our e2e runs, which drive the real editor in a browser.
-  It does not block the assertions we have, but the tests are running an unlicensed
-  build, and nothing that depends on the watermark being absent can be tested.
-  A key would go into CI as a secret and be handed to `setLicenseKey`.
+What is left below is ours to answer.
+
 - Is `eclipse/license-header.txt` (Apache-2.0, "Copyright $YEAR Vaadin Ltd.") the
   wording Component Factory actually uses? It was authored during scaffolding to
   replace the template's `<YOUR NAME OR COMPANY>` placeholder. If it needs to

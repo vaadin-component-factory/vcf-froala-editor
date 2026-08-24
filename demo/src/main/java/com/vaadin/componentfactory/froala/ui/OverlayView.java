@@ -83,7 +83,7 @@ public class OverlayView extends BasicView {
     }
 
     private Component[] getOverlayContent() {
-        return new Component[] {getToolbar(), getEditor(), getViewer()};
+        return new Component[] { getToolbar(), getEditor(), getViewer() };
     }
 
 }

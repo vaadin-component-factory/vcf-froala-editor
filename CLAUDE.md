@@ -70,6 +70,12 @@ Spring binding lives in the demo — or later in a separate optional
 `vcf-froala-editor-spring` module. **Do not add a Spring dependency to
 `component/`.**
 
+**This project itself never has a commercial key** — not locally, not in CI. Froala
+runs unlicensed here and shows its watermark, deliberately and permanently. Don't
+propose acquiring one, don't write anything that needs a valid key, and don't treat
+the watermark as a defect. Where a key has to be exercised, a dummy string is enough:
+`FroalaTestView.LICENSE_KEY` proves it reaches Froala's own `opts.key`.
+
 ## State management
 
 This project uses **classic state (component fields / Spring beans)**.
@@ -96,7 +102,15 @@ License-free stack, all run by `mvn clean verify -Pproduction`. Browserless laye
   does not fit this stack. **Every Froala behaviour that needs the JS to run must
   be tested here.**
 
-Mirror existing tests when adding new ones.
+**Test our wiring, not Froala.** The add-on's job is the connection between Flow and
+Froala, so that is what the tests cover: does the value we set arrive, does the change
+we make come back, does the option we pass reach `editor.opts`. Whether Froala itself
+behaves correctly — its licensing, its toolbar rendering, its own HTML handling — is
+Froala's scope and not ours to assert.
+
+Mirror existing tests when adding new ones. Browser tests run against fixture views the
+tests own, under `e2e/src/test/java/.../it/views/`, never against the demo — the demo
+exists to show the add-on off and has to stay free to change.
 
 When a module's Java or frontend changes, rebuild that module before running the
 demo or e2e tests so they don't run against a stale jar. The demo's `production`

@@ -96,6 +96,17 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void licenseKey_arrivesInFroalasOwnOptions() {
+        // Whether the key is valid is Froala's business -- this project runs unlicensed on purpose. What is ours is
+        // that the key the server set is the key Froala was constructed with, which is only observable here: it is read
+        // once, at init, and Karibu cannot see past the element property.
+        page.locator("#editor .fr-element").waitFor();
+
+        assertEquals(FroalaTestView.LICENSE_KEY,
+                page.evaluate("() => document.querySelector('#editor').editor.opts.key"));
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();

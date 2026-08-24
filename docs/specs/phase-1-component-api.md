@@ -49,14 +49,17 @@ specified here.
 ## License key
 
 Froala is commercial. The add-on ships **no** key — without one the editor works but
-shows Froala's unlicensed watermark.
+shows Froala's unlicensed watermark. This project never has one either, in CI or
+locally; that is settled, not a gap.
 
 - **API-9** `setLicenseKey(String)` maps onto Froala's **`key`** option. Not
   `apiKey`, which is Froala's Google Drive key (`index.d.ts:1144`, used only for
   `gapi.client.init`); the licensing code reads `opts.key`.
-  *Verified:* `FroalaEditorKaribuTest.licenseKey_isSetAsElementProperty` — which
-  asserts the **element property**, not that Froala received it. Reading
-  `editor.opts.key` off the live instance needs a key input in the demo and is open.
+  *Verified:* `FroalaEditorIT.licenseKey_arrivesInFroalasOwnOptions` reads
+  `editor.opts.key` off the live instance and matches it against the fixture's key;
+  `FroalaEditorKaribuTest.licenseKey_isSetAsElementProperty` covers the server half.
+  A dummy string is enough — this project runs Froala unlicensed on purpose, and
+  whether a key is *valid* is Froala's scope, not ours.
 - **API-10** `setLicenseKey(null)` removes the property instead of sending a null, so
   Froala sees no `key` option at all rather than an explicit empty one.
   *Verified:* `FroalaEditorKaribuTest.licenseKey_nullRemovesTheProperty`.

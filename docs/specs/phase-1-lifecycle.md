@@ -45,7 +45,12 @@ guarantees here are mostly about *not* breaking.
 ## Detach and re-attach
 
 - **LC-6** On detach the editor is destroyed (`editor.destroy()`), its host `<div>`
-  removed, and all three timer handles cleared — interval, timeout and throttle.
+  removed, and all three timer handles cleared. `destroy()` is **not** optional:
+  Froala registers every instance in a global `FroalaEditor.INSTANCES` array from
+  `_init` and removes it only from `destroy()`, and other live editors iterate that
+  array from global mouse, resize and drag handlers. Verified against the installed
+  5.4.0 bundle; there is no `MutationObserver` on the editor's own element, so nothing
+  self-cleans when the element is simply removed — interval, timeout and throttle.
   Every one of them outlives the element otherwise: in `INTERVAL` mode the interval
   keeps firing against a destroyed editor, and each re-attach starts another on top.
   *Verified:* the clean-up is verified only indirectly, through
@@ -74,10 +79,14 @@ guarantees here are mostly about *not* breaking.
 
 ## Decided, with a cost
 
-- **LC-6 stands: destroy on detach.** Decided 2026-08-24 on the strength of LC-9.
-  The alternative below cannot pay off, because a Flow detach discards the element a
-  surviving instance would have to live on. Re-parenting into a `Dialog` or `Popover`
-  is such a detach plus attach, so it rebuilds the editor too.
+- **LC-6 stands: destroy on detach.** Decided 2026-08-24 for two reasons. Froala does
+  not clean up after itself when its element is detached, and leaving an instance in
+  its global registry means other editors keep reaching into it (see LC-6). And the
+  alternative could not pay off regardless, because a Flow detach discards the element
+  a surviving instance would have to live on — re-parenting into a `Dialog` or
+  `Popover` is such a detach plus attach.
+  The purely client-side DOM move of LC-10 is handled, not broken: the element instance
+  survives it, so `_lastSyncedValue` does too and the editor is re-seeded from it.
   **Accepted cost:** every detach loses Froala's undo/redo stack, caret, selection and
   scroll position. The value survives (VT-7). Nothing preserves the rest and no
   requirement asks for it — named here so it is a known cost, not a surprise.

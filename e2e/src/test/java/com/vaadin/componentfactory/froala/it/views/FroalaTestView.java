@@ -48,12 +48,17 @@ public class FroalaTestView extends VerticalLayout {
     public static final String INITIAL_VALUE = "<p>seeded by the server</p>";
     public static final String INITIAL_TEXT = "seeded by the server";
 
+    /// Not a real license key and never will be -- this project runs Froala unlicensed. It only has to be a string the
+    /// test can find again in Froala's own options, which proves our end of the wiring.
+    public static final String LICENSE_KEY = "it-dummy-license-key";
+
     public FroalaTestView() {
         setSizeFull();
 
         FroalaEditor editor = new FroalaEditor(LABEL);
         editor.setId("editor");
         editor.setHelperText(HELPER_TEXT);
+        editor.setLicenseKey(LICENSE_KEY);
         editor.setHeight("300px");
 
         FroalaViewer viewer = new FroalaViewer();

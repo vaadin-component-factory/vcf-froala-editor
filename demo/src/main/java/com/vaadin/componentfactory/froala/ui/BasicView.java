@@ -15,17 +15,13 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.popover.Popover;
 import org.apache.commons.text.WordUtils;
 import org.jspecify.annotations.NonNull;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
+import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -77,9 +73,9 @@ public class BasicView extends VerticalLayout {
         toolbar.setAlignItems(Alignment.BASELINE);
 
         Button changeValue = new Button("Change value", _unused -> {
-            if(INITIAL_VALUE.equals(editor.getValue())) {
+            if (INITIAL_VALUE.equals(editor.getValue())) {
                 editor.setValue(ALTERNATIVE_VALUE);
-            } else  {
+            } else {
                 editor.setValue(INITIAL_VALUE);
             }
         });

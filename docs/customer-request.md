@@ -83,3 +83,60 @@ manager. `setLicenseKey(String)` maps onto `key`.
 
 `key` also accepts an array of keys, not just a string (the runtime wraps a plain
 string into one). Not exposed for now — a single key covers the customer's case.
+
+---
+
+## Open questions back to NST
+
+Each of these blocks scoping. They are written out in full, with Froala's actual
+situation next to them, so they can be asked without knowing Froala's plugin list.
+The measurements they refer to are in the section above.
+
+### 1. What does "mentions" mean?
+
+The request lists mentions as a wanted feature. Froala offers two unrelated things
+under that word, and they differ by roughly an order of magnitude in effort.
+
+| Reading | What the user sees | What Froala provides |
+|---|---|---|
+| **In-document mentions** | Typing `@` while writing opens a name picker and inserts a reference into the document text | **Nothing.** No plugin exists. Trigger detection, the dropdown and a server-side feed of candidate users would all be built from scratch |
+| **Mentions in review comments** | `@name` inside a comment thread attached to the document | Ships in the `collaborative` plugin (`mentionableUsers`) — but that plugin is a collaboration stack: it requires Yjs, a `docId`, `commentsUrl` and `suggestionsUrl` endpoints, and a role model |
+
+The second reading changes the architecture, not just the estimate. **Which one is
+meant?**
+
+### 2. What does "templates" mean?
+
+Also on the list. **Froala has no document-template feature.** The
+`RegisterTemplate` / `ICON_TEMPLATES` / `POPUP_TEMPLATES` names in its API are markup
+for Froala's own icons and popups, not prepared documents. So this is custom work
+either way, and the cost depends entirely on the reading:
+
+- *"Insert a stored HTML snippet at the caret"* — small: a list of snippets plus an
+  insert call.
+- *"A document skeleton with placeholders that get filled in"* — a variable
+  substitution system, substantially larger.
+
+**Which one is meant?**
+
+### 3. Full feature set, or a first cut?
+
+The request says "maximum feature set". Delivering everything on the list is months
+apart from a first release covering rich-text formatting, media, upload and
+localization. **Is a staged delivery acceptable, and if so, what has to be in the
+first stage?**
+
+### 4. Which Vaadin version does the NST application run?
+
+This add-on targets Vaadin 24, the platform floor, so it excludes as few consumers as
+possible. If NST is on 25, several versions have to move together (Vaadin, the
+browserless test library, the Java baseline). **Which version is NST on?**
+
+### 5. Are track changes and mentions needed on day one?
+
+They are the two most expensive items on the list. **Can they be in a later stage?**
+
+Not open any more, recorded here because the request touches them: the add-on builds
+against **Froala 5.4.0**, not the 4.6.2 the request names, and a consuming application
+supplies its own license key through `setLicenseKey(String)` — the add-on ships none.
+
