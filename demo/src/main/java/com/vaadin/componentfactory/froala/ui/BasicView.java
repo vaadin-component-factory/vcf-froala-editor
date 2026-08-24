@@ -38,6 +38,8 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 @AnonymousAllowed
 public class BasicView extends VerticalLayout {
 
+    public static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
+    public static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
     private final HorizontalLayout toolbar;
     private final FroalaEditor editor;
     private final FroalaViewer viewer;
@@ -66,14 +68,21 @@ public class BasicView extends VerticalLayout {
         // setFlexGrow(1, editor, viewer);
 
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
+        editor.setValue(INITIAL_VALUE);
     }
 
     private @NonNull HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
         HorizontalLayout toolbar = new HorizontalLayout();
         toolbar.setAlignItems(Alignment.BASELINE);
-        Button focus = new Button("Focus", _unused -> editor.focus());
-        focus.setId("focus-button");
-        toolbar.add(focus);
+
+        Button changeValue = new Button("Change value", _unused -> {
+            if(INITIAL_VALUE.equals(editor.getValue())) {
+                editor.setValue(ALTERNATIVE_VALUE);
+            } else  {
+                editor.setValue(INITIAL_VALUE);
+            }
+        });
+        toolbar.add(changeValue);
 
         Select<ValueChangeMode> valueChangeMode = new Select<>("Value Change Mode",
                 event -> editor.setValueChangeMode(event.getValue()));
@@ -94,6 +103,10 @@ public class BasicView extends VerticalLayout {
         enabled.setValue(editor.isEnabled());
         enabled.setId("enabled-toggle");
         toolbar.add(enabled);
+
+        Button focus = new Button("Focus", _unused -> editor.focus());
+        focus.setId("focus-button");
+        toolbar.add(focus);
 
         Button toggleAttached = new Button("Toggle attached", _unused -> toggleAttached(editor));
         toggleAttached.setId("attach-toggle");
