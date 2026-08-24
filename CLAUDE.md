@@ -10,18 +10,26 @@ sanitization and configurable image/file upload — through a clean Java API, wi
 **configurable** (never hard-coded) license key.
 
 The customer's original request is quoted verbatim in `docs/customer-request.md`,
-together with the measured size of Froala's surface (302 options, 49 plugins, 39
-locales) — read it before estimating or scoping anything.
+together with the measured size of Froala's surface (322 options in 5.4.0, 49
+plugins, 39 locales) — read it before estimating or scoping anything.
 
-Current state: scaffolding only. See `ROADMAP.md` for what is built, what is next,
-and the effort estimate. The `GreetingComponent` / `GreetingView` classes are placeholders that prove
-the build wiring; phase 1 replaces them.
+Current state: phase 1 done — `FroalaEditor` renders, round-trips HTML through a
+delta channel and takes a license key; the scaffolding placeholders are gone. See
+`ROADMAP.md` for what is built, what is next, and the effort estimate, and
+`docs/specs/` for what phase 1 actually delivers.
+
+## General agent rules
+See AGENTS.md
 
 ## Stack
 
 - **Vaadin** 24.10.9 (Core) on **Spring Boot** 3.5.15, **JDK** 17+
 - Base package: `com.vaadin.componentfactory.froala`
 - Build/verify gate: `mvn clean verify -Pproduction`
+
+Spring Boot 3.5.15 is not "the latest 3.5.x" — it is the version
+`com.vaadin:vaadin-spring:24.10.9` is built against. Derive it from the Vaadin
+release when bumping instead of taking the newest 3.5.x.
 
 Java 17 and Vaadin 24 are deliberate: they are the platform's floor, so the
 published add-on excludes as few consumers as possible. Do not raise them without
@@ -34,7 +42,10 @@ a reason that is written down in `ROADMAP.md`.
   builds and releases on its own. **Spring-free** — `vaadin-core` only, per the
   official add-on guide, so it forces nothing on consumers. Anything wired to
   plugins on the reactor root (Spotless, Checkstyle) is **not** inherited here and
-  must be duplicated into this pom.
+  must be duplicated into this pom — resolving their config through
+  `${codechecks.config.dir}` = `${project.basedir}/..`, not the root pom's
+  `${maven.multiModuleProjectDirectory}`, which points at `component/` itself during
+  a standalone build and would break it.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and
   showcases it. Holds everything Spring-shaped (`Application`, `@Service` beans,
   the future `@ConfigurationProperties` license-key binding) and the browserless
@@ -99,41 +110,10 @@ optimized bundle rather than a precompiled one.
 - Don't pin dependency versions to a guessed "latest" — resolve the current
   release first.
 - Code style: read and follow `STYLEGUIDE.md`. Spotless + Checkstyle run in the
-  build; `mvn spotless:apply` fixes formatting.
+  build; `mvn spotless:apply` fixes formatting. Spotless's `<pom><sortPom>` block is
+  deliberately left out of both poms: they are hand-authored with block comments
+  explaining the BOM-not-parent setup and the `exec` classifier, and sortPom would
+  reorder elements away from what those comments document.
 - Domain language: use the terms in `CONTEXT.md`.
+- Check the `AGENTS.md` for further rules and guidelines.
 
-## Working conventions
-
-- **Don't present an assumption as fact.** Verify it (Vaadin MCP, docs, grep, run
-  it) or say you don't know. Being uncertain is fine; guessing confidently is not.
-- **Commits:** one commit per logical phase or feature; run the tests before
-  committing, and don't commit on the user's behalf unless asked.
-- **Agent review is part of every phase, before the commit.** Not optional and not
-  something to wait to be asked for: once a phase's code is written and the tests
-  are green, dispatch parallel review agents (see the model table below) *before*
-  offering the commit, and report what they found. Use several agents on separate
-  axes rather than one general one — for a component wrapper that means at minimum
-  the framework/API axis, the wrapped-library axis, and the test-quality axis
-  (do the tests prove the behaviour, or do they pass around it?). Findings that
-  belong to a later phase get a `TODO` in the code pointing at that phase, not a
-  silent fix.
-- **Never push.** Pushing, opening PRs and anything else that leaves this machine
-  is the maintainer's step, always — not something to offer or do, even when the
-  commits are ready and a remote exists.
-- **Tests & long-running ops:** run new/changed tests first; only run the full
-  suite once those pass. Don't wrap waits in `until … done` sleep loops (they can
-  stall) — poll periodically and check whether a background job has died.
-- **Never self-dispatch after a question:** if you ask the user something, wait
-  for the answer before acting.
-- **Pick the cheapest model that fits a subagent.** Always pass `model` explicitly
-  — the inherited default is Opus or better, which is expensive for mechanical work.
-  Restate the critical rules in each subagent's prompt. When unsure, start cheaper
-  and escalate only if the output is shallow.
-
-  | Subagent role | Model |
-  |---|---|
-  | Mechanical implementer (plan specifies the exact code) | Haiku |
-  | Explore / search ("where is X defined") | Haiku |
-  | Multi-file integration / pattern matching | Sonnet |
-  | Per-phase code-quality or spec-compliance review | Sonnet |
-  | Final whole-branch / holistic / deep design review | Opus or better |

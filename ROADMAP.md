@@ -1,8 +1,9 @@
 # Roadmap — Froala Editor for Vaadin Flow
 
-Progress tracker for `vcf-froala-editor`. Update the status boxes as work lands;
-record decisions in `memory/addon-constraints.md`, not here. The customer's
-original wording lives in `docs/customer-request.md`.
+Progress tracker for `vcf-froala-editor`. Update the status boxes as work lands and
+record decisions here, in the phase they belong to; standing rules that outlive a
+phase go to `CLAUDE.md`. What a finished phase actually guarantees is specified in
+`docs/specs/`; the customer's original wording lives in `docs/customer-request.md`.
 
 **Status legend:** `[ ]` open · `[~]` in progress · `[x]` done
 
@@ -32,6 +33,11 @@ as of `b5627df`; `GreetingViewIT` is the last one left (Phase 1).
 
 Goal: a `FroalaEditor` component that renders, round-trips HTML, and is covered by
 one browserless and one e2e test.
+
+Specified in `docs/specs/phase-1-value-transfer.md`,
+`phase-1-value-change-modes.md`, `phase-1-lifecycle.md` and
+`phase-1-component-api.md` — written after the fact, and the place where the
+remaining test gaps are recorded per requirement.
 
 **State as of 2026-08-21** — done. The wrapper renders, round-trips through the
 delta channel, takes a license key, and `mvn clean verify -Pproduction` is green
@@ -171,6 +177,18 @@ Each has a `TODO Phase 2` at its place in the connector:
       positioning inside a dialog. Froala positions DOM-relative through
       `Position`/`Popups`, so verify there is a problem at all before implementing;
       delete the block if the toolbar behaves inside `vaadin-dialog`.
+- [ ] **Decide whether to destroy Froala on detach at all.** The connector currently
+      calls `editor.destroy()` in `disconnectedCallback`. The maintainer's own
+      `stefanuebe/vaadin-fullcalendar` (`v6_master`, `full-calendar.ts`) does the
+      opposite on purpose: `disconnectedCallback` only releases observers and
+      draggables, the widget instance survives, and `connectedCallback` falls through
+      an `if (!this._calendar)` guard on re-attach. The reason is the churn Flow and
+      Lit produce together — a component can be connected, get its first update and
+      be disconnected again — which makes destroy-and-rebuild the expensive path and
+      also throws away undo stack and caret. Keeping the instance trades that against
+      holding DOM references when the detach is final. Both are defensible; pick one
+      deliberately rather than by inheritance, and note that the `isConnected` guard
+      in `_initEditor` and the timer clean-up already handle the *correctness* half.
 - [ ] Server-driven editor configuration. `initialConfig` / `rawInitialConfig` carry
       over from **both** references — the same split exists in
       `stefanuebe/vaadin-fullcalendar` as `initialOptions` / `initialJsonOptions`,
@@ -502,6 +520,12 @@ every minute* rather than failing once, which is why the symptom reads as a hang
   They are the two most expensive items in the list.
 - Who provides the Froala license key for CI? The e2e tests will show Froala's
   unlicensed watermark until one is available.
+- **The customer-facing estimate artifact is stale.** Published at
+  `claude.ai/code/artifact/0c302f5d-daf6-47f6-8fcd-473e2177698a` on 2026-08-13, it
+  still says 302 options / Froala 5.3.1 and carries the pre-correction "mentions is
+  not a Froala plugin" wording. The source file is still in an old session
+  scratchpad, so an update is cheap — but it goes out to the customer, so it needs
+  an explicit go-ahead. Offered, not yet answered.
 - Is `eclipse/license-header.txt` (Apache-2.0, "Copyright $YEAR Vaadin Ltd.") the
   wording Component Factory actually uses? It was authored during scaffolding to
   replace the template's `<YOUR NAME OR COMPANY>` placeholder. If it needs to

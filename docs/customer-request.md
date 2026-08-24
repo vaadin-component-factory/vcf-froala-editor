@@ -2,7 +2,7 @@
 
 Source: customer request forwarded to Vaadin, received before 2026-08-13.
 This is the **original wording**; do not edit it. Interpretations, scope cuts and
-decisions belong in `ROADMAP.md` and `memory/addon-constraints.md`.
+decisions belong in `ROADMAP.md`.
 
 ---
 
