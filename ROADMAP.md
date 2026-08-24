@@ -39,9 +39,9 @@ Specified in `docs/specs/phase-1-value-transfer.md`,
 `phase-1-component-api.md` — written after the fact, and the place where the
 remaining test gaps are recorded per requirement.
 
-**State as of 2026-08-21** — done. The wrapper renders, round-trips through the
+**State as of 2026-08-24** — done. The wrapper renders, round-trips through the
 delta channel, takes a license key, and `mvn clean verify -Pproduction` is green
-with 11 browserless and 11 e2e tests. Two things landed that were not planned here at
+with 9 browserless and 16 e2e tests. Two things landed that were not planned here at
 all: the `ValueChangeMode` enum and `FroalaViewer` (see below).
 
 Everything still marked open below is either explicitly deferred or belongs to a
@@ -132,8 +132,8 @@ Open:
       demo bug — `WordUtils.capitalizeFully("ON_BLUR")` renders `On_blur`, because it
       only splits on whitespace.
 - [x] All placeholders deleted, `GreetingViewIT` included.
-- [x] **Green build gate.** `mvn clean verify -Pproduction` passes: 11 browserless
-      + 11 e2e tests, Spotless and Checkstyle clean in all four modules.
+- [x] **Green build gate.** `mvn clean verify -Pproduction` passes: 9 browserless
+      + 16 e2e tests, Spotless and Checkstyle clean in all four modules.
 
 Carried into the connector as marked TODOs, tracked here so they are not lost:
 
@@ -298,16 +298,41 @@ Still open from the reviews, deliberately:
 
 - [ ] e2e for `TIMEOUT` and `INTERVAL` modes — needs Playwright's `page.clock()` so
       the test does not wait on the wall clock. `ON_CHANGE` and `ON_BLUR` are covered.
-- [ ] e2e reading the license key off the live Froala instance
-      (`editor.opts.key`). Needs the demo to expose a key input, since a browser test
-      cannot reach the server API. Server side is covered browserless.
+- [x] e2e reading the license key off the live Froala instance (`editor.opts.key`).
+      Done 2026-08-24 — `FroalaEditorIT.licenseKey_arrivesInFroalasOwnOptions`. It
+      needed no real key: the fixture view sets a dummy string, and whether a key is
+      *valid* is Froala's scope, not ours.
 - [ ] A direct assertion that no interval leaks across detach. The clean-up is in
       place and the value/edit contract is covered, but the leak itself is hard to
       observe from outside: the events would be dispatched from an element that is no
       longer in the tree.
 - [x] `focus()` null check (`this.editor?.events.focus()`)
 
-Removing the last placeholder is the definition of done for this phase.
+The two remaining boxes above are the open test debt of this phase. `TIMEOUT` /
+`INTERVAL` is the one worth doing next, and `page.clock()` is the reason it has not
+been.
+
+### Current work — the maintainer's findings (2026-08-24)
+
+`docs/issues/findings.md` is the active queue. It is **gitignored and maintainer
+owned**: read it, do not edit it, and report back in chat rather than ticking items
+off in the file. Items 1–3 are done and committed; 4–11 are open.
+
+Two of them already have an answer, given in chat and repeated here so it is not lost:
+
+- **4 / 5 — `hasUpdated` and `isConnected` are never assigned because neither is
+  ours.** `hasUpdated` is Lit's own reactive-element flag, `isConnected` is the
+  standard DOM `Node` property. Both are read-only from our side. What `hasUpdated`
+  is *for* is documented at the call site in the connector.
+- **6 — `setValue` not reaching the client after a client-side edit is real, and the
+  mechanism is understood.** `AbstractSinglePropertyField` compares the new value
+  against the *model* value, and a client edit updated the model without updating the
+  presentation value (that is VT-6, deliberate). Setting the same string the model
+  already holds is therefore a no-op: no property write, nothing sent, and the client
+  keeps whatever the user typed. The maintainer linked
+  `parttio/hugerte-for-flow` issue 30, which describes the same thing. Reproduction is
+  in the findings file with a screenshot. This is the cost side of the model-only
+  update and needs a deliberate fix, not a patch — start here.
 
 ---
 

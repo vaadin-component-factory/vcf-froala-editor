@@ -117,6 +117,17 @@ demo or e2e tests so they don't run against a stale jar. The demo's `production`
 profile already sets `forceProductionBuild`, so the e2e run exercises the true
 optimized bundle rather than a precompiled one.
 
+## Who owns which file
+
+Getting this wrong wastes the maintainer's time, so it is worth stating.
+
+| File | Owner | Rule |
+|---|---|---|
+| `docs/customer-request.md` | maintainer | The quoted request is verbatim — never edit it. Questions *back to the customer* belong here, below the quote. |
+| `docs/issues/findings.md` | maintainer | Review notes and the active work queue. Gitignored. Read it, never write it; report back in chat. |
+| `ROADMAP.md`, `docs/specs/` | Claude | Planning, decisions with their reasons, and what each phase guarantees. |
+| `CLAUDE.md`, `AGENTS.md`, `STYLEGUIDE.md`, `CONTEXT.md` | shared | Standing rules. Add here only what outlives a phase. |
+
 ## Conventions
 
 - Vaadin views: `@Route` + access annotation (`@AnonymousAllowed` / `@PermitAll`).
