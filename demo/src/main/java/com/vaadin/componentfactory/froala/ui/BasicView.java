@@ -73,6 +73,7 @@ public class BasicView extends VerticalLayout {
 
     private @NonNull HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
         HorizontalLayout toolbar = new HorizontalLayout();
+        toolbar.setWrap(true);
         toolbar.setAlignItems(Alignment.BASELINE);
 
         Button changeValue = new Button("Change value", _unused -> {

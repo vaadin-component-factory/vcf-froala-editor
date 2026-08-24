@@ -19,8 +19,10 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -30,19 +32,28 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 public class OverlayView extends BasicView {
 
     public OverlayView() {
+        addComponentAsFirst(new Hr());
+
         HorizontalLayout buttons = new HorizontalLayout();
         addComponentAsFirst(buttons);
 
         Button showInDialog = new Button("In Dialog", _unused -> {
-            Dialog dialog = new Dialog("Show In Dialog");
-            dialog.setWidth(800, Unit.PIXELS);
-            dialog.add(new Span("Simply click outside to close the dialog"));
-            dialog.add(getOverlayContent());
+            Dialog dialog = new Dialog();
+            dialog.setWidth(66, Unit.PERCENTAGE);
+            dialog.setResizable(true);
+            VerticalLayout dialogLayout = new VerticalLayout();
+            dialogLayout.setAlignItems(Alignment.STRETCH);
+            dialogLayout.setPadding(false);
+            dialogLayout.add(new Span("Info Simply click outside to close the dialog"));
+            dialogLayout.add(getOverlayContent());
+            dialog.add(dialogLayout);
+
             dialog.addOpenedChangeListener(event -> {
                 if (!event.isOpened()) {
                     add(getOverlayContent());
                 }
             });
+
             dialog.setCloseOnEsc(false);
             dialog.open();
         });
@@ -52,12 +63,17 @@ public class OverlayView extends BasicView {
         Button showInPopover = new Button("In Popover");
         Popover popover = new Popover();
         popover.setTarget(showInPopover);
-        popover.add(new Span("Simply click outside to close the popover"));
+
+        VerticalLayout popoverLayout = new VerticalLayout();
+        popoverLayout.setAlignItems(Alignment.STRETCH);
+        popoverLayout.add(new Span("Info: Simply click outside to close the popover"));
+        popover.add(popoverLayout);
+
         popover.addOpenedChangeListener(event -> {
             if (!event.isOpened()) {
                 add(getOverlayContent());
             } else {
-                popover.add(getOverlayContent());
+                popoverLayout.add(getOverlayContent());
             }
         });
         popover.setCloseOnEsc(false);
