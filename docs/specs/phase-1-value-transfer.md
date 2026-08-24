@@ -37,8 +37,10 @@ half is meaningful alone. Ported from `parttio/hugerte-for-flow` (Apache-2.0).
 - **VT-6** A client-originated change updates the **model** value only, never the
   presentation value. Without this, every keystroke would echo the full document
   back to the browser and defeat VT-1.
-  *Verified:* unverified as a direct assertion. Covered indirectly: VT-7's test would
-  fail if the presentation value were being written on every change.
+  *Verified:* `FroalaEditorIT.typing_neverPushesTheFullValueBackToTheClient` counts
+  writes to the element's `value` property from inside the browser and asserts zero
+  across a sentence's worth of typing, while still asserting the round trip happened.
+  This is the guard for the requirement the whole delta design exists for.
 - **VT-7** The full value is pushed to the client exactly once per detach
   (`addDetachListener` → `setPresentationValue`), so a re-attached editor starts from
   the server's value.
@@ -75,5 +77,6 @@ a lost update, a programmatic `setValue` racing a keystroke, a bug.
   change event carry a delta the user never typed. Whether this actually happens in
   5.4.0 has **not** been measured. If it does, VT-6 needs a suppression window
   around `html.set`.
-- No test covers a `setValue()` of a *large* document, which is the requirement's
-  actual motivation. Nothing measures the payload size the design is meant to avoid.
+- No test covers a `setValue()` of a *large* document. VT-6 now guards the direction
+  that matters (no full value per keystroke), but nothing measures actual payload size,
+  so a size regression in the delta itself would go unnoticed.

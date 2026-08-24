@@ -54,10 +54,9 @@ shows Froala's unlicensed watermark.
 - **API-9** `setLicenseKey(String)` maps onto Froala's **`key`** option. Not
   `apiKey`, which is Froala's Google Drive key (`index.d.ts:1144`, used only for
   `gapi.client.init`); the licensing code reads `opts.key`.
-  *Verified:* `FroalaEditorKaribuTest.licenseKey_isHandedToTheClient` — which
+  *Verified:* `FroalaEditorKaribuTest.licenseKey_isSetAsElementProperty` — which
   asserts the **element property**, not that Froala received it. Reading
   `editor.opts.key` off the live instance needs a key input in the demo and is open.
-  The test name overclaims and should read `…_isSetAsElementProperty`.
 - **API-10** `setLicenseKey(null)` removes the property instead of sending a null, so
   Froala sees no `key` option at all rather than an explicit empty one.
   *Verified:* `FroalaEditorKaribuTest.licenseKey_nullRemovesTheProperty`.
@@ -66,10 +65,10 @@ shows Froala's unlicensed watermark.
   on the setter.
   *Verified:* unverified.
 - **API-12** ~~`setDefaultLicenseKey(String)` applies a key to every instance created
-  afterwards.~~ **To be removed.** One key per application set at construction is what
-  other add-ons do; global mutable static state is not this add-on's scope. Currently
-  still present, covered by
-  `FroalaEditorKaribuTest.defaultLicenseKey_appliesToNewInstancesOnly`.
+  afterwards.~~ **Removed 2026-08-24.** One key per instance, set by the application,
+  is what other add-ons do; global mutable static state is not this add-on's scope.
+  The consequence is deliberate: an application with many editors sets the key on
+  each one, or wraps the construction itself.
 - **API-13** Spring `@ConfigurationProperties` binding of the key is **not** part of
   the component. `component/` stays Spring-free; the binding belongs in `demo/` or a
   later optional `vcf-froala-editor-spring` module (phase 3).

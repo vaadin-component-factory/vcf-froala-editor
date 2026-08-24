@@ -1,8 +1,9 @@
 # Froala Editor for Vaadin Flow
 
-A Vaadin Component Factory add-on that wraps the Froala WYSIWYG Editor (currently
-v4.6.2, forward-compatible with the upcoming 5.x) as a Java Flow component,
-requested for the NST application. The goal is to expose Froala's full feature set
+A Vaadin Component Factory add-on that wraps the Froala WYSIWYG Editor as a Java
+Flow component, requested for the NST application. The customer named v4.6.2; the
+add-on targets **5.4.0** and NST's sign-off on that is still open (see
+`ROADMAP.md`, phase 5). The goal is to expose Froala's full feature set
 — rich-text formatting, media/content insertion, inline/document/full-screen
 modes, productivity plugins (paste-from-Word, markdown, find-and-replace, counts,
 track changes, mentions, templates), localization/RTL and accessibility, HTML
@@ -64,7 +65,7 @@ dependency versions only, so the root pins plugin versions (`spring-boot-maven-p
 
 The customer asked for the Froala license key to come from Spring config
 (`application.properties`). That collides with the Spring-free add-on rule, so:
-the component exposes a plain `setLicenseKey(String)` / static default, and the
+the component exposes a plain `setLicenseKey(String)` per instance, and the
 Spring binding lives in the demo — or later in a separate optional
 `vcf-froala-editor-spring` module. **Do not add a Spring dependency to
 `component/`.**
@@ -115,5 +116,4 @@ optimized bundle rather than a precompiled one.
   explaining the BOM-not-parent setup and the `exec` classifier, and sortPom would
   reorder elements away from what those comments document.
 - Domain language: use the terms in `CONTEXT.md`.
-- Check the `AGENTS.md` for further rules and guidelines.
 

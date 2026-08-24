@@ -112,7 +112,6 @@ class FroalaEditorElement extends SlotStylesMixin(
 
         // TODO Phase 2: tooltip support. Froala has its own Tooltip and Popups modules, so decide there whether the
         // host exposes a single Vaadin tooltip or delegates to Froala's. The commented wiring below is the Vaadin half.
-        // (The earlier reasoning here was carried over from the HugeRTE reference and does not describe Froala.)
         // this._tooltipController = new TooltipController(this);
         // this.addController(this._tooltipController);
         // this._tooltipController.setShouldShow(target => {
@@ -132,10 +131,14 @@ class FroalaEditorElement extends SlotStylesMixin(
     async connectedCallback() {
         super.connectedCallback();
 
-        // The editor is initialized from firstUpdated, not from here, so that properties the server sets in the same
-        // response (licenseKey, value) are applied before Froala reads them -- the license key in particular is only
-        // read once, at init. On a re-attach the element has already rendered, so firstUpdated will not run again and
-        // this is the only place left to re-create the editor.
+        // `hasUpdated` is false on a first connect. The editor is then left to firstUpdated, so that properties the
+        // server sets in the same response (licenseKey, value) are applied before Froala reads them -- the license key
+        // in particular is only read once, at init.
+        //
+        // It is true when an element that has already rendered is connected again. That is NOT what a Flow detach and
+        // re-attach does: measured 2026-08-24, Flow discards the element and builds a new one, whose firstUpdated runs
+        // again. This branch covers a client side DOM move of the same element, where Lit will not run firstUpdated a
+        // second time and nothing else would rebuild the editor.
         if (this.hasUpdated) {
             await this._initEditor();
         }
@@ -155,11 +158,16 @@ class FroalaEditorElement extends SlotStylesMixin(
         delete this._throttleHandle;
 
         if (this.editor) {
-            this.editor.destroy();
-            this.editorElement.remove();
+            // the clean up has to happen even if destroy throws: leaving `this.editor` set would make _initEditor's
+            // guard skip a dead instance forever, and the field would never work again after a re-attach
+            try {
+                this.editor.destroy();
+            } finally {
+                this.editorElement.remove();
 
-            delete this.editorElement;
-            delete this.editor;
+                delete this.editorElement;
+                delete this.editor;
+            }
         }
 
         this._editorInitialized = false;

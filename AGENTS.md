@@ -1,9 +1,10 @@
 # IMPORTANT: General rules and conventions for you (agent)
 
 * Code and document for humans. they have to understand and maintain the application. 
-* Don't guess, confirm with docs / sources / research results / MCP. 
+* Don't guess, confirm with docs / sources / research results / MCP. Being uncertain is fine and saying so is
+  fine; stating an assumption as fact is not.
 * If there is no solution or answer, say it. Aknowledging failure is better than trying to hide it. 
-* Always review your own produce with subagents.
+* Review your own produce with subagents -- see *Verifying your produce* for when and how.
 * The code is not your history / changelog.
 * Follow clean code and yagni principles.
 * Don't invent or workaround, if there's already a solution. Use the existing libs first before adding new ones.
@@ -12,7 +13,7 @@
 
 - **Agent review is part of every phase, before the commit.** Not optional and not
   something to wait to be asked for: once a phase's code is written and the tests
-  are green, dispatch parallel review agents (see the model table below) *before*
+  are green, dispatch parallel review agents (see the model table under *Working conventions*) *before*
   offering the commit, and report what they found. Use several agents on separate
   axes rather than one general one — for a component wrapper that means at minimum
   the framework/API axis, the wrapped-library axis, and the test-quality axis
@@ -20,7 +21,7 @@
   belong to a later phase get a `TODO` in the code pointing at that phase, not a
   silent fix.
 
-# Working conventions
+## Working conventions
 
 - **Commits:** one commit per logical phase or feature; run the tests before
   committing, and don't commit on the user's behalf unless asked.

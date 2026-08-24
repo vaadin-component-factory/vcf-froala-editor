@@ -52,8 +52,6 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
-    private static String defaultLicenseKey;
-
     /// Creates a new instance with the given label.
     ///
     /// @param label label
@@ -117,7 +115,6 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
         setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         setValueChangeTimeout(DEFAULT_VALUE_CHANGE_MODE_TIMEOUT);
-        setLicenseKey(defaultLicenseKey);
 
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
@@ -163,7 +160,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /// @param oldValue old value
     /// @param delta delta to apply
     /// @return new value
-    /// @throws DeltaMismatchException if the delta does not fit the given old value
+    /// @throws DeltaMismatchException if the delta cannot be applied to the given old value
     public static String applyDelta(String oldValue, String delta) {
         // convert string to patch object
         List<DiffMatchPatch.Patch> patches = DIFF_MATCH_PATCH.patchFromText(delta);
@@ -173,11 +170,17 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                 .patchApply(patches instanceof LinkedList<DiffMatchPatch.Patch> alreadyLinkedList ? alreadyLinkedList
                         : new LinkedList<>(patches), oldValue);
 
-        // patchApply returns the resulting string plus one flag per patch. A false flag means that patch found no place
-        // to apply and was skipped -- the string then comes back partially patched or, as verified against 1.2,
-        // entirely unchanged, with the edit silently lost. Checking these is the whole difference to the reference
-        // implementation this was ported from.
-        boolean[] applied = (boolean[]) results[1];
+        // patchApply answers with an untyped pair, so verify its shape instead of trusting it -- a library change
+        // would otherwise surface as a ClassCastException from inside a value update.
+        if (results.length != 2 || !(results[0] instanceof String patched)
+                || !(results[1] instanceof boolean[] applied)) {
+            throw new DeltaMismatchException(
+                    "diff-match-patch returned an unexpected result shape, expected a String and a boolean[]");
+        }
+
+        // One flag per patch. A false flag means that patch found no place to apply and was skipped, so the string
+        // comes back partially patched or, as verified against 1.2, entirely unchanged -- without this loop the edit
+        // is lost with nothing to notice it.
         for (int i = 0; i < applied.length; i++) {
             if (!applied[i]) {
                 throw new DeltaMismatchException(
@@ -185,33 +188,13 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             }
         }
 
-        // extract the resulting string
-        return (String) results[0];
+        return patched;
     }
 
-    /// Sets the license key for every editor created afterwards. Instances that already exist are not modified.
-    /// Applications will usually call this once at startup, so that [#FroalaEditor()] and friends need no key.
+    /// Sets the license key of this instance. Maps onto Froala's `key` option.
     ///
     /// Froala is commercial software and the key is customer specific, therefore this add-on ships none. Without a
     /// key the editor still works, but shows Froala's unlicensed watermark.
-    ///
-    /// This is global mutable state. A test that sets it has to reset it afterwards, or it leaks into whatever runs
-    /// next in the same JVM.
-    ///
-    /// @param defaultLicenseKey license key or null to unset
-    public static void setDefaultLicenseKey(String defaultLicenseKey) {
-        FroalaEditor.defaultLicenseKey = defaultLicenseKey;
-    }
-
-    /// Returns the license key applied to newly created instances. May be null.
-    ///
-    /// @return default license key or null
-    public static String getDefaultLicenseKey() {
-        return defaultLicenseKey;
-    }
-
-    /// Sets the license key of this instance, overriding [#setDefaultLicenseKey(String)]. Maps onto Froala's `key`
-    /// option.
     ///
     /// The key is only read when the client side editor initializes, so calling this on an already attached instance
     /// has no effect until it is detached and attached again.
@@ -279,17 +262,5 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /// @return timespan in milliseconds
     public int getValueChangeTimeout() {
         return getElement().getProperty("valueChangeTimeout", DEFAULT_VALUE_CHANGE_MODE_TIMEOUT);
-    }
-
-    /// Thrown by [#applyDelta(String,String)] when a delta cannot be applied to the value it is handed, which means
-    /// the client built it against a different base and the two sides have drifted apart.
-    public static class DeltaMismatchException extends RuntimeException {
-
-        /// Creates a new instance with the given message.
-        ///
-        /// @param message message
-        public DeltaMismatchException(String message) {
-            super(message);
-        }
     }
 }

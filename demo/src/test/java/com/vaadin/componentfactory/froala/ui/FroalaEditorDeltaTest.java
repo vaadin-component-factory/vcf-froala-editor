@@ -18,8 +18,8 @@ package com.vaadin.componentfactory.froala.ui;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.jupiter.api.Test;
 
+import com.vaadin.componentfactory.froala.DeltaMismatchException;
 import com.vaadin.componentfactory.froala.FroalaEditor;
-import com.vaadin.componentfactory.froala.FroalaEditor.DeltaMismatchException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

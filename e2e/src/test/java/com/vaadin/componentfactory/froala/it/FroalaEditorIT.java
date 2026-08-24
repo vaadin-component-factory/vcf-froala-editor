@@ -20,7 +20,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
+import com.vaadin.componentfactory.froala.it.views.FroalaTestView;
+
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * End-to-end test driving the real Froala editor in a browser. Named *IT so failsafe runs it in the
@@ -36,7 +39,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Override
     protected String getView() {
-        return "";
+        return FroalaTestView.ROUTE;
     }
 
     /** Froala's own editable surface, inside our web component's light DOM. */
@@ -55,6 +58,44 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void initialValue_isInTheEditorOnLoad() {
+        // The view sets this value server side before the first attach, so it can only have arrived through the
+        // innerHTML seeding in _initEditor -- Froala has no init option for its content.
+        assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT);
+    }
+
+    @Test
+    void typing_neverPushesTheFullValueBackToTheClient() {
+        // The point of the whole delta design, and the customer's actual requirement: an NST document can be large, so
+        // a keystroke must not put it back on the wire. The server pushes a full value by writing the element's `value`
+        // property, so counting those writes measures exactly that. A regression to setPresentationValue on every
+        // change would pass every other test in this suite.
+        page.locator("#editor .fr-element").waitFor();
+        page.evaluate("""
+                () => {
+                    const el = document.querySelector('#editor');
+                    const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), 'value');
+                    window.__fullValueWrites = 0;
+                    Object.defineProperty(el, 'value', {
+                        configurable: true,
+                        get: () => descriptor.get.call(el),
+                        set: (newValue) => {
+                            window.__fullValueWrites++;
+                            descriptor.set.call(el, newValue);
+                        }
+                    });
+                }
+                """);
+
+        editableArea().click();
+        editableArea().type("a sentence long enough to produce several change events");
+
+        // the round trip has to have happened, otherwise a count of zero would prove nothing
+        assertThat(page.locator("#viewer")).containsText("several change events");
+        assertEquals(0, page.evaluate("() => window.__fullValueWrites"));
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();
@@ -66,8 +107,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
      */
     @Test
     void labelAndHelperText_areRendered() {
-        assertThat(page.locator("vcf-froala-editor")).containsText("Test editor");
-        assertThat(page.locator("vcf-froala-editor")).containsText("Hello World, it's-a-me, Malario");
+        assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.LABEL);
+        assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.HELPER_TEXT);
     }
 
     @Test
@@ -110,7 +151,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void onBlurMode_syncsOnlyWhenFocusLeaves() {
-        selectValueChangeMode("On Blur");
+        selectValueChangeMode("ON_BLUR");
 
         editableArea().click();
         editableArea().type("only after blur");

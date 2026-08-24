@@ -64,14 +64,6 @@ class FroalaEditorKaribuTest {
     @AfterEach
     void tearDown() {
         MockVaadin.tearDown();
-
-        // the default key is static, so leaking it would change whatever test runs next
-        FroalaEditor.setDefaultLicenseKey(null);
-    }
-
-    @Test
-    void basicView_rendersAnEditor() {
-        assertEquals("", _get(FroalaEditor.class).getValue());
     }
 
     @Test
@@ -96,7 +88,7 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void licenseKey_isHandedToTheClient() {
+    void licenseKey_isSetAsElementProperty() {
         FroalaEditor editor = _get(FroalaEditor.class);
 
         editor.setLicenseKey("test-key");
@@ -113,16 +105,6 @@ class FroalaEditorKaribuTest {
         editor.setLicenseKey(null);
 
         assertNull(editor.getLicenseKey());
-    }
-
-    @Test
-    void defaultLicenseKey_appliesToNewInstancesOnly() {
-        FroalaEditor before = new FroalaEditor();
-        FroalaEditor.setDefaultLicenseKey("default-key");
-        FroalaEditor after = new FroalaEditor();
-
-        assertNull(before.getLicenseKey());
-        assertEquals("default-key", after.getLicenseKey());
     }
 
     @Test

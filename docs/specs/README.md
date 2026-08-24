@@ -16,6 +16,10 @@ behaviour rather than intent. From phase 2 on, the spec is written first.
 - Only behaviour that is observable from outside belongs here. Internal fields and
   private helpers do not.
 - Contradiction between spec and code is a bug in one of them. Say which.
+- e2e tests run against **fixture views the tests own**, under
+  `e2e/src/test/java/.../it/views/`, never against the demo. The demo exists to show
+  the add-on off and its author has to stay free to change labels, values and layout;
+  a test that asserts against it breaks for reasons that are not regressions.
 
 **Files**
 

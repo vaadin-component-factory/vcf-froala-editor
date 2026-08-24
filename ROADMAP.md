@@ -101,7 +101,7 @@ Open:
             programmatic `setValue()` of a huge document is on a hot path.
       - [x] the reference's Jackson-3 config layer is not portable to Vaadin 24 —
             not ported, only the delta code was.
-- [x] **`setLicenseKey(String)` + a static default** (`setDefaultLicenseKey`), the
+- [x] **`setLicenseKey(String)`** per instance, the
       customer's named requirement. Maps onto Froala's **`key`** option — *not*
       `apiKey`, which is the Google Drive key; see `docs/customer-request.md`. Passed
       as an element property and read once, when the client side editor initializes,
@@ -189,6 +189,11 @@ Each has a `TODO Phase 2` at its place in the connector:
       holding DOM references when the detach is final. Both are defensible; pick one
       deliberately rather than by inheritance, and note that the `isConnected` guard
       in `_initEditor` and the timer clean-up already handle the *correctness* half.
+      **Measured 2026-08-24, and it narrows the question:** a Flow detach/re-attach
+      discards the HTML element and builds a new one, so a surviving Froala instance
+      would be discarded with it. Keeping the instance can only pay off for a
+      client-side DOM move of the same element, not for a Flow remove/add. See
+      `docs/specs/phase-1-lifecycle.md`, LC-9 and LC-10.
 - [ ] Server-driven editor configuration. `initialConfig` / `rawInitialConfig` carry
       over from **both** references — the same split exists in
       `stefanuebe/vaadin-fullcalendar` as `initialOptions` / `initialJsonOptions`,
@@ -256,8 +261,10 @@ artefacts, test quality). What they caught, beyond the artefacts above:
   Nothing dispatches it, so it is inert — but making `value` a notifying Lit
   property would quietly open a second update path beside `_value-delta`. Noted at
   the constructor.
-- **`setDefaultLicenseKey` is global mutable state.** Javadoc now warns test authors
-  to reset it; the only current guard is one `@AfterEach`.
+- **`setDefaultLicenseKey` was global mutable state** and is **removed** (2026-08-24,
+  maintainer's call): one key per instance set by the application is what other
+  add-ons do, and storing it globally is not this add-on's scope. The javadoc warning
+  about resetting it in tests, and the `@AfterEach` guard, went with it.
 
 Still open from the reviews, deliberately:
 
