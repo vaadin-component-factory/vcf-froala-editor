@@ -123,6 +123,36 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void typingThenDetachingImmediately_keepsTheLastChange_inTimeoutMode() {
+        // TIMEOUT holds the change for two seconds, so detaching right away is guaranteed to catch it mid-flight.
+        selectValueChangeMode("TIMEOUT");
+
+        assertLastChangeSurvivesAnImmediateDetach("typed in timeout mode");
+    }
+
+    @Test
+    void typingThenDetachingImmediately_keepsTheLastChange_inIntervalMode() {
+        selectValueChangeMode("INTERVAL");
+
+        assertLastChangeSurvivesAnImmediateDetach("typed in interval mode");
+    }
+
+    @Test
+    void typingThenDetachingImmediately_keepsTheLastChange() {
+        editableArea().click();
+        editableArea().type("typed just before detaching");
+
+        // No pause and no click elsewhere first: straight to the toggle. Focus leaving the editor makes Froala fire
+        // blur, and that is the last moment anything can be sent -- the detach clears every pending timer on the
+        // client, so a change still sitting in one is gone.
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+        page.locator("#attach-toggle").click();
+
+        assertThat(editableArea()).containsText("typed just before detaching");
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();
@@ -167,9 +197,9 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                 () => {
                     const el = document.querySelector('#editor');
                     el.editor.html.set('<p>first</p>');
-                    el.onValueChange();
+                    el.onValueChangeThrottled();
                     el.editor.html.set('<p>second</p>');
-                    el.onValueChange();
+                    el.onValueChangeThrottled();
                 }
                 """);
 
@@ -244,6 +274,17 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#enabled-toggle input").uncheck();
 
         assertThat(page.locator("#editor .fr-element")).hasAttribute("contenteditable", "false");
+    }
+
+    private void assertLastChangeSurvivesAnImmediateDetach(String text) {
+        editableArea().click();
+        editableArea().type(text);
+
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+        page.locator("#attach-toggle").click();
+
+        assertThat(editableArea()).containsText(text);
     }
 
     private void selectValueChangeMode(String label) {

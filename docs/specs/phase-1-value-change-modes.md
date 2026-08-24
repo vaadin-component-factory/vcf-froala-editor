@@ -47,19 +47,40 @@ names are ours. The name clash is accepted and documented in the javadoc.
   setter, with the same message.
   *Verified:* `FroalaEditorKaribuTest.valueChangeTimeout_rejectsAnythingButPositiveValues`.
 
+## Flush on blur
+
+- **VCM-9** **A blur flushes in every mode**, not only in `ON_BLUR`. Losing focus
+  usually means a click elsewhere, and that click can detach the component — which
+  clears the mode's pending timer and would take the last edit with it. An empty delta
+  dispatches nothing (VT-2), so the modes that synced already pay nothing.
+  *Verified:* `FroalaEditorIT.typingThenDetachingImmediately_keepsTheLastChange`
+  and its `_inTimeoutMode` / `_inIntervalMode` variants — type, then straight to the
+  detach toggle with no pause and no click elsewhere first. The two mode variants fail
+  without this flush.
+- **VCM-10** What a blur cannot save is a detach with no blur before it — another view
+  removing the editor, a timer, a closing browser. By the time `disconnectedCallback`
+  runs, the element is out of the DOM and its Flow node is detached server-side, so
+  nothing dispatched there would arrive. **Accepted limitation.**
+
 ## Throttle
 
-- **VCM-9** Independently of the mode, the connector never syncs more often than
-  every **50 ms**.
-  *Verified:* `FroalaEditorIT.syncInsideTheThrottleWindow_isDeferredNotDropped`.
-- **VCM-10** A sync that falls inside the throttle window is **deferred, not
-  dropped** — it is rescheduled for the end of the window. Dropping is safe for a
-  keystroke, because a later one carries the delta, but a blur or a timeout flush has
-  no successor, so dropping loses the user's last edit.
-  *Verified:* `FroalaEditorIT.syncInsideTheThrottleWindow_isDeferredNotDropped` (calls
-  the real `onValueChange` twice inside the window and asserts both arrive) and
+- **VCM-11** `ON_CHANGE` never syncs more often than every **50 ms**. Froala reports
+  every keystroke, and without this each one would be a round trip.
+- **VCM-12** The throttle belongs to `ON_CHANGE` alone, in `onValueChangeThrottled()`.
+  `onValueChange()` itself does no rate limiting and always sends. `TIMEOUT` and
+  `INTERVAL` limit their own rate already, and a flush — from a blur, a mode switch or
+  an elapsed timer — must never be held back. Rate policy sits at the call site, the
+  dispatcher only dispatches.
+  *Verified:* `FroalaEditorIT.syncInsideTheThrottleWindow_isDeferredNotDropped` calls
+  the throttled path twice inside the window and asserts both arrive.
+- **VCM-13** A sync that falls inside the throttle window is **deferred, not dropped**
+  — it is rescheduled for the end of the window. Dropping is safe for a keystroke,
+  because a later one carries the delta, but the last keystroke of a burst has no
+  successor. This is a deliberate deviation from the reference implementation, which
+  drops (see `docs/upstream/hugerte-value-change-losses.md`).
+  *Verified:* `syncInsideTheThrottleWindow_isDeferredNotDropped`,
   `fastTyping_thenBlur_losesNothing`.
-- **VCM-11** The 50 ms window is a constant, not configurable. No requirement asks
+- **VCM-14** The 50 ms window is a constant, not configurable. No requirement asks
   for it to be.
 
 ## Known gaps

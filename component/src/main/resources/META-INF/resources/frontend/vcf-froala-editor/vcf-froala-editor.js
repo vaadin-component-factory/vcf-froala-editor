@@ -206,14 +206,21 @@ class FroalaEditorElement extends SlotStylesMixin(
                         }
                     },
                     'blur': () => {
-                        this.onValueChangeIfMode("blur");
+                        // Flush in every mode, not just ON_BLUR. Focus leaving usually means a click somewhere
+                        // else, and that click can detach the component -- which clears the mode's pending timer on
+                        // the way out and would take the last edit with it. An empty delta dispatches nothing, so
+                        // the modes that synced already pay nothing for this.
+                        this.onValueChange();
                         this.dispatchEvent(new CustomEvent('blur'));
                     },
                     'focus': () => {
                         this.dispatchEvent(new CustomEvent('focus'));
                     },
                     'contentChanged': () => {
-                        this.onValueChangeIfMode("change");
+                        if (this.valueChangeMode === "change") {
+                            this.onValueChangeThrottled();
+                        }
+
                         this.restartValueChangeTimeoutIfMode();
                     }
                 }
@@ -234,33 +241,33 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     /**
-     * Calls #onValueChange(), if the given string matches the current value change mode.
-     * @param expectedValueChangeMode expected value change mode
+     * Rate limit for ON_CHANGE, where Froala reports every keystroke and an unthrottled sync would be one round trip
+     * per key. Defers rather than drops: the deferred call is the only one left to carry that change.
+     *
+     * Only this mode needs it. TIMEOUT and INTERVAL limit their own rate already, and a flush -- from a blur, a mode
+     * switch or an elapsed timer -- must never be held back, which is why the throttle lives here and not in
+     * #onValueChange().
      */
-    onValueChangeIfMode(expectedValueChangeMode) {
-        if (this.valueChangeMode === expectedValueChangeMode) {
-            this.onValueChange();
-        }
-    }
+    onValueChangeThrottled() {
+        const sinceLastSync = Date.now() - this._lastSyncedValueTimestamp;
 
-    /**
-     * This method is to be called when ever a value change should be triggered. It will calculate the current value
-     * delta, update the "old value" property and send an event to the server.
-     */
-    onValueChange() {
-        const now = Date.now();
-        const sinceLastSync = now - this._lastSyncedValueTimestamp;
-
-        // Throttle, so a burst of changes does not become a burst of round trips. It defers rather than drops: a blur
-        // or a timeout flush landing inside the window has no later change to carry it.
         if (sinceLastSync < 50) {
             clearTimeout(this._throttleHandle);
             this._throttleHandle = setTimeout(() => this.onValueChange(), 50 - sinceLastSync);
             return;
         }
 
+        this.onValueChange();
+    }
+
+    /**
+     * Sends whatever the editor holds now: calculates the delta against the last synced value, updates it and
+     * dispatches the event. Sends nothing if the delta is empty. Always immediate -- rate limiting is the caller's
+     * business.
+     */
+    onValueChange() {
         clearTimeout(this._throttleHandle);
-        this._lastSyncedValueTimestamp = now;
+        this._lastSyncedValueTimestamp = Date.now();
 
         const currentValue = this.editor?.html?.get() ?? this._lastSyncedValue;
 
