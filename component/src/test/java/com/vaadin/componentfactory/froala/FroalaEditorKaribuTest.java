@@ -13,26 +13,16 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.vaadin.componentfactory.froala.ui;
+package com.vaadin.componentfactory.froala;
 
 import com.github.mvysny.kaributesting.v10.MockVaadin;
-import com.github.mvysny.kaributesting.v10.Routes;
-import com.github.mvysny.kaributesting.v10.spring.MockSpringServlet;
-import kotlin.jvm.functions.Function0;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 
-import com.vaadin.componentfactory.froala.FroalaEditor;
-import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.spring.SpringServlet;
 
-import static com.github.mvysny.kaributesting.v10.LocatorJ._get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -40,28 +30,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Browserless UI-unit test using Karibu Testing (license-free) — runs the view in the JVM, no browser.
+ * Browserless UI-unit test using Karibu Testing (license-free) — runs the component in the JVM, no browser.
  *
  * <p>
- * Karibu executes no JavaScript, so everything here is server-side state and element properties: the value round-trip,
- * the license key and the value change mode as they are handed to the client. Whether Froala then honours them is an
- * e2e question, see {@code FroalaEditorIT}.
+ * Karibu executes no JavaScript, so everything here is server-side state, element properties and the JS calls the
+ * server queues. Whether Froala then honours them is an e2e question, see {@code FroalaEditorIT}.
+ *
+ * <p>
+ * Every test builds the component it asserts on. Nothing here navigates to a view, in particular not to one of the
+ * demo's — the demo exists to show the add-on off and its author has to stay free to change it.
  */
-@SpringBootTest
 class FroalaEditorKaribuTest {
 
-    private static final Routes routes = new Routes().autoDiscoverViews("com.vaadin.componentfactory.froala");
-
-    @Autowired
-    ApplicationContext ctx;
+    private VerticalLayout layout;
 
     @BeforeEach
     void setup() {
-        Function0<UI> uiFactory = UI::new;
-        SpringServlet servlet = new MockSpringServlet(routes, ctx, uiFactory);
+        MockVaadin.setup();
 
-        MockVaadin.setup(uiFactory, servlet);
-        UI.getCurrent().navigate(BasicView.class);
+        layout = new VerticalLayout();
+        UI.getCurrent().add(layout);
     }
 
     @AfterEach
@@ -71,7 +59,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void setValue_reachesTheClientProperty() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
 
         editor.setValue("<p>typed on the server</p>");
 
@@ -81,7 +69,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void valueChangeListener_firesOnServerSideChange() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
         String[] seen = new String[1];
         editor.addValueChangeListener(event -> seen[0] = event.getValue());
 
@@ -92,7 +80,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void licenseKey_isSetAsElementProperty() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
 
         editor.setLicenseKey("test-key");
 
@@ -102,7 +90,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void licenseKey_nullRemovesTheProperty() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
         editor.setLicenseKey("test-key");
 
         editor.setLicenseKey(null);
@@ -112,7 +100,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void valueChangeMode_roundTripsAndDefaults() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
 
         editor.setValueChangeMode(ValueChangeMode.TIMEOUT);
         assertEquals(ValueChangeMode.TIMEOUT, editor.getValueChangeMode());
@@ -124,7 +112,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void valueChangeTimeout_rejectsAnythingButPositiveValues() {
-        FroalaEditor editor = _get(FroalaEditor.class);
+        FroalaEditor editor = attachedEditor();
 
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(-1));
 
@@ -135,11 +123,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void setValueRepeatingTheLastServerValue_queuesAnExplicitClientPush() {
-        VerticalLayout layout = new VerticalLayout();
-        UI.getCurrent().add(layout);
-
-        ProbeEditor editor = new ProbeEditor();
-        layout.add(editor);
+        ProbeEditor editor = attachedProbeEditor();
         editor.setValue("<p>A</p>");
         editor.simulateClientEdit("<p>B</p>");
         drainPendingJavaScript();
@@ -153,11 +137,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void detach_doesNotQueueAValuePushForTheNextAttach() {
-        VerticalLayout layout = new VerticalLayout();
-        UI.getCurrent().add(layout);
-
-        ProbeEditor editor = new ProbeEditor();
-        layout.add(editor);
+        ProbeEditor editor = attachedProbeEditor();
         editor.setValue("<p>A</p>");
         drainPendingJavaScript();
 
@@ -170,6 +150,20 @@ class FroalaEditorKaribuTest {
         layout.add(editor);
 
         assertFalse(hasPendingValuePush());
+    }
+
+    private FroalaEditor attachedEditor() {
+        FroalaEditor editor = new FroalaEditor();
+        layout.add(editor);
+
+        return editor;
+    }
+
+    private ProbeEditor attachedProbeEditor() {
+        ProbeEditor editor = new ProbeEditor();
+        layout.add(editor);
+
+        return editor;
     }
 
     private void drainPendingJavaScript() {

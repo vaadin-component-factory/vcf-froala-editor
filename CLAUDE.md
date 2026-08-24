@@ -46,11 +46,13 @@ a reason that is written down in `ROADMAP.md`.
   must be duplicated into this pom — resolving their config through
   `${codechecks.config.dir}` = `${project.basedir}/..`, not the root pom's
   `${maven.multiModuleProjectDirectory}`, which points at `component/` itself during
-  a standalone build and would break it.
+  a standalone build and would break it. Holds the **unit and browserless tests**, so
+  a standalone build verifies the published artifact. They stay Spring-free too:
+  plain `karibu-testing-v10`, never `-spring`.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and
   showcases it. Holds everything Spring-shaped (`Application`, `@Service` beans,
-  the future `@ConfigurationProperties` license-key binding) and the browserless
-  tests. Its `spring-boot-maven-plugin` uses `<classifier>exec</classifier>` so the
+  the future `@ConfigurationProperties` license-key binding) and **no tests at all**
+  — see Testing. Its `spring-boot-maven-plugin` uses `<classifier>exec</classifier>` so the
   main jar stays a plain library jar the `e2e` module can depend on — don't remove
   that.
 - **`e2e/`** — Playwright tests that boot the demo and drive it in a real browser,
@@ -88,10 +90,13 @@ Do not introduce Signals — they are a Vaadin 25 feature and this project targe
 License-free stack, all run by `mvn clean verify -Pproduction`. Browserless layer:
 **Karibu 2.4.x**. Browser e2e: **yes**.
 
-- **JUnit 5** — unit tests (Spring Boot 3.x line).
-- **Browserless UI-unit — Karibu Testing** (`com.github.mvysny.kaributesting.v10.LocatorJ`
-  + `MockVaadin`, Spring-aware via `MockSpringServlet`). Fast, browser-free, runs in
-  the normal test phase. Karibu is pinned to the **2.4.x** line — 2.4.x is Vaadin
+- **JUnit 5** — unit tests, in `component/`. Pinned there to the version
+  `spring-boot-dependencies` manages in the reactor root, so a standalone build of the
+  add-on and a reactor build run the same one.
+- **Browserless UI-unit — Karibu Testing** (`MockVaadin`), in `component/`, test scope.
+  Fast, browser-free, runs in the normal test phase. Plain `MockVaadin.setup()` — the
+  `-spring` artifact and `MockSpringServlet` would pull Spring into the add-on, which
+  is forbidden. Karibu is pinned to the **2.4.x** line — 2.4.x is Vaadin
   24.8+ only and 2.6.x+ is Vaadin 25 only, so the line must move together with the
   Vaadin version. Karibu does not initialise servlet filters (no Spring Security)
   and **executes no JavaScript** — it can assert server-side state and element
@@ -108,9 +113,13 @@ we make come back, does the option we pass reach `editor.opts`. Whether Froala i
 behaves correctly — its licensing, its toolbar rendering, its own HTML handling — is
 Froala's scope and not ours to assert.
 
-Mirror existing tests when adding new ones. Browser tests run against fixture views the
-tests own, under `e2e/src/test/java/.../it/views/`, never against the demo — the demo
-exists to show the add-on off and has to stay free to change.
+**No test lives in `demo/`, ever.** Unit and browserless tests belong in `component/`,
+browser tests in `e2e/`. And no test asserts against the demo's views: browser tests run
+against fixture views the tests own, under `e2e/src/test/java/.../it/views/`, browserless
+tests build the component they assert on. The demo exists to show the add-on off and its
+author has to stay free to change it — a test that reads it breaks on a label change.
+
+Mirror existing tests when adding new ones.
 
 When a module's Java or frontend changes, rebuild that module before running the
 demo or e2e tests so they don't run against a stale jar. The demo's `production`

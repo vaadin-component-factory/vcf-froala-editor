@@ -13,13 +13,10 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.vaadin.componentfactory.froala.ui;
+package com.vaadin.componentfactory.froala;
 
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.jupiter.api.Test;
-
-import com.vaadin.componentfactory.froala.DeltaMismatchException;
-import com.vaadin.componentfactory.froala.FroalaEditor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

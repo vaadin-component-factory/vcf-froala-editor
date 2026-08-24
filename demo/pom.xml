@@ -51,19 +51,6 @@
         <!-- ===== Test stack ===== JUnit base plus the browserless layer (Karibu,
              license-free on Vaadin 24) beside the views it drives. The browser
              e2e layer lives in the separate `e2e/` module. -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Karibu line is Vaadin-version-specific and not BOM-managed:
-             2.4.x -> Vaadin 24.8+ (not 25), 2.6.x+ -> Vaadin 25+. Pinned. -->
-        <dependency>
-            <groupId>com.github.mvysny.kaributesting</groupId>
-            <artifactId>karibu-testing-v10-spring</artifactId>
-            <version>2.4.4</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
