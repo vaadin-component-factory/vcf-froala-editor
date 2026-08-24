@@ -1,14 +1,20 @@
 /* adjust inner height automatically to field height to have not a gap between froala and helper text*/
+/* https://github.com/froala/wysiwyg-editor/issues/2249 */
 .fr-box {
     height: 100%;
     display: flex;
     flex-direction: column;
+    .fr-wrapper {
+        flex: 1;
+        overflow: auto;
+
+        .fr-element {
+            min-height: 100%;
+        }
+    }
 }
 
-.fr-wrapper {
-    flex: 1;
-    overflow: auto;
-}
+
 /* end inner height adjustment */
 
 vcf-froala-viewer {
