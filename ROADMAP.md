@@ -494,6 +494,38 @@ decision, not a migration project.
 
 ---
 
+## Phase 7 — Vaadin 25
+
+Not a port, a **decision**: does the add-on move to 25, or serve both lines? Java 17
+and Vaadin 24 are the current floor on purpose — they are the platform's own floor, so
+the published add-on excludes as few consumers as possible (see `CLAUDE.md`). Vaadin 25
+needs Java 21 and Spring Boot 4, so moving means dropping consumers, and serving both
+means two maintained lines (e.g. 1.x for 24, 2.x for 25). Whether NST needs 25 at all
+is one of the open questions to them in `docs/customer-request.md` — that answer comes
+first.
+
+- [ ] Decide: raise the floor, or two lines. Everything below follows from it.
+- [ ] Test stack moves with the version, and not one piece at a time:
+      - **Karibu is version-locked** — 2.4.x is Vaadin 24.8+, 2.6.x is Vaadin 25 only,
+        no line spans both. A Vaadin bump is a Karibu bump.
+      - **Vaadin's own browserless layer is free on 25.1+** (it needs a commercial
+        TestBench license on 24), so on 25 it becomes the natural replacement for
+        Karibu rather than an extra cost.
+      - **DramaFinder becomes usable.** It was ruled out for phase 1 only because 1.x
+        is built against Vaadin 25 / JUnit 6 / Java 21 (see the Testing section of
+        `CLAUDE.md`); on 25 that objection is gone and plain Playwright can be
+        reconsidered.
+      - JUnit 5 → 6 comes with Spring Boot 4.
+- [ ] Re-check the value transfer against Flow 25. It rests on Flow behaviour, not on
+      Flow's public contract: property de-duplication on both sides, detach listeners
+      firing before the node's parent is cleared, and a `beforeClientResponse` task of
+      a detached node being deferred rather than dropped. All three are covered by
+      `FroalaEditorKaribuTest` and VT-11 — run those first, they are the canary.
+- [ ] Signals. `CLAUDE.md` bans them because they are a Vaadin 25 feature; on 25 that
+      ban should be re-read rather than silently dropped. Classic state is not wrong,
+      so this is a deliberate choice, not an automatic migration.
+- [ ] Vaadin 25 dropped some Flow API that 24 deprecated — walk the deprecation
+      warnings of a 25 build before assuming the wrapper compiles unchanged.
 
 ---
 
