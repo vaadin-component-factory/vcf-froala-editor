@@ -10,6 +10,9 @@ import {DisabledMixin} from '@vaadin/a11y-base/src/disabled-mixin.js';
 import {ThemableMixin} from '@vaadin/vaadin-themable-mixin/vaadin-themable-mixin.js';
 import {inputFieldShared} from '@vaadin/vaadin-lumo-styles/mixins/input-field-shared.js';
 import {SlotStylesMixin} from '@vaadin/component-base/src/slot-styles-mixin.js';
+// TODO Phase 4: Lumo integration and dark mode. Froala's own chrome ships its stock CSS and ignores Lumo's tokens, so
+// it stays light in a dark app. This mixin is the Vaadin side of detecting the active theme; Froala has a `theme`
+// option with a dark variant on the other side. See ROADMAP, phase 4.
 // import {ThemeDetectionMixin} from "@vaadin/vaadin-themable-mixin/vaadin-theme-detection-mixin.js";
 import {diff_match_patch} from 'diff-match-patch';
 

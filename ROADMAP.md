@@ -442,6 +442,17 @@ assertion.
         override. Flow side must mirror `dir` onto the host element.
       - Test 3 locales (de / ar / zh_cn), not 39, plus one cheap test asserting
         every enum constant resolves to an existing file.
+- [ ] Lumo integration and dark mode. The host already pulls Lumo's
+      `inputFieldShared` and renders Vaadin's field parts, but **Froala's own chrome
+      is unstyled by us** — toolbar, popups, dropdowns and the editing surface come
+      with Froala's stock CSS and ignore Lumo's tokens, so they do not follow the
+      Vaadin theme and stay light when the app is dark. Needs: Froala's colors,
+      radii, spacing and fonts mapped onto `--lumo-*`, and the theme in effect
+      passed to Froala (it has its own `theme` option and a `dark` variant). Note
+      the commented `ThemeDetectionMixin` import in the connector — that is the
+      Vaadin side of detecting the active theme, kept as the marker for this item.
+      Froala's popups render outside the host, so check what a Vaadin overlay needs
+      before assuming shadow-DOM styling is enough.
 - [ ] Accessibility: keyboard navigation, ARIA, focus handling
 - [ ] HTML sanitization — decide client-side (Froala) vs. server-side
       (jsoup/OWASP) vs. both. **Server-side is the trust boundary**; client-only
