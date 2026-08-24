@@ -35,10 +35,13 @@ import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
 
+/// Flow integration of the Froala WYSIWYG editor.
+///
+/// Please note, that html values are not parsed or sanitized by the Java code, but the client side only. Therefore
+/// handle every input with care before saving or presenting it.
+@Tag("vcf-froala-editor")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
 @NpmPackage(value = "diff-match-patch", version = "1.0.5")
-
-@Tag("vcf-froala-editor")
 @JsModule("./vcf-froala-editor/vcf-froala-editor.js")
 @CssImport("./vcf-froala-editor/vcf-froala-editor.css")
 public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String> implements HasValidationProperties,
