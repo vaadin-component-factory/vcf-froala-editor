@@ -42,8 +42,10 @@ names are ours. The name clash is accepted and documented in the javadoc.
   time before the sync) and `INTERVAL` (time between syncs, and before the first
   one). Default **2000 ms**.
   *Verified:* `FroalaEditorKaribuTest.valueChangeMode_roundTripsAndDefaults`.
-- **VCM-8** A negative timeout is rejected with `IllegalArgumentException`.
-  *Verified:* `FroalaEditorKaribuTest.valueChangeTimeout_rejectsNegativeValues`.
+- **VCM-8** The timeout must be greater than zero. Zero and negative values are
+  rejected with `IllegalArgumentException`, on the server and in the client's own
+  setter, with the same message.
+  *Verified:* `FroalaEditorKaribuTest.valueChangeTimeout_rejectsAnythingButPositiveValues`.
 
 ## Throttle
 
@@ -62,10 +64,4 @@ names are ours. The name clash is accepted and documented in the javadoc.
 
 ## Known gaps
 
-- **Server and client disagree about timeout `0`.** `setValueChangeTimeout(0)` passes
-  the Java validation (which rejects only `< 0`, `FroalaEditor.java:266`) but the
-  client setter throws `"valueChangeTimeout must be greater than 0"`
-  (`vcf-froala-editor.js:315`). One of the two is wrong; pick the semantics —
-  probably reject `0` on both sides, since a `0` ms interval is not a useful request —
-  and align the message.
 - VCM-3 and VCM-4, the two modes with timing behaviour, are the two without a test.

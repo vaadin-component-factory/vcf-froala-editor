@@ -72,8 +72,18 @@ guarantees here are mostly about *not* breaking.
   element that way has not been established. The branch is kept because it is two
   lines and the failure mode without it is a permanently empty editor.
 
-## Undecided
+## Decided, with a cost
 
+- **LC-6 stands: destroy on detach.** Decided 2026-08-24 on the strength of LC-9.
+  The alternative below cannot pay off, because a Flow detach discards the element a
+  surviving instance would have to live on. Re-parenting into a `Dialog` or `Popover`
+  is such a detach plus attach, so it rebuilds the editor too.
+  **Accepted cost:** every detach loses Froala's undo/redo stack, caret, selection and
+  scroll position. The value survives (VT-7). Nothing preserves the rest and no
+  requirement asks for it — named here so it is a known cost, not a surprise.
+
+  The original reasoning, kept because it is the argument to revisit if a concrete
+  case appears:
 - **Whether to destroy on detach at all.** LC-6 is one of two defensible answers.
   The maintainer's own `stefanuebe/vaadin-fullcalendar` (`v6_master`) does the
   opposite deliberately: the widget survives the detach and `connectedCallback` falls
@@ -85,6 +95,3 @@ guarantees here are mostly about *not* breaking.
   churn and it throws away undo stack and caret; keeping the instance holds DOM
   references when the detach turns out to be final. Open in `ROADMAP.md`, phase 1
   deferred list. LC-4 and LC-6 already handle the *correctness* half either way.
-- **Lost on every detach, whichever way that goes:** Froala's undo/redo stack,
-  caret and selection, scroll position. Nothing preserves them today and no
-  requirement asks for it — worth naming so it is a decision, not a surprise.

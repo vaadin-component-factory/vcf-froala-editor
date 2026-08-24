@@ -120,9 +120,13 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void valueChangeTimeout_rejectsNegativeValues() {
+    void valueChangeTimeout_rejectsAnythingButPositiveValues() {
         FroalaEditor editor = _get(FroalaEditor.class);
 
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(-1));
+
+        // zero used to pass here and then throw in the client's own setter, so the failure surfaced in the browser
+        // instead of at the call site
+        assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(0));
     }
 }

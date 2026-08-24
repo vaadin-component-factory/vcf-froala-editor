@@ -177,7 +177,18 @@ Each has a `TODO Phase 2` at its place in the connector:
       positioning inside a dialog. Froala positions DOM-relative through
       `Position`/`Popups`, so verify there is a problem at all before implementing;
       delete the block if the toolbar behaves inside `vaadin-dialog`.
-- [ ] **Decide whether to destroy Froala on detach at all.** The connector currently
+- [x] **Decided 2026-08-24: keep destroying Froala on detach.** The alternative
+      cannot pay off here. A Flow detach discards the HTML element, so there is no
+      element left for a surviving Froala instance to live on — and re-parenting a
+      component into a `Dialog` or `Popover`, which the demo's `OverlayView` does, is
+      exactly such a detach plus attach. Keeping the instance alive would only help if
+      the *same* element were disconnected and reconnected, which is a client-side DOM
+      move. The cost is real and accepted: every re-parent rebuilds the editor and
+      loses Froala's undo stack, caret and scroll position; the value survives through
+      the presentation push on detach. Reopen only if a concrete case appears where
+      that rebuild is visible enough to matter. Original reasoning below.
+
+      **Decide whether to destroy Froala on detach at all.** The connector currently
       calls `editor.destroy()` in `disconnectedCallback`. The maintainer's own
       `stefanuebe/vaadin-fullcalendar` (`v6_master`, `full-calendar.ts`) does the
       opposite on purpose: `disconnectedCallback` only releases observers and
@@ -357,13 +368,12 @@ decision, not a migration project.
       locales, 37 CSS files. The option surface is still moving between minors —
       treat the count as a snapshot, and re-measure once more before Phase 2 freezes
       the typed API.
-- [ ] Confirm with NST that 5.x is acceptable, or budget the +2–4 d to also support
-      4.6.2. The customer request names 4.6.2 explicitly, so this is *our* decision
-      until they sign off on it.
-- [ ] Keep the connector's Froala-specific surface behind one TS file so a major
-      swap stays localized
-- [ ] If both majors must be supported: one artifact with a version switch, or
-      separate branches — decide before Phase 2 hardens the option API
+- [x] **4.6.2 is not a target.** The customer request names it, but the decision is
+      taken and not up for re-litigation: this add-on builds against 5.4.0 only.
+      Supporting both majors would mean a version switch in the connector or separate
+      branches; neither is planned.
+- [ ] Keep the connector's Froala-specific surface behind one file so a major swap
+      stays localized
 
 ---
 
@@ -379,82 +389,6 @@ decision, not a migration project.
 
 ---
 
-## Effort estimate (2026-08-13)
-
-Answer to the customer's "how much effort is this?". Grounded in the measured
-surface in `docs/customer-request.md` — 322 options, 49 plugins, 39 locales, as
-measured against froala-editor 5.4.0 — not in a gut feeling. Person-days = one experienced Vaadin/Flow developer who has done
-a JS-component integration before, 8 h days, including tests and demo.
-
-The two columns are estimated by **different methods on purpose** — dividing the
-human number by a productivity factor produces a wrong answer, because the two
-have almost disjoint bottlenecks.
-
-| Phase | Scope driver | Human dev | Claude + copilot |
-|---|---|---|---|
-| 1 Core wrapper | connector, value round-trip, field/Binder semantics, license key, detach | 8–12 d | 1–2 d |
-| 1b Delta transfer | diff-match-patch both halves + resync-on-drift; ported from `hugerte-for-flow` (Apache-2.0) instead of built fresh | 1–2 d *(3–5 d without the prior art)* | 0.25–0.5 d |
-| 2 Config API | 322 options (~130 typed + escape hatch), toolbar model, 4 breakpoints, 3 modes | 15–20 d | 1.5–2.5 d |
-| 3 Spring + upload | `-spring` module, image/file upload endpoint, image manager, limits | 10–14 d | 1.5–2.5 d |
-| 4a Formatting & media | ~15 plugins, config + demo + e2e each | 8–10 d | 0.5–1 d |
-| 4b Productivity | Word paste/import/export, markdown, find&replace, counters, code view/snippet, templates | 8–12 d | 1–1.5 d |
-| 4c Track changes | own accept/reject API, server-side representation | 5–8 d | 1–2 d |
-| 4d Mentions | no in-document mention plugin — custom trigger + async server data feed. **Unconfirmed:** the `collaborative` plugin ships @mention *in comments* (`mentionableUsers`); if that is what NST wants, this row shrinks — but it drags in the whole Yjs collaboration stack | 6–10 d | 1–2 d |
-| 4e Localization / RTL | 39 language files, lazy load, `I18NProvider` wiring, RTL | 4–6 d | 0.5–1 d |
-| 4f Accessibility | keyboard, ARIA, focus, screen-reader pass | 4–6 d | 1–2 d |
-| 4g Sanitization | server-side policy (jsoup/OWASP), allow-list API, XSS corpus | 5–7 d | 0.5–1 d |
-| 6 Release | README, compat table, licensing statement, Directory + Central, CI | 5–7 d | 0.5–1 d |
-| Cross-cutting | review cycles, rework, flaky e2e, customer feedback | 14–21 d | 1.5–3 d |
-| **Total (full scope)** | | **93–135 d ≈ 4.5–6.5 person-months** | **12–22 d ≈ 3–4 weeks** |
-
-Phase 5 is 0 d if 5.x is the target from day 1; +2–4 d to also support 4.6.2.
-
-**MVP cut — the number worth negotiating for.** Phases 1 + 3 + 4a + 4g, plus
-Phase 2 reduced to toolbar/modes/escape-hatch instead of ~130 typed setters, plus
-a lean release: **32–45 d human / 4–7 d with Claude**. Covers everyday editing,
-images, upload, a safe HTML boundary. Track changes, mentions, markdown, full
-localization and the long option tail land later as increments.
-
-**How the Claude column is derived — and what actually limits it.** Not writing
-speed; code volume is effectively free. The real costs, in order:
-
-0. **Agent review runs first** — per-phase code-quality/spec review and a final
-   holistic pass, per the subagent table in `CLAUDE.md`. Defect *finding* happens
-   before anything reaches the copilot: style, missing tests, cross-module
-   violations, naming drift across 130 setters, obvious upload/injection
-   mistakes. Its cost trades against rework, so the Claude column is unchanged by
-   it. Its blind spots are real, though: product taste, accessibility with actual
-   assistive technology, NST-specific context, and the correlated blindness of
-   reviewing code from the same model that wrote it (mitigated by independent
-   reviewer agents, not eliminated).
-1. **The copilot's review bandwidth — the binding constraint, but only on the
-   parts that carry judgement.** With agent review upstream this is a *second*
-   instance, not a first: budget **~12–20 h of the copilot's own time** for the
-   full scope, ~6–10 h for the MVP. It concentrates on: the API shape
-   (naming, what is typed vs. escape hatch — this is a published add-on, the
-   signatures are semver-permanent), the upload endpoint, the sanitization
-   allow-list, and actually *using* the demo by hand.
-   Explicitly **not** on generated setter bodies. For generated code the review
-   unit is the **signature list plus an exception list** ("not generated, and
-   why / hand-typed / security-relevant") — one page, 30–60 min, not 130 method
-   bodies. Correctness of the bodies is covered mechanically by a generated
-   round-trip test over every setter, which is strictly better than reading them.
-2. **Browser feedback cycles.** `mvn clean verify -Pproduction` runs in ~55 s on
-   this project; a stubborn JS↔Flow bug costs 10–40 cycles. Hours, not days — but
-   it is the one place where the work is genuinely serial.
-3. **Things no amount of generation touches:** the Froala license key (without it
-   e2e runs against a watermarked, partly gated editor), an accessibility pass
-   with real assistive technology, Vaadin Directory / Maven Central / legal steps,
-   and every decision that has to come back from NST. These are calendar time.
-
-Deliberately *not* in the Claude column: the 322 typed setters, the toolbar enum
-and the locale enum are generated from Froala's own `index.d.ts` and file listing.
-That is a script plus one review pass — it does not scale with the option count,
-which is exactly why the two columns diverge most in Phase 2.
-
-Estimate history: a first version of this table put the Claude column at 40–61 d.
-That number was human-days ÷ ~3, not a bottom-up estimate, and was corrected on
-2026-08-13.
 
 ---
 
@@ -506,33 +440,44 @@ every minute* rather than failing once, which is why the symptom reads as a hang
 
 ## Open questions
 
-- **Froala 4.6.2 or 5.x?** Answered on our side — the connector targets **5.4.0**
-  (Phase 5). Still needs NST's sign-off: are they pinned to 4.6.2, and if so, do
-  they want one artifact supporting both majors?
-- **Which "mentions" does NST mean?** In-document `@name` autocomplete (no Froala
-  plugin — custom trigger plus server data feed), or @mention inside review
-  comments (ships in the `collaborative` plugin, but only together with Yjs,
-  `docId`, `commentsUrl`, `suggestionsUrl` and a role model)? The second is a much
-  bigger surface than "mentions" suggests, and it changes both the estimate and the
-  architecture. Ask before Phase 4d is scoped.
-- **Are document templates in scope?** Froala has no template plugin, so this is
-  ours to build. Cheap if "template" means "insert a stored HTML snippet", not
-  cheap if it means a variable/placeholder system.
-- Does NST expect "full/maximum feature set" literally, or is the MVP cut above
-  acceptable for the first release? The difference is ~3 months of work.
-- Which Vaadin version does the NST application actually run? This project targets
-  24 (the platform floor) — if NST is on 25, revisit Vaadin/Karibu/DramaFinder and
-  the Java floor together.
-- Does NST need track changes and mentions on day one, or are they phase 4 tail?
-  They are the two most expensive items in the list.
-- Who provides the Froala license key for CI? The e2e tests will show Froala's
-  unlicensed watermark until one is available.
-- **The customer-facing estimate artifact is stale.** Published at
-  `claude.ai/code/artifact/0c302f5d-daf6-47f6-8fcd-473e2177698a` on 2026-08-13, it
-  still says 302 options / Froala 5.3.1 and carries the pre-correction "mentions is
-  not a Froala plugin" wording. The source file is still in an old session
-  scratchpad, so an update is cheap — but it goes out to the customer, so it needs
-  an explicit go-ahead. Offered, not yet answered.
+Each of these needs an answer from NST, not from us. They are written out in full on
+purpose: the shorthand ("which mentions?") is meaningless to anyone who has not read
+Froala's plugin list.
+
+- **What does NST mean by "mentions"?** Their request lists it as a wanted feature,
+  and Froala offers two unrelated things under that word.
+  1. *In-document mentions* — typing `@` while writing opens a name picker and
+     inserts a reference into the document. **Froala has no plugin for this.** It
+     would be ours to build: trigger detection in the editor, a dropdown, and a
+     server-side feed of candidate users.
+  2. *Mentions inside review comments* — `@name` in a comment thread on the
+     document. This one ships, in Froala's `collaborative` plugin
+     (`mentionableUsers`), but that plugin is a collaboration stack: it pulls in
+     Yjs, a `docId`, `commentsUrl` and `suggestionsUrl` endpoints, and a role model.
+  The two differ by roughly an order of magnitude in work, and the second one
+  changes the architecture. Ask before Phase 4 is scoped.
+- **What does NST mean by "templates"?** Also on their list. **Froala has no
+  document-template feature** — the `RegisterTemplate` / `ICON_TEMPLATES` /
+  `POPUP_TEMPLATES` names in its API are markup for Froala's own icons and popups,
+  not prepared documents. So this is ours to build either way, and the cost depends
+  entirely on the reading:
+  - "insert a stored HTML snippet at the caret" — small, a list plus an insert call.
+  - "a document skeleton with placeholders that get filled in" — a variable
+    substitution system, much larger.
+- **Does NST expect the full feature set literally, or is a first cut acceptable?**
+  Their wording is "maximum feature set". Everything in Phase 4 versus a first
+  release covering formatting, media, upload and localization is months apart.
+- **Which Vaadin version does the NST application run?** This project targets 24,
+  the platform floor. If NST is on 25, the Vaadin, Karibu and Java versions have to
+  move together — see the coupling rules in `CLAUDE.md`.
+- **Are track changes and mentions needed on day one?** They are the two most
+  expensive items in Phase 4.
+- **Who provides a Froala license key for CI?** Froala is commercial software and
+  the add-on ships no key. Without one, the editor renders with Froala's unlicensed
+  watermark — including in our e2e runs, which drive the real editor in a browser.
+  It does not block the assertions we have, but the tests are running an unlicensed
+  build, and nothing that depends on the watermark being absent can be tested.
+  A key would go into CI as a secret and be handed to `setLicenseKey`.
 - Is `eclipse/license-header.txt` (Apache-2.0, "Copyright $YEAR Vaadin Ltd.") the
   wording Component Factory actually uses? It was authored during scaffolding to
   replace the template's `<YOUR NAME OR COMPANY>` placeholder. If it needs to

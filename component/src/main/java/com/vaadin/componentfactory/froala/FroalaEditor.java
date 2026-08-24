@@ -239,15 +239,17 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /// * TIMEOUT: the time, that is waited after the last change before the value is synced.
     /// * INTERVAL: the time between two value syncs. Also used as initial time before the first call.
     ///
-    /// Default is 2000.
+    /// Default is 2000. Must be greater than zero -- neither mode has a meaningful behaviour at zero, and the client
+    /// rejects it as well.
     ///
     /// Please note, that the client also throttles the amount of events, that might be fired to prevent the
     /// events from overhelming the server.
     ///
-    /// @param timeoutInMilliseconds milliseconds to be used by the value change modes
+    /// @param timeoutInMilliseconds milliseconds to be used by the value change modes, greater than zero
+    /// @throws IllegalArgumentException if the given timeout is zero or negative
     public void setValueChangeTimeout(int timeoutInMilliseconds) {
-        if (timeoutInMilliseconds < 0) {
-            throw new IllegalArgumentException("Timeout must be zero or greater!");
+        if (timeoutInMilliseconds <= 0) {
+            throw new IllegalArgumentException("valueChangeTimeout must be greater than 0");
         }
 
         getElement().setProperty("valueChangeTimeout", timeoutInMilliseconds);
