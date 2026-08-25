@@ -175,10 +175,9 @@ Each has a `TODO Phase 2` at its place in the connector:
 - [ ] `replaceSelectionContent` — the Froala equivalent is
       **`editor.html.insert(html, clean, doSplit)`** (`index.d.ts:2256`). Deferred
       because `clean`/`doSplit` are configuration decisions.
-- [ ] `isInDialog()` (commented out) — an iframe-era TinyMCE workaround for toolbar
-      positioning inside a dialog. Froala positions DOM-relative through
-      `Position`/`Popups`, so verify there is a problem at all before implementing;
-      delete the block if the toolbar behaves inside `vaadin-dialog`.
+- [x] `isInDialog()` — **deleted 2026-08-24** (maintainer's finding 8). An iframe-era
+      TinyMCE workaround for toolbar positioning; Froala positions DOM-relative through
+      its `Position`/`Popups` modules and no problem is observable under `/overlay`.
 - [x] **Decided 2026-08-24: keep destroying Froala on detach.** Two independent
       reasons, both checked rather than assumed.
 
