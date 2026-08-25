@@ -37,7 +37,10 @@ names are ours. The name clash is accepted and documented in the javadoc.
   two ticks, with the editor never losing focus and the user never pausing.
 - **VCM-5** Switching *away* from `INTERVAL` flushes the pending value first, so a mode
   change never swallows an edit.
-  *Verified:* unverified.
+  *Verified:* **parked 2026-08-25 — not relevant for now.** The code is in
+  `stopValueChangeInterval()`; a mode switch on a live editor is a rare thing for an
+  application to do, and the blur flush covers the ordinary way an edit leaves. Not a
+  gap to chase, and not to be raised again unless a requirement asks for it.
 - **VCM-6** Setting the mode to `null` server-side resets it to `ON_CHANGE` rather
   than throwing.
   *Verified:* `FroalaEditorKaribuTest.valueChangeMode_roundTripsAndDefaults`.
@@ -143,7 +146,6 @@ feels like.
 
 ## Known gaps
 
-- VCM-5, the flush on a mode switch, is still without a test.
 - Froala's `save` plugin listens to `contentChanged` too and schedules a POST to
   `saveURL` 10 s later, which then fails on the missing URL. Nobody listens to that
   failure, so it is dead work rather than a defect — `saveInterval: 0` turns it off once

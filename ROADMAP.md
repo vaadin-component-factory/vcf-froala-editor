@@ -359,10 +359,12 @@ left before the phase can be called done is the list below, **in this order** (a
    build time (API-11) — that last one pins a documented limitation, not a behaviour we
    would want.
 
-**What is left after this queue** — two requirements, both known gaps rather than
-oversights: VCM-5 (a mode switch flushes the pending value) and LC-10 (the
-`connectedCallback` branch for a purely client-side DOM move, which no Vaadin 24
-component has been shown to trigger).
+**Phase 1 is closed with this queue.** Two requirements stay without a test and are
+**parked as not relevant** — settled, not open work, and not to be raised again unless
+something asks for them: VCM-5 (a mode switch flushes the pending value — rare on a live
+editor, and the blur flush covers the ordinary exit) and LC-10 (the `connectedCallback`
+branch for a purely client-side DOM move — no Vaadin 24 component has been shown to do
+one, so there is nothing to reproduce).
 
 ### Acceptance — with the maintainer (2026-08-25) — passed
 

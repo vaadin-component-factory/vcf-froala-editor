@@ -84,9 +84,10 @@ guarantees here are mostly about *not* breaking.
 - **LC-10** `connectedCallback`'s `hasUpdated` branch therefore covers a different
   case: a **client-side DOM move** of an element that has already rendered, where Lit
   does not run `firstUpdated` again and nothing else would rebuild the editor.
-  *Verified:* **unverified** — whether any Vaadin 24 component moves a field's
-  element that way has not been established. The branch is kept because it is two
-  lines and the failure mode without it is a permanently empty editor.
+  *Verified:* **parked 2026-08-25 — not relevant for now.** No Vaadin 24 component has
+  been shown to move a field's element that way, so there is nothing to reproduce. The
+  branch stays: two lines, and without it the failure mode is a permanently empty
+  editor. Revisit only if such a move actually turns up.
 
 ## Decided
 
