@@ -333,8 +333,13 @@ left before the phase can be called done is the list below, **in this order** (a
      through a server round trip in real time, so looking right after a time jump only
      proves it is early. The tests count `_value-delta` dispatches on the client, which
      happen synchronously inside the timer callback.
-2. **VT-10 — a resync clears the pending throttle**, so the flushed full value is not
-   followed by a stale delta.
+2. ~~**VT-10 — a resync clears the pending throttle.**~~ **Done (2026-08-25).** Took
+   three attempts to get a test with teeth, and the two failures are the lesson: the
+   real server path never reaches the client while a sync is still pending, because the
+   round trip is slower than the 50 ms window, and the pending throttle firing a moment
+   later repairs the value on its own — so every assertion on the viewer passed with the
+   bug in place. It is asserted on the client's own events now, with `resyncValue()`
+   called at the moment the state exists.
 3. **LC-4 / LC-5 — `_initEditor`'s `isConnected` guard and its idempotence.** LC-4
    needs a detach inside the first update cycle, LC-5 needs to observe that no second
    Froala instance is built.

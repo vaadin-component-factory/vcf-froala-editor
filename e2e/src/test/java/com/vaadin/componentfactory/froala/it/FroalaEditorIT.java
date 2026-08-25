@@ -323,6 +323,51 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void resyncWhileASyncIsPending_carriesWhatTheEditorHoldsNow() {
+        editableArea().click();
+        editableArea().type("base");
+        page.locator("#viewer").click();
+        assertThat(page.locator("#viewer")).containsText("base");
+
+        // Synthesized down to the resync call, because the state only exists for 50 ms and a server round trip is
+        // slower than that: drift the client so its next delta would be rejected, edit twice so the second sync is
+        // still sitting in the throttle, and then make the call the server would make. The resync has to carry that
+        // second edit -- it is the only thing left that can deliver it, because it also clears the throttle.
+        //
+        // Asserted on the events, not on the viewer: the viewer would be rescued by the pending throttle firing a
+        // moment later and would prove nothing. The server's own half of this is driftedClient_recoversThroughResync.
+        page.evaluate("""
+                () => {
+                    const el = document.querySelector('#editor');
+                    window.__resynced = null;
+                    el.addEventListener('_value-resync',
+                        (e) => window.__resynced ??= e.detail.value);
+
+                    el._lastSyncedValue = '<p>drifted</p>';
+                    el.editor.html.set('<p>base plus one</p>');
+                    el.onValueChangeThrottled();
+
+                    el.editor.html.set('<p>base plus one plus two</p>');
+                    el.onValueChangeThrottled();
+
+                    window.__deltasAfterResync = 0;
+                    el.resyncValue();
+                    el.addEventListener('_value-delta', () => window.__deltasAfterResync++);
+
+                    // a server-side setValue lands here, and html.set fires no contentChanged of its own, so a
+                    // throttle the resync failed to clear is the only thing that could still send anything
+                    el.editor.html.set('<p>set by the server</p>');
+                }
+                """);
+
+        assertEquals("<p>base plus one plus two</p>", page.evaluate("() => window.__resynced"));
+
+        // well past the 50 ms window
+        page.waitForTimeout(300);
+        assertEquals(0, ((Number) page.evaluate("() => window.__deltasAfterResync")).intValue());
+    }
+
+    @Test
     void readOnly_stopsEditing() {
         page.locator("#readonly-toggle input").check();
 

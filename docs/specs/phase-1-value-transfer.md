@@ -69,9 +69,18 @@ a lost update, a programmatic `setValue` racing a keystroke, a bug.
   server's stale value would discard their work.
   *Verified:* `FroalaEditorIT.driftedClient_recoversThroughResync`, which corrupts
   `_lastSyncedValue` in the browser and asserts recovery.
-- **VT-10** A resync clears the pending throttle timer, so the flushed full value is
-  not followed by a stale delta.
-  *Verified:* unverified.
+- **VT-10** A resync **clears the pending throttle timer**, so the flushed full value
+  is not followed by a delta nobody asked for. It also sends what the editor holds
+  *now*, not the last synced value — a sync still sitting in the throttle has no other
+  way to arrive, because the resync just cancelled it.
+  *Verified:* `FroalaEditorIT.resyncWhileASyncIsPending_carriesWhatTheEditorHoldsNow`,
+  which synthesizes the whole state down to the `resyncValue()` call: the window is
+  50 ms wide and a server round trip is slower than that, so the real path never reaches
+  the client while a sync is still pending. Both halves fail on their own — dropping the
+  `html.get()` resyncs the drifted base, and dropping the `clearTimeout` lets the orphan
+  timer answer a following server-side `setValue` with a delta describing the server's
+  own push. That last one is only visible because `html.set` fires no `contentChanged`
+  of its own (VCM-16), so nothing else could have sent it.
 - **VT-11** `setValue()` reaches the editor **even when it repeats a value the server
   set before**. That single case cannot travel through the property: VT-6 leaves the
   property on the value the server set last, Flow drops a write whose value the
