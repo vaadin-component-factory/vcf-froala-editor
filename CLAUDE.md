@@ -119,6 +119,21 @@ against fixture views the tests own, under `e2e/src/test/java/.../it/views/`, br
 tests build the component they assert on. The demo exists to show the add-on off and its
 author has to stay free to change it — a test that reads it breaks on a label change.
 
+**Three things about driving Vaadin + Froala from Playwright**, each learned the
+expensive way — every one of them let a test pass with the bug deliberately reinstated:
+
+- **`page.clock().runFor()`, never `fastForward()`.** `fastForward` fires each due timer
+  at most once and never the ones scheduled while it jumps. Froala's own typing debounce
+  scheduling our sync is exactly such a chain, so the jump silently breaks it.
+- **`locator.click()` returns when the click is dispatched, not when the server has
+  answered.** Reading client state right after it is a race. Give the fixture control a
+  visible effect to wait for — the buttons that change something invisible disable
+  themselves, and the test asserts `isDisabled()` first.
+- **"Nothing has been sent yet" cannot be asserted on the viewer.** A value reaches it
+  through a round trip in real time, so an empty viewer only means *not yet*. Count the
+  client's own `_value-delta` dispatches instead; they happen synchronously in the timer
+  callback.
+
 Mirror existing tests when adding new ones.
 
 When a module's Java or frontend changes, rebuild that module before running the
