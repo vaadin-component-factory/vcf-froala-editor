@@ -312,9 +312,48 @@ Still open from the reviews, deliberately:
       longer in the tree.
 - [x] `focus()` null check (`this.editor?.events.focus()`)
 
-The two remaining boxes above are the open test debt of this phase. `TIMEOUT` /
-`INTERVAL` is the one worth doing next, and `page.clock()` is the reason it has not
-been.
+### Test debt — the work queue for phase 1
+
+Everything phase 1 promises is built and the maintainer's findings are worked; what is
+left before the phase can be called done is the list below, **in this order** (agreed
+2026-08-25). Each item is a spec requirement that currently says *unverified*.
+
+1. **VCM-3 / VCM-4 — the timing of `TIMEOUT` and `INTERVAL`.** The biggest item and the
+   reason it kept being deferred: it needs Playwright's `page.clock()` so the test does
+   not wait on the wall clock. `FroalaEditorIT.typingThenDetachingImmediately_*` drives
+   both modes already, but asserts the detach behaviour, not the debounce or the tick.
+2. **VT-10 — a resync clears the pending throttle**, so the flushed full value is not
+   followed by a stale delta.
+3. **LC-4 / LC-5 — `_initEditor`'s `isConnected` guard and its idempotence.** LC-4
+   needs a detach inside the first update cycle, LC-5 needs to observe that no second
+   Froala instance is built.
+4. **No interval leaks across detach.** The clean-up is in place and the value contract
+   is covered, but the leak itself is hard to see from outside: the events would come
+   from an element no longer in the tree.
+5. **After `setValue(X)` no delta arrives that nobody typed.** Froala normalizes HTML,
+   so `html.set` can produce a `contentChanged` whose delta is Froala's own rewrite.
+   Testing *our* channel, not Froala's HTML handling — that distinction is the
+   maintainer's and is why this replaced a manual "look at it" check.
+6. **The two unverified API points**, including that nothing binds the editor to a bean
+   through `Binder`.
+
+### Acceptance — with the maintainer (2026-08-25)
+
+Being walked by the maintainer now; results come back in chat. Nothing else blocks the
+phase.
+
+- **A1 / A2** — the only places yesterday's blur flush could have broken something:
+  `ON_CHANGE` must not show a visible double sync on blur, `ON_BLUR` must behave
+  exactly as before.
+- **B1 — `/overlay`, dialog and popover.** The real risk: a Flow detach and a
+  client-side DOM move mixed, and no test covers it.
+- **B2** — no interval left running after a detach in `INTERVAL` mode.
+- **B3** — no typing latency in a multi-page document.
+- **B4** — layout: heights, toolbar wrapping, viewer frame.
+
+Note that the demo now runs in dark mode (`@Theme(variant = "dark")`), which makes the
+phase 4 Lumo item plainly visible: Froala's own chrome stays light. That is known and
+not a phase 1 defect.
 
 ### The maintainer's findings (2026-08-24) — worked
 
