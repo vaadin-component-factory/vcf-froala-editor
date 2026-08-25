@@ -417,8 +417,8 @@ public class LongHtmlView extends FroalaViewBase {
 
     public LongHtmlView() {
         getEditor().setValue(HTML);
-        getEditor().setSizeFull();
-
+        getEditor().setMaxHeight("50%");
+        getViewer().setMaxHeight("50%");
     }
 
 }
