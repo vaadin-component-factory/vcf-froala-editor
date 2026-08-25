@@ -60,7 +60,13 @@ names are ours. The name clash is accepted and documented in the javadoc.
 - **VCM-10** What a blur cannot save is a detach with no blur before it — another view
   removing the editor, a timer, a closing browser. By the time `disconnectedCallback`
   runs, the element is out of the DOM and its Flow node is detached server-side, so
-  nothing dispatched there would arrive. **Accepted limitation.**
+  nothing dispatched there would arrive.
+
+  This is out of reach rather than unfinished, and it matters less than it reads: an
+  editor's content is working data until the application saves it, so a reload or a
+  closed tab is the application's problem to cover and it has better means than a
+  keystroke sync. What is left after that is a browser crash, which takes more with it
+  than this ever could. No requirement asks for more.
 
 ## Throttle
 
