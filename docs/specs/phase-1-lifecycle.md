@@ -61,9 +61,12 @@ guarantees here are mostly about *not* breaking.
   self-cleans when the element is simply removed — interval, timeout and throttle.
   Every one of them outlives the element otherwise: in `INTERVAL` mode the interval
   keeps firing against a destroyed editor, and each re-attach starts another on top.
-  *Verified:* the clean-up is verified only indirectly, through
-  `detachAndReattach_keepsTheValueAndKeepsWorking`. A leaked interval is hard to
-  observe from outside, because its events come from an element no longer in the tree.
+  *Verified:* `FroalaEditorIT.detachingInIntervalMode_leavesNoTimerBehind` for the
+  interval, plus `detachAndReattach_keepsTheValueAndKeepsWorking` for the rest. The
+  leak is invisible on its own — a tick on a detached element finds no editor, computes
+  an empty delta and dispatches nothing — so the test keeps a reference to the element
+  and gives the timer something to report before running the clock forward. Without the
+  `clearInterval` it reports.
 - **LC-7** `super.disconnectedCallback()` runs **before** the teardown, matching
   `FocusMixin`, `ControllerMixin` and Vaadin's `ResizeMixin`.
   *Verified:* by inspection.

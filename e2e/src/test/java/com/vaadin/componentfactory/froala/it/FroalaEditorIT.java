@@ -229,6 +229,37 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void froalasFocusAndBlur_reachFlowSideListeners() {
+        // Froala's events fire on its own editing area, which Flow knows nothing about. The connector re-dispatches
+        // them from the host element, and this is the only place that can prove they arrive: the log is written by
+        // server-side listeners.
+        editableArea().click();
+        assertThat(page.locator("#focus-log")).containsText("focus");
+
+        page.locator("#viewer").click();
+        assertThat(page.locator("#focus-log")).containsText("blur");
+    }
+
+    @Test
+    void licenseKey_isReadOnceWhenTheEditorIsBuilt() {
+        page.locator("#editor .fr-element").waitFor();
+        assertEquals(FroalaTestView.LICENSE_KEY, licenseKeyInFroala());
+
+        // Pins the documented limitation of API-11 rather than a behaviour we would want: Froala reads opts.key at
+        // init and never again, so a key set on a running editor sits on the element until the next build.
+        page.locator("#other-license-key").click();
+        assertThat(page.locator("#other-license-key")).isDisabled();
+        assertEquals(FroalaTestView.LICENSE_KEY, licenseKeyInFroala());
+
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+        page.locator("#attach-toggle").click();
+        page.locator("#editor .fr-element").waitFor();
+
+        assertEquals(FroalaTestView.OTHER_LICENSE_KEY, licenseKeyInFroala());
+    }
+
+    @Test
     void focusButton_movesFocusIntoTheEditor() {
         page.locator("#focus-button").click();
 
@@ -368,6 +399,63 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void setValue_producesNoDeltaNobodyTyped() {
+        editableArea().click();
+        editableArea().type("typed by the user");
+
+        // blur first, so the click on the button below cannot flush anything (VCM-9) and the count stays clean
+        page.locator("#viewer").click();
+        assertThat(page.locator("#viewer")).containsText("typed by the user");
+
+        // Deliberately messy markup, because that is where the risk is: Froala rewrites what it is given, so a value
+        // reported back after a server push would differ from what the server sent and arrive as a delta describing a
+        // change nobody made. Setting already-normalized HTML would produce an empty delta and prove nothing.
+        recordDeltaDispatches();
+        page.locator("#messy-value").click();
+        assertThat(editableArea()).containsText(FroalaTestView.MESSY_TEXT);
+
+        // It stays quiet because html.set fires no contentChanged of its own (VCM-16); this asserts nothing else does.
+        page.waitForTimeout(300);
+        assertEquals(0, dispatchedDeltas(), deltaLog());
+    }
+
+    @Test
+    void detachingInIntervalMode_leavesNoTimerBehind() {
+        withFakeClock();
+        selectValueChangeMode("INTERVAL");
+
+        editableArea().click();
+        editableArea().type("typed before the detach");
+
+        // Keep a reference and a counter: after the detach the element is out of the DOM, but a leaked interval would
+        // still be firing against this object.
+        page.evaluate("""
+                () => {
+                    const el = document.querySelector('#editor');
+                    window.__detached = el;
+                    window.__ticks = 0;
+                    el.addEventListener('_value-delta', () => window.__ticks++);
+                }
+                """);
+
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+
+        // The count starts here, because the click blurs the editor and that flushes one delta on the way out
+        // (VCM-9). A tick on a detached element would find no editor and compute an empty delta, which dispatches
+        // nothing -- so the leak would be invisible. This gives it something to report: anything from here is a leak.
+        page.evaluate("""
+                () => {
+                    window.__ticks = 0;
+                    window.__detached.editor = {html: {get: () => '<p>reported by a leaked interval</p>'}};
+                }
+                """);
+
+        page.clock().runFor(10_000);
+        assertEquals(0, ((Number) page.evaluate("() => window.__ticks")).intValue());
+    }
+
+    @Test
     void initEditorOnAHostThatIsAlreadyDetached_buildsNothing() {
         page.locator("#editor .fr-element").waitFor();
 
@@ -468,6 +556,10 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                                 window.__log.push(Date.now() - window.__t0 + ':' + el.valueChangeMode + ':' + e.detail.delta.length); });
                         }
                         """);
+    }
+
+    private String licenseKeyInFroala() {
+        return String.valueOf(page.evaluate("() => document.querySelector('#editor').editor.opts.key"));
     }
 
     private int typingTimer() {

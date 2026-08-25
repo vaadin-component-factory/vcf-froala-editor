@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.binder.Binder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -173,6 +174,29 @@ class FroalaEditorKaribuTest {
         assertFalse(hasPendingValuePush());
     }
 
+    @Test
+    void binder_readsAndWritesTheEditorLikeAnyOtherField() {
+        FroalaEditor editor = attachedEditor();
+
+        Binder<Note> binder = new Binder<>();
+        binder.forField(editor).asRequired("a note needs a body").bind(Note::getBody, Note::setBody);
+
+        Note note = new Note();
+        note.setBody("<p>from the bean</p>");
+        binder.readBean(note);
+        assertEquals("<p>from the bean</p>", editor.getValue());
+
+        editor.setValue("<p>edited in the editor</p>");
+        assertTrue(binder.writeBeanIfValid(note));
+        assertEquals("<p>edited in the editor</p>", note.getBody());
+
+        // asRequired works off the field's empty value, which is the empty string for this one -- that is what makes
+        // AbstractSinglePropertyField the right base and is the half of API-1 a plain setValue test cannot show
+        editor.setValue("");
+        assertFalse(binder.writeBeanIfValid(note));
+        assertEquals("<p>edited in the editor</p>", note.getBody());
+    }
+
     private FroalaEditor attachedEditor() {
         FroalaEditor editor = new FroalaEditor();
         layout.add(editor);
@@ -202,6 +226,20 @@ class FroalaEditorKaribuTest {
     /**
      * Exposes the client-originated model update the delta listener performs, which no browserless test can trigger.
      */
+    /** Minimal bean for the Binder test -- a field this add-on would realistically be bound to. */
+    private static class Note {
+
+        private String body;
+
+        String getBody() {
+            return body;
+        }
+
+        void setBody(String body) {
+            this.body = body;
+        }
+    }
+
     private static class ProbeEditor extends FroalaEditor {
         void simulateClientEdit(String value) {
             setModelValue(value, true);

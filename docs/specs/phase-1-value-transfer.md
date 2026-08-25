@@ -33,8 +33,11 @@ half is meaningful alone. Ported from `parttio/hugerte-for-flow` (Apache-2.0).
   the element's `value` property; the connector's setter replaces the editor content
   through `editor.html.set()`. One case cannot use the property and writes it from a JS
   call instead — see VT-11.
-  *Verified:* `FroalaEditorKaribuTest.setValue_reachesTheClientProperty` (property
-  only — Karibu runs no JavaScript, so `html.set` itself is unverified).
+  *Verified:* `FroalaEditorKaribuTest.setValue_reachesTheClientProperty` for the
+  property, `FroalaEditorIT.setValue_producesNoDeltaNobodyTyped` for `html.set` — it
+  pushes deliberately messy markup, asserts the text arrives, and asserts that Froala's
+  rewrite of it does **not** come back as a delta describing a change nobody made.
+  `html.set` fires no `contentChanged` of its own (VCM-16), and nothing else may either.
 - **VT-6** A client-originated change updates the **model** value only, never the
   presentation value. Without this, every keystroke would echo the full document
   back to the browser and defeat VT-1.

@@ -11,8 +11,10 @@ specified here.
   `Binder` like any other Vaadin field, and `isEmpty()` / required validation behave
   normally.
   *Verified:* `FroalaEditorKaribuTest.setValue_reachesTheClientProperty`,
-  `valueChangeListener_firesOnServerSideChange`. Binder integration itself is
-  unverified — no test binds the editor to a bean.
+  `valueChangeListener_firesOnServerSideChange`, and
+  `binder_readsAndWritesTheEditorLikeAnyOtherField`, which binds it to a bean both ways
+  and lets `asRequired` fire on the empty value — the half a plain `setValue` test
+  cannot show, and the reason the empty value is the empty string rather than null.
 - **API-2** The field parts a Vaadin field is expected to have — label, helper text,
   error message, required indicator — come from Vaadin's own `FieldMixin` on the
   client element and are rendered by the connector's template, so they look and
@@ -43,8 +45,11 @@ specified here.
   *Verified:* `FroalaEditorIT.focusButton_movesFocusIntoTheEditor`.
 - **API-8** The `focused` attribute is toggled by Vaadin's `FocusMixin`, and Froala's
   `focus` / `blur` events are re-dispatched from the host so Flow-side focus
-  listeners work.
-  *Verified:* unverified as a direct assertion.
+  listeners work. They have to be: Froala fires them on its own editing area, which
+  Flow knows nothing about.
+  *Verified:* `FroalaEditorIT.froalasFocusAndBlur_reachFlowSideListeners`, against a
+  log written by server-side listeners. Each half fails on its own when the matching
+  `dispatchEvent` is removed.
 
 ## License key
 
@@ -66,7 +71,11 @@ locally; that is settled, not a gap.
 - **API-11** The key is read once, when the client-side editor initializes. Setting
   it on an attached instance has no effect until the next detach/attach. Documented
   on the setter.
-  *Verified:* unverified.
+  *Verified:* `FroalaEditorIT.licenseKey_isReadOnceWhenTheEditorIsBuilt` — a second key
+  set on the running editor does not reach `opts.key`, and does reach it after a
+  detach and re-attach. This pins a documented limitation rather than a behaviour we
+  would want, which is the point: it is Froala's, and it is what the setter's javadoc
+  promises.
 - **API-12** ~~`setDefaultLicenseKey(String)` applies a key to every instance created
   afterwards.~~ **Removed 2026-08-24.** One key per instance, set by the application,
   is what other add-ons do; global mutable static state is not this add-on's scope.

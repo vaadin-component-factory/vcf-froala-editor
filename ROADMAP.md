@@ -346,15 +346,24 @@ left before the phase can be called done is the list below, **in this order** (a
    attached and removed inside one task, but no editor is built through that path even
    with the guard removed — something upstream already covers the Lit route, so the
    guard is the second line of defence and is asserted on the call itself.
-4. **No interval leaks across detach.** The clean-up is in place and the value contract
-   is covered, but the leak itself is hard to see from outside: the events would come
-   from an element no longer in the tree.
-5. **After `setValue(X)` no delta arrives that nobody typed.** Froala normalizes HTML,
-   so `html.set` can produce a `contentChanged` whose delta is Froala's own rewrite.
-   Testing *our* channel, not Froala's HTML handling — that distinction is the
-   maintainer's and is why this replaced a manual "look at it" check.
-6. **The two unverified API points**, including that nothing binds the editor to a bean
-   through `Binder`.
+4. ~~**No interval leaks across detach.**~~ **Done (2026-08-25).** The leak is
+   invisible on its own — a tick on a detached element finds no editor, computes an
+   empty delta and dispatches nothing — so the test holds a reference to the element and
+   gives the timer something to report before running the clock forward (LC-6).
+5. ~~**After `setValue(X)` no delta arrives that nobody typed.**~~ **Done
+   (2026-08-25).** With deliberately messy markup, because already-normalized HTML
+   produces an empty delta and would prove nothing: the first version of this test
+   passed with the bug reinstated for exactly that reason (VT-5).
+6. ~~**The unverified API points.**~~ **Done (2026-08-25).** Three, not two: `Binder`
+   both ways with `asRequired` firing on the empty value (API-1), Froala's focus and
+   blur reaching Flow-side listeners (API-8), and the license key being read once at
+   build time (API-11) — that last one pins a documented limitation, not a behaviour we
+   would want.
+
+**What is left after this queue** — two requirements, both known gaps rather than
+oversights: VCM-5 (a mode switch flushes the pending value) and LC-10 (the
+`connectedCallback` branch for a purely client-side DOM move, which no Vaadin 24
+component has been shown to trigger).
 
 ### Acceptance — with the maintainer (2026-08-25) — passed
 

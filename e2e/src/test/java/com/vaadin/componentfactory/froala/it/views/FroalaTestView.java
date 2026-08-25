@@ -20,6 +20,7 @@ import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.Route;
@@ -54,6 +55,13 @@ public class FroalaTestView extends VerticalLayout {
      */
     public static final String LICENSE_KEY = "it-dummy-license-key";
 
+    /** A second one, to show that a key set on a running editor only reaches Froala on the next build. */
+    public static final String OTHER_LICENSE_KEY = "it-second-dummy-license-key";
+
+    /** Deliberately not what Froala would produce: an unclosed tag and a block it rewrites. */
+    public static final String MESSY_VALUE = "<div>messy <b>markup</div>";
+    public static final String MESSY_TEXT = "messy markup";
+
     /** Clearly above Froala's own 500 ms default, so a test can tell the two apart. */
     public static final int SLOW_TYPING_TIMEOUT = 1500;
 
@@ -74,6 +82,19 @@ public class FroalaTestView extends VerticalLayout {
 
         Button focus = new Button("Focus", event -> editor.focus());
         focus.setId("focus-button");
+
+        // Froala's own focus and blur are re-dispatched from the host element; this is where they arrive server side
+        Span focusLog = new Span();
+        focusLog.setId("focus-log");
+        editor.addFocusListener(event -> focusLog.setText(focusLog.getText() + " focus"));
+        editor.addBlurListener(event -> focusLog.setText(focusLog.getText() + " blur"));
+
+        Button otherLicenseKey = new Button("Other license key");
+        otherLicenseKey.addClickListener(event -> {
+            editor.setLicenseKey(OTHER_LICENSE_KEY);
+            otherLicenseKey.setEnabled(false);
+        });
+        otherLicenseKey.setId("other-license-key");
 
         Select<ValueChangeMode> valueChangeMode = new Select<>("Value change mode",
                 event -> editor.setValueChangeMode(event.getValue()));
@@ -102,6 +123,9 @@ public class FroalaTestView extends VerticalLayout {
         Button resetValue = new Button("Reset value", event -> editor.setValue(INITIAL_VALUE));
         resetValue.setId("reset-value");
 
+        Button messyValue = new Button("Set messy value", event -> editor.setValue(MESSY_VALUE));
+        messyValue.setId("messy-value");
+
         Button toggleAttached = new Button("Toggle attached", event -> {
             if (editor.getParent().isPresent()) {
                 remove(editor);
@@ -111,7 +135,8 @@ public class FroalaTestView extends VerticalLayout {
         });
         toggleAttached.setId("attach-toggle");
 
-        add(focus, valueChangeMode, readOnly, enabled, slowTyping, resetValue, toggleAttached, editor, viewer);
+        add(focus, focusLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue, otherLicenseKey,
+                toggleAttached, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);
