@@ -140,7 +140,7 @@ Carried into the connector as marked TODOs, tracked here so they are not lost:
 - [x] ~~`ValueChangeMode.TIMEOUT`~~ — **removed on 2026-08-25**. It debounced
       `contentChanged`, which is itself a debounce, so it only stacked a second wait
       onto Froala's own (VCM-3, VCM-15). `setValueChangeTimeout` now configures Froala's
-      `typingTimer` instead, and `INTERVAL` got its own `setValueChangeInterval`.
+      `typingTimer` instead, and `INTERVAL` got its own `setIntervalPeriod`.
       `INTERVAL` now also starts from Froala's `initialized` event rather than only
       on a mode switch.
 - [x] The 50 ms throttle in `onValueChange` **defers instead of drops.** It used to

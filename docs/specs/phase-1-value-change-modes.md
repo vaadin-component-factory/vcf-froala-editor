@@ -26,7 +26,7 @@ names are ours. The name clash is accepted and documented in the javadoc.
   the effective idle time 500 ms + `valueChangeTimeout`. It was dropped on 2026-08-25
   in favour of configuring Froala's debounce directly (VCM-7). What the mode offered
   over `ON_CHANGE` was one number, and that number is now `setValueChangeTimeout`.
-- **VCM-4** `INTERVAL` (client: `interval`) — syncs every `valueChangeInterval` ms
+- **VCM-4** `INTERVAL` (client: `interval`) — syncs every `intervalPeriod` ms
   regardless of user activity, as long as there is something to sync (VT-2). Started
   from Froala's `initialized` event as well as on a mode switch, so it also runs for
   an editor that is created in this mode.
@@ -63,12 +63,12 @@ names are ours. The name clash is accepted and documented in the javadoc.
   timespan for its selection-change flush, which drives the active state of the toolbar
   buttons, and for the reveal delay of the inline toolbar. A long timeout slows those
   down too, and the javadoc says so.
-- **VCM-19** `setValueChangeInterval(int)` is the time between two syncs in `INTERVAL`,
+- **VCM-19** `setIntervalPeriod(int)` is the time between two syncs in `INTERVAL`,
   and before the first one. Default **2000 ms**, must be greater than zero, rejected on
   both sides with the same message. Separate from `setValueChangeTimeout` because the
   two now mean different things: one is Froala's debounce, the other our tick.
   *Verified:*
-  `FroalaEditorKaribuTest.valueChangeInterval_roundTripsAndRejectsAnythingButPositiveValues`.
+  `FroalaEditorKaribuTest.intervalPeriod_roundTripsAndRejectsAnythingButPositiveValues`.
 
 ## Flush on blur
 

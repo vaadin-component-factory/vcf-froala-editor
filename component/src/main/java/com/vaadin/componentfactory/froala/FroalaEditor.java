@@ -52,7 +52,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         HasValidator<String>, InputNotifier, HasSize, HasStyle, Focusable<FroalaEditor>, HasLabel, HasHelper {
 
     public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
-    public static final int DEFAULT_VALUE_CHANGE_INTERVAL = 2000;
+    public static final int DEFAULT_INTERVAL_PERIOD = 2000;
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
 
     /** Froala floors its own {@code typingTimer} at this value, so anything below it would have no effect. */
@@ -143,7 +143,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
         setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         setValueChangeTimeout(DEFAULT_VALUE_CHANGE_TIMEOUT);
-        setValueChangeInterval(DEFAULT_VALUE_CHANGE_INTERVAL);
+        setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
@@ -344,15 +344,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Default is 2000. Must be greater than zero -- the mode has no meaningful behaviour at zero, and the client
      * rejects it as well.
      *
-     * @param intervalInMilliseconds time between two value syncs, greater than zero
-     * @throws IllegalArgumentException if the given interval is zero or negative
+     * @param periodInMilliseconds time between two value syncs, greater than zero
+     * @throws IllegalArgumentException if the given period is zero or negative
      */
-    public void setValueChangeInterval(int intervalInMilliseconds) {
-        if (intervalInMilliseconds <= 0) {
-            throw new IllegalArgumentException("valueChangeInterval must be greater than 0");
+    public void setIntervalPeriod(int periodInMilliseconds) {
+        if (periodInMilliseconds <= 0) {
+            throw new IllegalArgumentException("intervalPeriod must be greater than 0");
         }
 
-        getElement().setProperty("valueChangeInterval", intervalInMilliseconds);
+        getElement().setProperty("intervalPeriod", periodInMilliseconds);
     }
 
     /**
@@ -360,7 +360,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * @return time between two value syncs
      */
-    public int getValueChangeInterval() {
-        return getElement().getProperty("valueChangeInterval", DEFAULT_VALUE_CHANGE_INTERVAL);
+    public int getIntervalPeriod() {
+        return getElement().getProperty("intervalPeriod", DEFAULT_INTERVAL_PERIOD);
     }
 }

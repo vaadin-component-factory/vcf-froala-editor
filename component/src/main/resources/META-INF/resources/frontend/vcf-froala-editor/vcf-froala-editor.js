@@ -45,7 +45,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     // Froala's own typing debounce, its `typingTimer` option. Not one of our timers -- see #valueChangeTimeout.
     _valueChangeTimeout = 500;
 
-    _valueChangeInterval = 2_000;
+    _intervalPeriod = 2_000;
 
     static properties = {
         // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync -- do not redeclare it here.
@@ -350,13 +350,13 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     /** The time between two syncs in INTERVAL mode, in milliseconds. */
-    set valueChangeInterval(newInterval) {
-        if (!newInterval || newInterval < 0) {
-            throw new Error("valueChangeInterval must be greater than 0");
+    set intervalPeriod(newPeriod) {
+        if (!newPeriod || newPeriod < 0) {
+            throw new Error("intervalPeriod must be greater than 0");
         }
 
-        if (this._valueChangeInterval !== newInterval) {
-            this._valueChangeInterval = newInterval;
+        if (this._intervalPeriod !== newPeriod) {
+            this._intervalPeriod = newPeriod;
 
             if (this._valueChangeHandleForInterval) {
                 this.startValueChangeInterval(); // also stops the current interval
@@ -364,8 +364,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         }
     }
 
-    get valueChangeInterval() {
-        return this._valueChangeInterval;
+    get intervalPeriod() {
+        return this._intervalPeriod;
     }
 
     stopValueChangeInterval() {
@@ -379,7 +379,7 @@ class FroalaEditorElement extends SlotStylesMixin(
             this.stopValueChangeInterval();
         }
 
-        this._valueChangeHandleForInterval = setInterval(this.onValueChange.bind(this), this.valueChangeInterval);
+        this._valueChangeHandleForInterval = setInterval(this.onValueChange.bind(this), this.intervalPeriod);
     }
 
     /**

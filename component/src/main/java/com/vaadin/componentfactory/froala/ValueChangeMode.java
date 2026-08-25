@@ -35,9 +35,9 @@ public enum ValueChangeMode implements ClientSideReference {
 
     /**
      * <p>
-     * Syncs the value every {@link FroalaEditor#setValueChangeInterval(int)} milliseconds, regardless of any user
-     * events, as long as there are changes to sync. The only mode that sends anything at all while the user types
-     * without pausing -- Froala reports nothing during an uninterrupted burst.
+     * Syncs the value every {@link FroalaEditor#setIntervalPeriod(int)} milliseconds, regardless of any user events, as
+     * long as there are changes to sync. The only mode that sends anything at all while the user types without pausing
+     * -- Froala reports nothing during an uninterrupted burst.
      * </p>
      * <p>
      * This is the equivalent to Vaadin's native {@link com.vaadin.flow.data.value.ValueChangeMode#TIMEOUT}

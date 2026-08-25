@@ -130,16 +130,16 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void valueChangeInterval_roundTripsAndRejectsAnythingButPositiveValues() {
+    void intervalPeriod_roundTripsAndRejectsAnythingButPositiveValues() {
         FroalaEditor editor = attachedEditor();
 
-        assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_INTERVAL, editor.getValueChangeInterval());
+        assertEquals(FroalaEditor.DEFAULT_INTERVAL_PERIOD, editor.getIntervalPeriod());
 
-        editor.setValueChangeInterval(5000);
-        assertEquals(5000, editor.getValueChangeInterval());
+        editor.setIntervalPeriod(5000);
+        assertEquals(5000, editor.getIntervalPeriod());
 
-        assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeInterval(0));
-        assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeInterval(-1));
+        assertThrows(IllegalArgumentException.class, () -> editor.setIntervalPeriod(0));
+        assertThrows(IllegalArgumentException.class, () -> editor.setIntervalPeriod(-1));
     }
 
     @Test
