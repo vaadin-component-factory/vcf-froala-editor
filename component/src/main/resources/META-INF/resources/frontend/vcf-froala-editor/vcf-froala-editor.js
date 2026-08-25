@@ -241,8 +241,10 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     /**
-     * Rate limit for ON_CHANGE, where Froala reports every keystroke and an unthrottled sync would be one round trip
-     * per key. Defers rather than drops: the deferred call is the only one left to carry that change.
+     * Rate limit for ON_CHANGE. Typing rarely reaches this rate -- Froala debounces that itself for ~500 ms -- so what
+     * this catches are the paths that bypass its debounce and fire contentChanged at once: a toolbar command fires it
+     * twice in a row, and so do paste, cut and undo/redo. Defers rather than drops: the deferred call is the only one
+     * left to carry that change.
      *
      * Only this mode needs it. TIMEOUT and INTERVAL limit their own rate already, and a flush -- from a blur, a mode
      * switch or an elapsed timer -- must never be held back, which is why the throttle lives here and not in

@@ -318,10 +318,18 @@ Everything phase 1 promises is built and the maintainer's findings are worked; w
 left before the phase can be called done is the list below, **in this order** (agreed
 2026-08-25). Each item is a spec requirement that currently says *unverified*.
 
-1. **VCM-3 / VCM-4 — the timing of `TIMEOUT` and `INTERVAL`.** The biggest item and the
-   reason it kept being deferred: it needs Playwright's `page.clock()` so the test does
-   not wait on the wall clock. `FroalaEditorIT.typingThenDetachingImmediately_*` drives
-   both modes already, but asserts the detach behaviour, not the debounce or the tick.
+1. ~~**VCM-3 / VCM-4 — the timing of `TIMEOUT` and `INTERVAL`.**~~ **Done
+   (2026-08-25).** Two e2e tests under Playwright's fake clock, and three deliberate
+   regressions to prove they have teeth (no restart of the debounce, an interval that
+   fires once, an eager sync on `contentChanged`). Two things came out of it worth
+   keeping:
+   - It has to be `clock().runFor()`, not `clock().fastForward()`. `fastForward` fires
+     each due timer at most once and never the ones scheduled while it jumps — and that
+     chain is exactly the case here, because Froala's own debounce is what starts ours.
+   - "Nothing has been sent yet" cannot be asserted on the viewer: the delta reaches it
+     through a server round trip in real time, so looking right after a time jump only
+     proves it is early. The tests count `_value-delta` dispatches on the client, which
+     happen synchronously inside the timer callback.
 2. **VT-10 — a resync clears the pending throttle**, so the flushed full value is not
    followed by a stale delta.
 3. **LC-4 / LC-5 — `_initEditor`'s `isConnected` guard and its idempotence.** LC-4
@@ -337,23 +345,20 @@ left before the phase can be called done is the list below, **in this order** (a
 6. **The two unverified API points**, including that nothing binds the editor to a bean
    through `Binder`.
 
-### Acceptance — with the maintainer (2026-08-25)
+### Acceptance — with the maintainer (2026-08-25) — passed
 
-Being walked by the maintainer now; results come back in chat. Nothing else blocks the
-phase.
+Walked by the maintainer on 2026-08-25; **every point passed**, nothing left open.
 
-- **A1 / A2** — the only places yesterday's blur flush could have broken something:
-  `ON_CHANGE` must not show a visible double sync on blur, `ON_BLUR` must behave
-  exactly as before.
-- **B1 — `/overlay`, dialog and popover.** The real risk: a Flow detach and a
-  client-side DOM move mixed, and no test covers it.
+- **A1 / A2** — the blur flush broke nothing: `ON_CHANGE` shows no double sync, `ON_BLUR`
+  behaves as before.
+- **B1 — `/overlay`, dialog and popover** — the one place a Flow detach and a client-side
+  DOM move meet. No defect.
 - **B2** — no interval left running after a detach in `INTERVAL` mode.
 - **B3** — no typing latency in a multi-page document.
 - **B4** — layout: heights, toolbar wrapping, viewer frame.
 
-Note that the demo now runs in dark mode (`@Theme(variant = "dark")`), which makes the
-phase 4 Lumo item plainly visible: Froala's own chrome stays light. That is known and
-not a phase 1 defect.
+The demo runs in dark mode (`@Theme(variant = "dark")`), which makes the phase 4 Lumo item
+plainly visible: Froala's own chrome stays light. Known, and not a phase 1 defect.
 
 ### The maintainer's findings (2026-08-24) — worked
 
@@ -443,6 +448,13 @@ Goal: expose Froala's options through Java instead of leaking raw JSON.
 - [ ] Whatever guards "this option can no longer be changed" must reuse
       `FroalaEditor.liveOnClient`, which already flips in `beforeClientResponse` for
       exactly that purpose (VT-11) — do not add a second flag with attach timing
+- [ ] Two options the value-change work already pointed at (VCM-15…18):
+      **`typingTimer`** (default 500 ms) is Froala's own typing debounce and adds to
+      `valueChangeTimeout`, so exposing it is what makes `TIMEOUT` mode's latency fully
+      controllable; and **`saveInterval: 0`** turns off the `save` plugin, which today
+      schedules a 10 s POST after every `contentChanged` and then fails on the missing
+      `saveURL`. Nobody listens to that failure, so it is dead work rather than a
+      defect — but it is dead work per edit.
 
 ---
 

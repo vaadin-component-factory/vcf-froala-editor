@@ -11,7 +11,8 @@ names are ours. The name clash is accepted and documented in the javadoc.
 ## Modes
 
 - **VCM-1** `ON_CHANGE` (client: `change`) — syncs on Froala's `contentChanged`
-  event. Froala fires it per word, line or structural edit, not per keystroke.
+  event, which is **not** per keystroke: Froala coalesces typing itself (see
+  *Froala's own debounce* below) and only reports once the user pauses.
   **This is the default.**
   *Verified:* `FroalaEditorIT.typedText_reachesTheServer`,
   `FroalaEditorKaribuTest.valueChangeMode_roundTripsAndDefaults` (default).
@@ -21,14 +22,20 @@ names are ours. The name clash is accepted and documented in the javadoc.
   both halves: nothing before the blur, the full text after it.
 - **VCM-3** `TIMEOUT` (client: `timeout`) — a **debounce**: every `contentChanged`
   restarts a timer of `valueChangeTimeout` ms, and the sync happens when the user
-  pauses. Equivalent to Flow's `LAZY`.
-  *Verified:* **unverified** — needs Playwright's `page.clock()` so the test does not
-  wait on the wall clock.
+  pauses. Equivalent to Flow's `LAZY`. Because `contentChanged` is itself debounced,
+  the idle time a user actually experiences is Froala's ~500 ms **plus**
+  `valueChangeTimeout`.
+  *Verified:* `FroalaEditorIT.timeoutMode_syncsOnceTheUserPauses_andEveryEditRestartsTheWait`,
+  under Playwright's fake clock. Asserts both halves — nothing sent while the timer
+  runs, and an edit inside the window restarting it rather than letting the running
+  timer through.
 - **VCM-4** `INTERVAL` (client: `interval`) — syncs every `valueChangeTimeout` ms
   regardless of user activity, as long as there is something to sync (VT-2). Started
   from Froala's `initialized` event as well as on a mode switch, so it also runs for
   an editor that is created in this mode.
-  *Verified:* **unverified** — same reason as VCM-3.
+  *Verified:* `FroalaEditorIT.intervalMode_syncsOnEveryTick_whileTheUserKeepsTyping` —
+  two ticks, with the editor never losing focus and the user never pausing, which is
+  what separates it from `TIMEOUT`.
 - **VCM-5** Switching *away* from `TIMEOUT` or `INTERVAL` flushes the pending value
   first, so a mode change never swallows an edit.
   *Verified:* unverified.
@@ -70,8 +77,10 @@ names are ours. The name clash is accepted and documented in the javadoc.
 
 ## Throttle
 
-- **VCM-11** `ON_CHANGE` never syncs more often than every **50 ms**. Froala reports
-  every keystroke, and without this each one would be a round trip.
+- **VCM-11** `ON_CHANGE` never syncs more often than every **50 ms**. Typing rarely
+  reaches that rate — Froala's own debounce already coalesces it — so what this really
+  catches are the paths that bypass that debounce: a toolbar command fires
+  `contentChanged` twice in a row, and paste, cut and undo/redo fire it at once.
 - **VCM-12** The throttle belongs to `ON_CHANGE` alone, in `onValueChangeThrottled()`.
   `onValueChange()` itself does no rate limiting and always sends. `TIMEOUT` and
   `INTERVAL` limit their own rate already, and a flush — from a blur, a mode switch or
@@ -89,6 +98,30 @@ names are ours. The name clash is accepted and documented in the javadoc.
 - **VCM-14** The 50 ms window is a constant, not configurable. No requirement asks
   for it to be.
 
+## Froala's own debounce
+
+Measured in froala-editor 5.4.0, because it changes what every mode above actually
+feels like.
+
+- **VCM-15** `contentChanged` comes from Froala's **undo stack**, not from a DOM
+  event: its `keydown` handler restarts a `max(250, opts.typingTimer)` timer — 500 ms
+  by default — and only the elapsed timer pushes an undo step and fires
+  `contentChanged`. It is a trailing-edge debounce, so sustained typing produces
+  *nothing* until the user pauses, and Froala also drops a step whose HTML equals the
+  last one.
+- **VCM-16** Everything that is not typing bypasses that timer and fires
+  synchronously: toolbar commands (twice — once before and once after the command),
+  paste, cut, tab, undo/redo, Ctrl-combinations and blur. `html.set` fires no
+  `contentChanged` at all, which is why a server-side `setValue` never echoes back as
+  a delta.
+- **VCM-17** The delays therefore **stack**: `ON_CHANGE` syncs ~500 ms after the user
+  pauses, and `TIMEOUT` after ~500 ms + `valueChangeTimeout`. `INTERVAL` and `ON_BLUR`
+  are unaffected — neither listens to `contentChanged`. Both e2e tests above are
+  written around this and say so at the assertion.
+- **VCM-18** `typingTimer` is a normal Froala init option, so the 500 ms becomes
+  configurable as soon as the phase 2 option channel exists. Today `_initEditor`
+  passes only `key` and `events`, so it is fixed.
+
 ## Known gaps
 
-- VCM-3 and VCM-4, the two modes with timing behaviour, are the two without a test.
+- VCM-5, the flush on a mode switch, is still without a test.

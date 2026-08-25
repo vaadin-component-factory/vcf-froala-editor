@@ -153,6 +153,66 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void timeoutMode_syncsOnceTheUserPauses_andEveryEditRestartsTheWait() {
+        // Playwright's fake clock, so the debounce is run through rather than waited out and "not yet" and "now" are
+        // separated by an explicit time jump instead of by luck. It has to be runFor, not fastForward: fastForward
+        // fires each due timer at most once and never the ones scheduled while it jumps, which is exactly the chain
+        // here -- Froala's debounce is what starts ours.
+        //
+        // The jumps have to clear Froala's own typing debounce as well: it coalesces keystrokes for
+        // max(250, opts.typingTimer) = 500 ms before it fires contentChanged, and our timer only starts there. A
+        // keystroke at t therefore syncs at t + 500 + 2000 (the default valueChangeTimeout), which makes 2500 ms the
+        // real idle threshold -- see VCM-3.
+        withFakeClock();
+        selectValueChangeMode("TIMEOUT");
+
+        editableArea().click();
+        recordDeltaDispatches();
+        editableArea().type("first");
+
+        // past Froala's 500 ms, so our own timer is armed by now -- and it must not have elapsed
+        page.clock().runFor(1000);
+        assertEquals(0, dispatchedDeltas(), deltaLog());
+
+        // An edit inside the window has to restart the wait instead of letting the running timer through. This jump
+        // lands midway between the two: past the first edit's timer even if Froala passed the change on at once
+        // (2000), and short of the second edit's even if Froala held it the full 500 ms (3500).
+        editableArea().type(" second");
+        page.clock().runFor(1750);
+        assertEquals(0, dispatchedDeltas(), deltaLog());
+
+        page.clock().runFor(1000);
+        assertThat(page.locator("#viewer")).containsText("first second");
+        assertEquals(1, dispatchedDeltas(), deltaLog());
+    }
+
+    @Test
+    void intervalMode_syncsOnEveryTick_whileTheUserKeepsTyping() {
+        withFakeClock();
+        selectValueChangeMode("INTERVAL");
+
+        editableArea().click();
+        recordDeltaDispatches();
+        editableArea().type("first tick");
+
+        // short, because the interval was armed when the mode was selected -- a little before this test's clock zero
+        page.clock().runFor(600);
+        assertEquals(0, dispatchedDeltas(), deltaLog());
+
+        page.clock().runFor(1600);
+        assertThat(page.locator("#viewer")).containsText("first tick");
+
+        // The second tick is what separates INTERVAL from TIMEOUT: the editor never lost focus and the user never
+        // paused, yet the next span of text has to arrive on its own as well -- and not before its tick.
+        editableArea().type(" and second");
+        page.clock().runFor(1000);
+        assertEquals(1, dispatchedDeltas(), deltaLog());
+
+        page.clock().runFor(1200);
+        assertThat(page.locator("#viewer")).containsText("first tick and second");
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();
@@ -285,6 +345,45 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#attach-toggle").click();
 
         assertThat(editableArea()).containsText(text);
+    }
+
+    /**
+     * Installs Playwright's fake clock and reloads, because the clock only applies to a document opened after it. Every
+     * {@code setTimeout} and {@code setInterval} on the page then advances only when a test says so.
+     */
+    /**
+     * Counts the deltas the connector puts on the wire. Under a fake clock this is the only honest way to assert that
+     * nothing was sent *yet*: a delta reaches the viewer through a server round trip in real time, so looking at the
+     * viewer right after a time jump proves nothing -- it is merely early. The dispatch itself happens synchronously
+     * inside the timer callback, so the count is exact the moment {@code fastForward} returns.
+     */
+    private void recordDeltaDispatches() {
+        page.evaluate(
+                """
+                        () => {
+                            window.__deltas = 0;
+                            window.__log = [];
+                            window.__t0 = Date.now();
+                            const el = document.querySelector('#editor');
+                            el.addEventListener('_value-delta', (e) => { window.__deltas++;
+                                window.__log.push(Date.now() - window.__t0 + ':' + el.valueChangeMode + ':' + e.detail.delta.length); });
+                        }
+                        """);
+    }
+
+    private int dispatchedDeltas() {
+        return ((Number) page.evaluate("() => window.__deltas")).intValue();
+    }
+
+    private String deltaLog() {
+        return String.valueOf(page.evaluate(
+                "() => JSON.stringify(window.__log) + ' mode=' + document.querySelector('#editor').valueChangeMode"));
+    }
+
+    private void withFakeClock() {
+        page.clock().install();
+        page.reload();
+        page.locator("#editor .fr-element").waitFor();
     }
 
     private void selectValueChangeMode(String label) {
