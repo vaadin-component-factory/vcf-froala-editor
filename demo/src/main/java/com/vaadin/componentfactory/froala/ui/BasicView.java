@@ -16,7 +16,6 @@
 package com.vaadin.componentfactory.froala.ui;
 
 import org.apache.commons.text.WordUtils;
-import org.jspecify.annotations.NonNull;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaViewer;
@@ -25,52 +24,31 @@ import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route("")
-@AnonymousAllowed
-public class BasicView extends VerticalLayout {
+@Menu(title = "Basics", order = 0)
+public class BasicView extends FroalaViewBase {
 
     public static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
     public static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
-    private final HorizontalLayout toolbar;
-    private final FroalaEditor editor;
-    private final FroalaViewer viewer;
 
     private HasComponents froalaReattachParent = this;
 
     public BasicView() {
-        setSizeFull();
-        setAlignItems(Alignment.STRETCH);
 
-        editor = new FroalaEditor("Test editor");
-        editor.setId("editor");
-        editor.setHelperText("Just a helper text");
+        FroalaEditor editor = getEditor();
+        FroalaViewer viewer = getViewer();
 
-        viewer = new FroalaViewer();
-        viewer.setId("viewer");
-        viewer.getStyle().setBorder("2px dashed gray").setBorderRadius("5px");
-
-        toolbar = createToolbar(editor, viewer);
-
-        add(toolbar, editor, viewer);
-        // editor.setMinHeight("500px");
-        // editor.setMaxHeight("750px");
         editor.setHeight("500px");
         viewer.setMinHeight("250px");
-        // setFlexGrow(1, editor, viewer);
-
-        editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
-        editor.setValue(INITIAL_VALUE);
     }
 
-    private @NonNull HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
-        HorizontalLayout toolbar = new HorizontalLayout();
-        toolbar.setWrap(true);
-        toolbar.setAlignItems(Alignment.BASELINE);
+    @Override
+    protected HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
+        HorizontalLayout toolbar = super.createToolbar(editor, viewer);
 
         Button changeValue = new Button("Change value", _unused -> {
             if (INITIAL_VALUE.equals(editor.getValue())) {
@@ -121,19 +99,7 @@ public class BasicView extends VerticalLayout {
             froalaReattachParent = (HasComponents) editor.getParent().get();
             editor.removeFromParent();
         } else {
-            froalaReattachParent.addComponentAtIndex(froalaReattachParent.indexOf(toolbar) + 1, editor);
+            froalaReattachParent.addComponentAtIndex(froalaReattachParent.indexOf(getToolbar()) + 1, editor);
         }
-    }
-
-    public FroalaEditor getEditor() {
-        return editor;
-    }
-
-    public FroalaViewer getViewer() {
-        return viewer;
-    }
-
-    public HorizontalLayout getToolbar() {
-        return toolbar;
     }
 }

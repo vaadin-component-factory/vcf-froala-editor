@@ -21,22 +21,22 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.Layout;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.menu.MenuConfiguration;
 
 /**
  * Application shell: a top bar plus a side navigation drawer. The {@code @Layout} annotation makes the router render
  * every view inside this layout.
  */
 @Layout
-@AnonymousAllowed
 public class MainLayout extends AppLayout {
 
     public MainLayout() {
         addToNavbar(new DrawerToggle(), new H1("Froala Editor for Vaadin Flow"));
 
         SideNav nav = new SideNav();
-        nav.addItem(new SideNavItem("Basic", BasicView.class));
-        nav.addItem(new SideNavItem("Overlays", OverlayView.class));
+
+        MenuConfiguration.getMenuEntries().forEach(entry -> nav.addItem(new SideNavItem(entry.title(), entry.path())));
+
         addToDrawer(nav);
     }
 }
