@@ -340,9 +340,12 @@ left before the phase can be called done is the list below, **in this order** (a
    later repairs the value on its own — so every assertion on the viewer passed with the
    bug in place. It is asserted on the client's own events now, with `resyncValue()`
    called at the moment the state exists.
-3. **LC-4 / LC-5 — `_initEditor`'s `isConnected` guard and its idempotence.** LC-4
-   needs a detach inside the first update cycle, LC-5 needs to observe that no second
-   Froala instance is built.
+3. ~~**LC-4 / LC-5 — `_initEditor`'s `isConnected` guard and its idempotence.**~~
+   **Done (2026-08-25).** Both asserted in the browser, both counter-checked. LC-4 came
+   with a measurement worth keeping: Lit does complete an update on an element that was
+   attached and removed inside one task, but no editor is built through that path even
+   with the guard removed — something upstream already covers the Lit route, so the
+   guard is the second line of defence and is asserted on the call itself.
 4. **No interval leaks across detach.** The clean-up is in place and the value contract
    is covered, but the leak itself is hard to see from outside: the events would come
    from an element no longer in the tree.

@@ -368,6 +368,60 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void initEditorOnAHostThatIsAlreadyDetached_buildsNothing() {
+        page.locator("#editor .fr-element").waitFor();
+
+        // The state the isConnected guard exists for: a host that has already had its one and only
+        // disconnectedCallback. Anything built there would never be destroyed and would stay in Froala's global
+        // registry, which the live editors reach into from their window handlers (LC-6).
+        //
+        // Attached and removed inside one task first, so this is that host and not merely a loose element. Lit does
+        // complete an update on it -- hasUpdated turns true -- but no editor comes out of that path even with the
+        // guard removed, so what is asserted here is the guard itself, reached the way the connector reaches it.
+        page.evaluate("""
+                async () => {
+                    const orphan = document.createElement('vcf-froala-editor');
+                    document.body.appendChild(orphan);
+                    orphan.remove();
+
+                    await orphan._initEditor();
+
+                    window.__orphan = {
+                        editor: orphan.editor !== undefined,
+                        editable: orphan.querySelector('.fr-element') !== null
+                    };
+                }
+                """);
+
+        assertEquals(Boolean.FALSE, page.evaluate("() => window.__orphan.editor"));
+        assertEquals(Boolean.FALSE, page.evaluate("() => window.__orphan.editable"));
+    }
+
+    @Test
+    void buildingTheEditorASecondTime_changesNothing() {
+        page.locator("#editor .fr-element").waitFor();
+
+        // firstUpdated and connectedCallback both call _initEditor, so it has to be idempotent. A second instance on
+        // the same host would leave the first one live and unreachable, registered and never destroyed.
+        page.evaluate("""
+                async () => {
+                    const el = document.querySelector('#editor');
+                    const before = el.editor;
+
+                    await el._initEditor();
+
+                    window.__reinit = {
+                        same: el.editor === before,
+                        editables: el.querySelectorAll('.fr-element').length
+                    };
+                }
+                """);
+
+        assertEquals(Boolean.TRUE, page.evaluate("() => window.__reinit.same"));
+        assertEquals(1, ((Number) page.evaluate("() => window.__reinit.editables")).intValue());
+    }
+
+    @Test
     void readOnly_stopsEditing() {
         page.locator("#readonly-toggle input").check();
 

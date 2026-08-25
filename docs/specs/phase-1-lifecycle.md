@@ -34,13 +34,21 @@ guarantees here are mostly about *not* breaking.
   Flow can attach and detach an element before that first update flushes — without
   the guard a live Froala instance would be left on a host that already had its one
   and only `disconnectedCallback`, with nothing to destroy it.
-  *Verified:* unverified as a direct assertion. Reproducing it needs a detach inside
-  the same frame as the attach.
+  *Verified:* `FroalaEditorIT.initEditorOnAHostThatIsAlreadyDetached_buildsNothing`,
+  against an element that was attached and removed inside one task, so it is that host
+  and not merely a loose element. One measurement came out of writing it: Lit does
+  complete an update on such an element — `hasUpdated` turns true — but **no editor is
+  built through that path even with the guard removed**, so something upstream already
+  covers the Lit route. The guard is the second line of defence and is asserted where it
+  does bite, on the call itself: without it, `_initEditor` on that host builds a Froala
+  instance nobody will ever destroy.
 - **LC-5** Creating the editor is idempotent: `_initEditor` only builds when
   `this.editor` is unset, so `firstUpdated` and `connectedCallback` cannot produce
   two instances.
-  *Verified:* unverified as a direct assertion; a second instance would break
-  `detachAndReattach_keepsTheValueAndKeepsWorking`.
+  *Verified:* `FroalaEditorIT.buildingTheEditorASecondTime_changesNothing` — the same
+  instance and a single editable surface after a second `_initEditor()`. Without the
+  guard the whole view comes apart, which is the point: the first instance stays live
+  and unreachable, still registered and never destroyed.
 
 ## Detach and re-attach
 
