@@ -21,8 +21,10 @@ package com.vaadin.componentfactory.froala;
 public enum ValueChangeMode implements ClientSideReference {
 
     /**
-     * Syncs the value with the server on every "change" event, that is fired by the editor. This usually happens either
-     * when a new line is added, whole words are deleted at once or the editor loses the focus.
+     * Syncs the value with the server on every "change" event, that is fired by the editor. Froala debounces typing
+     * itself, so while the user types this happens once they pause -- after
+     * {@link FroalaEditor#setValueChangeTimeout(int)} milliseconds. Everything that is not typing (toolbar commands,
+     * paste, cut, undo/redo) is reported at once.
      */
     ON_CHANGE("change"),
 
@@ -33,18 +35,9 @@ public enum ValueChangeMode implements ClientSideReference {
 
     /**
      * <p>
-     * Syncs the value after the last change, when a certain amount of time has passed. If before that timeout any
-     * additional changes are made, the timeout is reset and starts again.
-     * </p>
-     * <p>
-     * This is the equivalent to Vaadin's native {@link com.vaadin.flow.data.value.ValueChangeMode#LAZY}
-     * </p>
-     */
-    TIMEOUT("timeout"),
-
-    /**
-     * <p>
-     * Syncs the value periodically regardless of any user events, as long as there are changes to sync.
+     * Syncs the value every {@link FroalaEditor#setValueChangeInterval(int)} milliseconds, regardless of any user
+     * events, as long as there are changes to sync. The only mode that sends anything at all while the user types
+     * without pausing -- Froala reports nothing during an uninterrupted burst.
      * </p>
      * <p>
      * This is the equivalent to Vaadin's native {@link com.vaadin.flow.data.value.ValueChangeMode#TIMEOUT}

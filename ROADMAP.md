@@ -137,8 +137,10 @@ Open:
 
 Carried into the connector as marked TODOs, tracked here so they are not lost:
 
-- [x] `ValueChangeMode.TIMEOUT` implemented as a debounce
-      (`restartValueChangeTimeoutIfMode`), restarted on every `contentChanged`.
+- [x] ~~`ValueChangeMode.TIMEOUT`~~ — **removed on 2026-08-25**. It debounced
+      `contentChanged`, which is itself a debounce, so it only stacked a second wait
+      onto Froala's own (VCM-3, VCM-15). `setValueChangeTimeout` now configures Froala's
+      `typingTimer` instead, and `INTERVAL` got its own `setValueChangeInterval`.
       `INTERVAL` now also starts from Froala's `initialized` event rather than only
       on a mode switch.
 - [x] The 50 ms throttle in `onValueChange` **defers instead of drops.** It used to
@@ -318,11 +320,12 @@ Everything phase 1 promises is built and the maintainer's findings are worked; w
 left before the phase can be called done is the list below, **in this order** (agreed
 2026-08-25). Each item is a spec requirement that currently says *unverified*.
 
-1. ~~**VCM-3 / VCM-4 — the timing of `TIMEOUT` and `INTERVAL`.**~~ **Done
-   (2026-08-25).** Two e2e tests under Playwright's fake clock, and three deliberate
-   regressions to prove they have teeth (no restart of the debounce, an interval that
-   fires once, an eager sync on `contentChanged`). Two things came out of it worth
-   keeping:
+1. ~~**The timing of `TIMEOUT` and `INTERVAL`.**~~ **Done (2026-08-25).** e2e tests
+   under Playwright's fake clock, each re-run with the bug put back in to prove the
+   assertions bite. `TIMEOUT` did not survive the exercise: measuring it is what showed
+   it was a second debounce on top of Froala's own, so it is gone and
+   `setValueChangeTimeout` configures Froala's `typingTimer` instead (VCM-3, VCM-7).
+   What is verified now is VCM-4, VCM-7, VCM-8 and VCM-19. Two things worth keeping:
    - It has to be `clock().runFor()`, not `clock().fastForward()`. `fastForward` fires
      each due timer at most once and never the ones scheduled while it jumps — and that
      chain is exactly the case here, because Froala's own debounce is what starts ours.
@@ -448,13 +451,11 @@ Goal: expose Froala's options through Java instead of leaking raw JSON.
 - [ ] Whatever guards "this option can no longer be changed" must reuse
       `FroalaEditor.liveOnClient`, which already flips in `beforeClientResponse` for
       exactly that purpose (VT-11) — do not add a second flag with attach timing
-- [ ] Two options the value-change work already pointed at (VCM-15…18):
-      **`typingTimer`** (default 500 ms) is Froala's own typing debounce and adds to
-      `valueChangeTimeout`, so exposing it is what makes `TIMEOUT` mode's latency fully
-      controllable; and **`saveInterval: 0`** turns off the `save` plugin, which today
-      schedules a 10 s POST after every `contentChanged` and then fails on the missing
-      `saveURL`. Nobody listens to that failure, so it is dead work rather than a
-      defect — but it is dead work per edit.
+- [ ] `saveInterval: 0` turns off Froala's `save` plugin, which today schedules a POST
+      to `saveURL` 10 s after every `contentChanged` and then fails on the missing URL.
+      Nobody listens to that failure, so it is dead work rather than a defect — but it
+      is dead work per edit. (`typingTimer`, the other option the value-change work
+      turned up, is already exposed as `setValueChangeTimeout`.)
 
 ---
 

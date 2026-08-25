@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
+import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.it.views.FroalaTestView;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -123,14 +124,6 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
-    void typingThenDetachingImmediately_keepsTheLastChange_inTimeoutMode() {
-        // TIMEOUT holds the change for two seconds, so detaching right away is guaranteed to catch it mid-flight.
-        selectValueChangeMode("TIMEOUT");
-
-        assertLastChangeSurvivesAnImmediateDetach("typed in timeout mode");
-    }
-
-    @Test
     void typingThenDetachingImmediately_keepsTheLastChange_inIntervalMode() {
         selectValueChangeMode("INTERVAL");
 
@@ -153,37 +146,44 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
-    void timeoutMode_syncsOnceTheUserPauses_andEveryEditRestartsTheWait() {
-        // Playwright's fake clock, so the debounce is run through rather than waited out and "not yet" and "now" are
-        // separated by an explicit time jump instead of by luck. It has to be runFor, not fastForward: fastForward
-        // fires each due timer at most once and never the ones scheduled while it jumps, which is exactly the chain
-        // here -- Froala's debounce is what starts ours.
+    void valueChangeTimeout_setsFroalasTypingTimer_andGovernsWhenAChangeIsReported() {
+        // valueChangeTimeout is not a timer of ours: it is Froala's typingTimer, the debounce that decides when
+        // contentChanged fires at all. Both halves are ours to prove -- that the value reaches Froala's options, and
+        // that setting it actually moves the sync.
         //
-        // The jumps have to clear Froala's own typing debounce as well: it coalesces keystrokes for
-        // max(250, opts.typingTimer) = 500 ms before it fires contentChanged, and our timer only starts there. A
-        // keystroke at t therefore syncs at t + 500 + 2000 (the default valueChangeTimeout), which makes 2500 ms the
-        // real idle threshold -- see VCM-3.
+        // Playwright's fake clock, and it has to be runFor, not fastForward: fastForward fires each due timer at most
+        // once and never the ones scheduled while it jumps, which is exactly this chain -- Froala's debounce is what
+        // triggers our sync.
         withFakeClock();
-        selectValueChangeMode("TIMEOUT");
+
+        // the constructor's default, applied through the init options
+        assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_TIMEOUT, typingTimer());
+
+        // and a later change reaches a running editor, because Froala reads the option on every keystroke. The
+        // button disables itself, which is how the test knows the round trip landed -- clicking only dispatches.
+        page.locator("#slow-typing").click();
+        assertThat(page.locator("#slow-typing")).isDisabled();
+        assertEquals(FroalaTestView.SLOW_TYPING_TIMEOUT, typingTimer());
+
+        // A rebuilt editor has to get it through the init options instead. Worth its own step because the default is
+        // Froala's own default as well, so the assertion above proves nothing about how the value got there.
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+        page.locator("#attach-toggle").click();
+        page.locator("#editor .fr-element").waitFor();
+        assertEquals(FroalaTestView.SLOW_TYPING_TIMEOUT, typingTimer());
 
         editableArea().click();
         recordDeltaDispatches();
-        editableArea().type("first");
+        editableArea().type("slowly");
 
-        // past Froala's 500 ms, so our own timer is armed by now -- and it must not have elapsed
-        page.clock().runFor(1000);
-        assertEquals(0, dispatchedDeltas(), deltaLog());
-
-        // An edit inside the window has to restart the wait instead of letting the running timer through. This jump
-        // lands midway between the two: past the first edit's timer even if Froala passed the change on at once
-        // (2000), and short of the second edit's even if Froala held it the full 500 ms (3500).
-        editableArea().type(" second");
-        page.clock().runFor(1750);
+        // past Froala's own 500 ms default: with the option ignored, this is where the change would have been reported
+        page.clock().runFor(800);
         assertEquals(0, dispatchedDeltas(), deltaLog());
 
         page.clock().runFor(1000);
-        assertThat(page.locator("#viewer")).containsText("first second");
         assertEquals(1, dispatchedDeltas(), deltaLog());
+        assertThat(page.locator("#viewer")).containsText("slowly");
     }
 
     @Test
@@ -369,6 +369,10 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                                 window.__log.push(Date.now() - window.__t0 + ':' + el.valueChangeMode + ':' + e.detail.delta.length); });
                         }
                         """);
+    }
+
+    private int typingTimer() {
+        return ((Number) page.evaluate("() => document.querySelector('#editor').editor.opts.typingTimer")).intValue();
     }
 
     private int dispatchedDeltas() {

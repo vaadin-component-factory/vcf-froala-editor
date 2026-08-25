@@ -102,16 +102,16 @@ class FroalaEditorKaribuTest {
     void valueChangeMode_roundTripsAndDefaults() {
         FroalaEditor editor = attachedEditor();
 
-        editor.setValueChangeMode(ValueChangeMode.TIMEOUT);
-        assertEquals(ValueChangeMode.TIMEOUT, editor.getValueChangeMode());
-        assertEquals("timeout", editor.getElement().getProperty("valueChangeMode"));
+        editor.setValueChangeMode(ValueChangeMode.INTERVAL);
+        assertEquals(ValueChangeMode.INTERVAL, editor.getValueChangeMode());
+        assertEquals("interval", editor.getElement().getProperty("valueChangeMode"));
 
         editor.setValueChangeMode(null);
         assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_MODE, editor.getValueChangeMode());
     }
 
     @Test
-    void valueChangeTimeout_rejectsAnythingButPositiveValues() {
+    void valueChangeTimeout_rejectsAnythingFroalaWouldIgnore() {
         FroalaEditor editor = attachedEditor();
 
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(-1));
@@ -119,6 +119,27 @@ class FroalaEditorKaribuTest {
         // zero used to pass here and then throw in the client's own setter, so the failure surfaced in the browser
         // instead of at the call site
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(0));
+
+        // Froala floors typingTimer at 250, so a smaller value would be accepted here and then quietly ignored --
+        // the editor would keep syncing at 250 while the getter claimed otherwise
+        assertThrows(IllegalArgumentException.class,
+                () -> editor.setValueChangeTimeout(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT - 1));
+
+        editor.setValueChangeTimeout(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT);
+        assertEquals(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT, editor.getValueChangeTimeout());
+    }
+
+    @Test
+    void valueChangeInterval_roundTripsAndRejectsAnythingButPositiveValues() {
+        FroalaEditor editor = attachedEditor();
+
+        assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_INTERVAL, editor.getValueChangeInterval());
+
+        editor.setValueChangeInterval(5000);
+        assertEquals(5000, editor.getValueChangeInterval());
+
+        assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeInterval(0));
+        assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeInterval(-1));
     }
 
     @Test

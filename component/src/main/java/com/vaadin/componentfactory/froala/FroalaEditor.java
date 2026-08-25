@@ -51,8 +51,12 @@ import com.vaadin.flow.dom.Element;
 public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String> implements HasValidationProperties,
         HasValidator<String>, InputNotifier, HasSize, HasStyle, Focusable<FroalaEditor>, HasLabel, HasHelper {
 
-    public static final int DEFAULT_VALUE_CHANGE_MODE_TIMEOUT = 2000;
+    public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
+    public static final int DEFAULT_VALUE_CHANGE_INTERVAL = 2000;
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
+
+    /** Froala floors its own {@code typingTimer} at this value, so anything below it would have no effect. */
+    public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
 
     private static final String VALUE_PROPERTY = "value";
 
@@ -138,7 +142,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         super(VALUE_PROPERTY, "", true);
 
         setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
-        setValueChangeTimeout(DEFAULT_VALUE_CHANGE_MODE_TIMEOUT);
+        setValueChangeTimeout(DEFAULT_VALUE_CHANGE_TIMEOUT);
+        setValueChangeInterval(DEFAULT_VALUE_CHANGE_INTERVAL);
 
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
@@ -290,46 +295,72 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the timespan in milliseconds, that will be used by several value change modes.
-     *
-     * <ul>
-     * <li>TIMEOUT: the time, that is waited after the last change before the value is synced.</li>
-     * <li>INTERVAL: the time between two value syncs. Also used as initial time before the first call.</li>
-     * </ul>
+     * Sets the idle time in milliseconds that has to pass after the last keystroke before the editor reports the
+     * change. This is Froala's own {@code typingTimer} option, not a timer of this add-on: Froala restarts it on every
+     * keystroke and only then reports, which is why {@link ValueChangeMode#ON_CHANGE} syncs once the user pauses rather
+     * than per key.
      *
      * <p>
-     * Default is 2000. Must be greater than zero -- neither mode has a meaningful behaviour at zero, and the client
-     * rejects it as well.
+     * Default is 500, Froala's own default. The minimum is {@value #MIN_VALUE_CHANGE_TIMEOUT} -- Froala floors the
+     * option there, so a smaller value would be silently ignored and is rejected here instead. The client rejects it
+     * with the same message.
      *
      * <p>
-     * Please note, that the client also throttles the amount of events, that might be fired to prevent the events from
-     * overhelming the server.
+     * Note that the option is not exclusive to the value sync: Froala uses the same timespan for its selection-change
+     * flush, which drives the active state of the toolbar buttons, and for the reveal delay of the inline toolbar. A
+     * long timeout slows those down as well.
      *
-     * @param timeoutInMilliseconds milliseconds to be used by the value change modes, greater than zero
-     * @throws IllegalArgumentException if the given timeout is zero or negative
+     * <p>
+     * {@link ValueChangeMode#ON_BLUR} and {@link ValueChangeMode#INTERVAL} do not depend on it -- neither waits for a
+     * reported change.
+     *
+     * @param timeoutInMilliseconds idle time before a change is reported, at least {@value #MIN_VALUE_CHANGE_TIMEOUT}
+     * @throws IllegalArgumentException if the given timeout is below {@value #MIN_VALUE_CHANGE_TIMEOUT}
      */
     public void setValueChangeTimeout(int timeoutInMilliseconds) {
-        if (timeoutInMilliseconds <= 0) {
-            throw new IllegalArgumentException("valueChangeTimeout must be greater than 0");
+        if (timeoutInMilliseconds < MIN_VALUE_CHANGE_TIMEOUT) {
+            throw new IllegalArgumentException("valueChangeTimeout must be at least " + MIN_VALUE_CHANGE_TIMEOUT
+                    + " ms, the lower bound Froala " + "enforces");
         }
 
         getElement().setProperty("valueChangeTimeout", timeoutInMilliseconds);
     }
 
     /**
-     * Returns the timespan in milliseconds, that will be used by several value change modes.
+     * Returns the idle time in milliseconds that has to pass after the last keystroke before the editor reports the
+     * change. Default is 500.
      *
-     * <ul>
-     * <li>TIMEOUT: the time, that is waited after the last change before the value is synced.</li>
-     * <li>INTERVAL: the time between two value syncs. Also used as initial time before the first call.</li>
-     * </ul>
-     *
-     * <p>
-     * Default is 2000.
-     *
-     * @return timespan in milliseconds
+     * @return idle time in milliseconds
      */
     public int getValueChangeTimeout() {
-        return getElement().getProperty("valueChangeTimeout", DEFAULT_VALUE_CHANGE_MODE_TIMEOUT);
+        return getElement().getProperty("valueChangeTimeout", DEFAULT_VALUE_CHANGE_TIMEOUT);
+    }
+
+    /**
+     * Sets the time in milliseconds between two value syncs in {@link ValueChangeMode#INTERVAL}. Also the time before
+     * the first one. Has no effect in any other mode.
+     *
+     * <p>
+     * Default is 2000. Must be greater than zero -- the mode has no meaningful behaviour at zero, and the client
+     * rejects it as well.
+     *
+     * @param intervalInMilliseconds time between two value syncs, greater than zero
+     * @throws IllegalArgumentException if the given interval is zero or negative
+     */
+    public void setValueChangeInterval(int intervalInMilliseconds) {
+        if (intervalInMilliseconds <= 0) {
+            throw new IllegalArgumentException("valueChangeInterval must be greater than 0");
+        }
+
+        getElement().setProperty("valueChangeInterval", intervalInMilliseconds);
+    }
+
+    /**
+     * Returns the time in milliseconds between two value syncs in {@link ValueChangeMode#INTERVAL}. Default is 2000.
+     *
+     * @return time between two value syncs
+     */
+    public int getValueChangeInterval() {
+        return getElement().getProperty("valueChangeInterval", DEFAULT_VALUE_CHANGE_INTERVAL);
     }
 }

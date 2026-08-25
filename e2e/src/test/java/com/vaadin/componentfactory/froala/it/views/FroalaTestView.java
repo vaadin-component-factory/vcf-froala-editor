@@ -54,6 +54,9 @@ public class FroalaTestView extends VerticalLayout {
      */
     public static final String LICENSE_KEY = "it-dummy-license-key";
 
+    /** Clearly above Froala's own 500 ms default, so a test can tell the two apart. */
+    public static final int SLOW_TYPING_TIMEOUT = 1500;
+
     public FroalaTestView() {
         setSizeFull();
 
@@ -87,6 +90,15 @@ public class FroalaTestView extends VerticalLayout {
         enabled.setValue(editor.isEnabled());
         enabled.setId("enabled-toggle");
 
+        // disables itself, so a test can tell that the round trip has landed before it reads the client -- a click
+        // returns as soon as it is dispatched, not when the server has answered
+        Button slowTyping = new Button("Slow typing timer");
+        slowTyping.addClickListener(event -> {
+            editor.setValueChangeTimeout(SLOW_TYPING_TIMEOUT);
+            slowTyping.setEnabled(false);
+        });
+        slowTyping.setId("slow-typing");
+
         Button resetValue = new Button("Reset value", event -> editor.setValue(INITIAL_VALUE));
         resetValue.setId("reset-value");
 
@@ -99,7 +111,7 @@ public class FroalaTestView extends VerticalLayout {
         });
         toggleAttached.setId("attach-toggle");
 
-        add(focus, valueChangeMode, readOnly, enabled, resetValue, toggleAttached, editor, viewer);
+        add(focus, valueChangeMode, readOnly, enabled, slowTyping, resetValue, toggleAttached, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

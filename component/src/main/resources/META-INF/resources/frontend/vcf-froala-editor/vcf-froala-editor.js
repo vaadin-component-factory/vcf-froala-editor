@@ -42,7 +42,10 @@ class FroalaEditorElement extends SlotStylesMixin(
     _lastSyncedValueTimestamp = 0;
     _valueChangeMode = "change";
 
-    _valueChangeTimeout = 2_000;
+    // Froala's own typing debounce, its `typingTimer` option. Not one of our timers -- see #valueChangeTimeout.
+    _valueChangeTimeout = 500;
+
+    _valueChangeInterval = 2_000;
 
     static properties = {
         // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync -- do not redeclare it here.
@@ -153,10 +156,8 @@ class FroalaEditorElement extends SlotStylesMixin(
         // these outlive the element otherwise: an interval keeps firing against a destroyed editor, and a re-attach
         // starts a second one on top of it
         clearInterval(this._valueChangeHandleForInterval);
-        clearTimeout(this._valueChangeHandleForTimeout);
         clearTimeout(this._throttleHandle);
         delete this._valueChangeHandleForInterval;
-        delete this._valueChangeHandleForTimeout;
         delete this._throttleHandle;
 
         if (this.editor) {
@@ -193,6 +194,7 @@ class FroalaEditorElement extends SlotStylesMixin(
 
             this.editor = new FroalaEditor(this.editorElement, {
                 key: this.licenseKey ?? undefined,
+                typingTimer: this._valueChangeTimeout,
                 events: {
                     'initialized': () => {
                         this._editorInitialized = true;
@@ -220,8 +222,6 @@ class FroalaEditorElement extends SlotStylesMixin(
                         if (this.valueChangeMode === "change") {
                             this.onValueChangeThrottled();
                         }
-
-                        this.restartValueChangeTimeoutIfMode();
                     }
                 }
             });
@@ -312,10 +312,6 @@ class FroalaEditorElement extends SlotStylesMixin(
         if (this._valueChangeMode !== newValueChangeMode) {
             this._valueChangeMode = newValueChangeMode;
 
-            if (this._valueChangeMode !== "timeout" && this._valueChangeHandleForTimeout) {
-                this.stopValueChangeTimeout();
-            }
-
             if (this._valueChangeMode === "interval") {
                 this.startValueChangeInterval();
             } else if (this._valueChangeHandleForInterval) {
@@ -329,20 +325,23 @@ class FroalaEditorElement extends SlotStylesMixin(
         return this._valueChangeMode;
     }
 
+    /**
+     * The idle time before Froala reports a change, in milliseconds -- its own `typingTimer` option, not a timer of
+     * ours. Froala restarts it on every keystroke and only fires contentChanged once it elapses, so this is what
+     * decides how long after the last keypress ON_CHANGE syncs.
+     *
+     * Froala floors it at 250 ms, so anything below that would be silently ignored and is rejected here instead. It is
+     * read on every keystroke, which is why setting it takes effect on a running editor.
+     */
     set valueChangeTimeout(newTimeout) {
-        if (!newTimeout || newTimeout < 0) {
-            throw new Error("valueChangeTimeout must be greater than 0");
+        if (!newTimeout || newTimeout < 250) {
+            throw new Error("valueChangeTimeout must be at least 250 ms, the lower bound Froala enforces");
         }
 
-        if (this._valueChangeTimeout !== newTimeout) {
-            this._valueChangeTimeout = newTimeout;
+        this._valueChangeTimeout = newTimeout;
 
-            if (this._valueChangeHandleForTimeout) {
-                this.stopValueChangeTimeout();
-            } else if (this._valueChangeHandleForInterval) {
-                this.startValueChangeInterval(); // also stops the current interval
-            }
-
+        if (this.editor) {
+            this.editor.opts.typingTimer = newTimeout;
         }
     }
 
@@ -350,10 +349,23 @@ class FroalaEditorElement extends SlotStylesMixin(
         return this._valueChangeTimeout;
     }
 
-    stopValueChangeTimeout() {
-        this.onValueChange(); // flush value to server
-        clearTimeout(this._valueChangeHandleForTimeout);
-        delete this._valueChangeHandleForTimeout;
+    /** The time between two syncs in INTERVAL mode, in milliseconds. */
+    set valueChangeInterval(newInterval) {
+        if (!newInterval || newInterval < 0) {
+            throw new Error("valueChangeInterval must be greater than 0");
+        }
+
+        if (this._valueChangeInterval !== newInterval) {
+            this._valueChangeInterval = newInterval;
+
+            if (this._valueChangeHandleForInterval) {
+                this.startValueChangeInterval(); // also stops the current interval
+            }
+        }
+    }
+
+    get valueChangeInterval() {
+        return this._valueChangeInterval;
     }
 
     stopValueChangeInterval() {
@@ -362,28 +374,12 @@ class FroalaEditorElement extends SlotStylesMixin(
         delete this._valueChangeHandleForInterval;
     }
 
-    /**
-     * Restarts the debounce timer, if the current mode is "timeout". Any change before it elapses restarts it, so the
-     * value is synced once the user pauses.
-     */
-    restartValueChangeTimeoutIfMode() {
-        if (this.valueChangeMode !== "timeout") {
-            return;
-        }
-
-        clearTimeout(this._valueChangeHandleForTimeout);
-        this._valueChangeHandleForTimeout = setTimeout(() => {
-            delete this._valueChangeHandleForTimeout;
-            this.onValueChange();
-        }, this.valueChangeTimeout);
-    }
-
     startValueChangeInterval() {
         if (this._valueChangeHandleForInterval) {
             this.stopValueChangeInterval();
         }
 
-        this._valueChangeHandleForInterval = setInterval(this.onValueChange.bind(this), this.valueChangeTimeout);
+        this._valueChangeHandleForInterval = setInterval(this.onValueChange.bind(this), this.valueChangeInterval);
     }
 
     /**
