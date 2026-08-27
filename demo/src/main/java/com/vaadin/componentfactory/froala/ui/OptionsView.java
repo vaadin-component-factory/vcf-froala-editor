@@ -18,8 +18,10 @@ package com.vaadin.componentfactory.froala.ui;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -58,6 +60,7 @@ public class OptionsView extends VerticalLayout {
 
     public OptionsView() {
         setSizeFull();
+        setAlignItems(Alignment.STRETCH);
 
         direction.setLabel("Text direction");
         direction.setItems(FroalaTextDirection.values());
@@ -70,20 +73,17 @@ public class OptionsView extends VerticalLayout {
         FormLayout form = new FormLayout(placeholderText, direction, toolbarInline, documentReady, toolbarSticky,
                 toolbarBottom, charCounterCount, charCounterMax, wordCounterCount, wordCounterMax);
 
-        Button reload = new Button("Reload editor", VaadinIcon.REFRESH.create(), _unused -> reload());
-        reload.setId("reload-editor");
+        form.getChildren().map(HasValue.class::cast).forEach(field -> field.addValueChangeListener(_unused -> reload()));
 
         optionsJson.setReadOnly(true);
-        optionsJson.setWidthFull();
-        optionsJson.setMaxHeight("8em");
 
-        editor.setHeight("400px");
-        editor.setValue("<p>Type something, then reload; the text survives the rebuild.</p>");
+        editor.setMinHeight("400px");
+        setFlexGrow(1, editor);
 
         showOptions(FroalaOptions.defaults());
 
         add(new Paragraph("Pick options, then reload. Only what you set is passed on; everything else stays at "
-                + "Froala's own default."), form, reload, optionsJson, editor);
+                + "Froala's own default."), new Details("Sample Options", form), new Details("JSON", optionsJson), editor);
     }
 
     /**

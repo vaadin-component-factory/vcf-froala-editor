@@ -20,14 +20,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaToolbarAlign;
 import com.vaadin.componentfactory.froala.FroalaToolbarGroup;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -50,6 +53,8 @@ import com.vaadin.flow.router.Route;
 @Route("toolbar")
 @Menu(title = "Toolbar", order = 4)
 public class ToolbarView extends VerticalLayout {
+
+    private static final String INITIAL_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
 
     private static final String FLAT = "Flat list";
     private static final String GROUPED = "Named groups";
@@ -84,8 +89,10 @@ public class ToolbarView extends VerticalLayout {
     private final TextArea toolbarJson = new TextArea("What the editor is built with");
     private final FroalaEditor editor = new FroalaEditor("Editor");
 
+
     public ToolbarView() {
         setSizeFull();
+        setAlignItems(Alignment.STRETCH);
 
         shape.setLabel("Toolbar shape");
         shape.setItems(FLAT, GROUPED);
@@ -99,6 +106,7 @@ public class ToolbarView extends VerticalLayout {
                 + "\"-\" as separators; they are left out here because a multi-select cannot say where they go.");
 
         groupedForm.setPadding(false);
+        groupedForm.setWidthFull();
         PALETTE.forEach((name, buttons) -> {
             GroupForm group = new GroupForm(name, buttons);
 
@@ -110,17 +118,18 @@ public class ToolbarView extends VerticalLayout {
         reload.setId("reload-editor");
 
         toolbarJson.setReadOnly(true);
-        toolbarJson.setWidthFull();
+        toolbarJson.setSizeFull();
         toolbarJson.setMaxHeight("10em");
 
-        editor.setHeight("300px");
-        editor.setValue("<p>Pick buttons above, then reload.</p>");
+        editor.setMinHeight("300px");
+        editor.setValue(INITIAL_VALUE);
+        setFlexGrow(1, editor);
 
         showFormForShape();
 
         add(new Paragraph("A group's name is also the command name of its overflow button, which is why the four "
-                + "groups below carry Froala's own names: those are the only ones it has a button for."), shape,
-                flatButtons, groupedForm, reload, toolbarJson, editor);
+                + "groups below carry Froala's own names: those are the only ones it has a button for."),
+                new Details("Toolbar Options", shape, flatButtons, groupedForm, reload), new Details("JSON", toolbarJson), editor);
     }
 
     private void showFormForShape() {

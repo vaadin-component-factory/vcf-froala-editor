@@ -500,6 +500,71 @@ Still open from the same round, deliberately not fixed: a detach that is followe
 the old options, one when the new options arrive an update later. The guard makes
 the wasted one harmless, but it is still a full Froala init nobody sees.
 
+**Next up, agreed with the maintainer 2026-08-27 — one at a time, in this order.**
+
+**1. Take the license key out of its own element property.** Decided 2026-08-27: it
+is Froala's `key` option like any other, so it travels inside the `options` property
+and the client builds Froala from one place. This was written once and the maintainer
+reset the working tree, so it has to be written again — the design, in full:
+
+- *Client*: delete the `licenseKey` field from the connector and the
+  `options.key = this.licenseKey` line in `_initEditor`. Nothing replaces them.
+- *Server*: `FroalaEditor` keeps `setLicenseKey`/`getLicenseKey` — `CLAUDE.md`
+  requires the setter and `FroalaOptions` still does not type `key`. Three fields:
+  `configuredOptionsJson` (what `setOptions` was given), `licenseKey`, and
+  `optionsJson` (what the client was given). One private `writeOptions()` does the
+  merge: re-parse `configuredOptionsJson`, `put("key", …)` when a key is set, write
+  the property — and remove the property when both are null. Re-parsed rather than
+  written into, so the caller's `JsonObject` cannot pick up a key from an editor it
+  was handed to earlier.
+- The setter **wins** over a `key` that came in as raw JSON, and setting a key on a
+  running editor now **rebuilds** it. That removes the old API-11 limitation: no
+  detach and re-attach needed any more.
+- *Tests to adjust*: `FroalaEditorKaribuTest.licenseKey_isSetAsElementProperty` →
+  assert the key lands in the options property; `licenseKey_nullRemovesTheProperty` →
+  assert the property goes away entirely; add one for the setter winning over a
+  `key` in the options (mind the emitted order — the re-parsed object keeps its
+  original key order, so it reads `{"key":…,"language":…}`).
+  `FroalaEditorIT.licenseKey_isReadOnceWhenTheEditorIsBuilt` becomes
+  `licenseKey_rebuildsTheEditorLikeAnyOtherOption` and waits with
+  `page.waitForFunction` on `editor.opts.key` — the rebuild is asynchronous and the
+  element answers with the old editor until it lands. API-9, API-10 and API-11 in
+  `docs/specs/phase-1-component-api.md` change with it.
+- *Asked and answered*: only **two** element properties ever duplicated a Froala
+  option — `licenseKey` → `key`, and `valueChangeTimeout` → `typingTimer`. The timer
+  **stays**: the connector writes it to a running editor
+  (`editor.opts.typingTimer = …`) without a rebuild, which the options channel cannot
+  do. `valueChangeMode` and `intervalPeriod` are ours, Froala has no such options,
+  and `value` is not an option at all.
+
+**2. Then get the gate green.** It was last fully green at `9246328` (39 browserless,
+34 e2e) and has not been run since the constructor-defaults commits. One e2e test is
+known to fail and it is **not** the license key: `FroalaEditorIT.setValue_producesNoDeltaNobodyTyped`, with
+`["349:change:99"] mode=change ==> expected: <0> but was: <1>`. Measured on a clean
+HEAD with the local changes stashed, so it is nobody's edit — and it passed in a
+full-class run earlier the same day, so it is order or timing sensitive. Suspicion,
+not yet proven: the server pushes deliberately messy HTML, Froala normalizes it, and
+a `contentChanged` that VCM-16 says `html.set` never fires does fire, so the
+normalization travels back as a delta describing a change nobody made. Decide which
+of the two is wrong, the spec or the test.
+
+**3. Then the javadoc pass**, and only once 2 is green. Review every javadoc under
+`component/src/main/java/com/vaadin/componentfactory/froala/` against `STYLEGUIDE.md`
+and `AGENTS.md` — plain language, and why rather than what. The maintainer's own
+calibration point: `FroalaToolbarGroup.withButtonsVisible`, the paragraph beginning
+*"The count is not a maximum with an escape hatch"* — they could not tell what it was
+trying to say, or whether it was our wording or Froala's. Two review subagents were
+started for this and stopped on purpose; run them one at a time.
+
+**Also open, from the same afternoon:** `7d7910d` and `6b85d33` put
+`setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE)` and
+`setIntervalPeriod(DEFAULT_INTERVAL_PERIOD)` back into the constructor. CFG-13 in
+`docs/specs/phase-2-configuration.md` says the constructor no longer writes those
+defaults as element properties, so one of the two is now wrong. (The commit before
+the fix had them inside the `_value-delta` listener, which reset the mode on every
+delta the client sent — that is what made
+`intervalMode_syncsOnEveryTick_whileTheUserKeepsTyping` fail, and it is fixed.)
+
 Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
 - [x] `FroalaOptions` — immutable, typed, serialized to the raw JSON Froala expects
