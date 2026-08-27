@@ -1,15 +1,25 @@
 # IMPORTANT: General rules and conventions for you (agent)
 
-* Code and document for humans. they have to understand and maintain the application. 
-* Don't guess, confirm with docs / sources / research results / MCP. Being uncertain is fine and saying so is
-  fine; stating an assumption as fact is not.
-* If there is no solution or answer, say it. Aknowledging failure is better than trying to hide it. 
-* Review your own produce with subagents -- see *Verifying your produce* for when and how.
-* The code is not your history / changelog.
-* Follow clean code and yagni principles.
-* Don't invent or workaround, if there's already a solution. Use the existing libs first before adding new ones.
+- Code and document for humans. They have to understand and maintain the
+  application.
+- Don't guess, confirm with docs / sources / research results / MCP. Being
+  uncertain is fine and saying so is fine; stating an assumption as fact is not.
+- If there is no solution or answer, say it. Acknowledging failure is better than
+  trying to hide it.
+- Review your own output with subagents — see *Verifying your output* for when and
+  how.
+- **Answer the question you were asked before you edit anything.** A question about
+  finished work wants an answer, not a rewrite.
+- The code is not your history / changelog. 
+- Never silently revert or tidy away something in the workspace you cannot
+  explain. Ask, or leave it.
+- Follow clean code and yagni principles.
+- Don't invent or work around something that already has a solution. Use the
+  existing libs before adding new ones.
+- Use plain and clear language in your answers, don't try to sound creative, keep it simple.
 
-## Verifying your produce
+
+## Verifying your outcome / work
 
 - **Agent review is part of every phase, before the commit.** Not optional and not
   something to wait to be asked for: once a phase's code is written and the tests
