@@ -17,6 +17,7 @@ package com.vaadin.componentfactory.froala.it.views;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -43,11 +44,11 @@ public class FroalaOptionsTestView extends VerticalLayout {
 
     /** Not Froala's own default toolbar, so no default can pass for a configured one. */
     public static final FroalaOptions INITIAL_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
-            .withToolbarButtons("bold", "italic");
+            .withToolbarButtons(FroalaToolbar.of("bold", "italic"));
 
     /** A second set, to show that options really are re-read when they change on a running editor. */
     public static final FroalaOptions OTHER_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
-            .withToolbarButtons("undo", "redo", "insertLink");
+            .withToolbarButtons(FroalaToolbar.of("undo", "redo", "insertLink"));
 
     public FroalaOptionsTestView() {
         setSizeFull();

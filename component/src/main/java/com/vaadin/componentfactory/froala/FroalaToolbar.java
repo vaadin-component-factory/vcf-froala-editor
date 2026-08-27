@@ -1,0 +1,173 @@
+/*
+ * Copyright 2026 Vaadin Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.vaadin.componentfactory.froala;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import elemental.json.Json;
+import elemental.json.JsonArray;
+import elemental.json.JsonObject;
+import elemental.json.JsonValue;
+
+/**
+ * A toolbar layout: which buttons the toolbar shows, in which order, and -- in the grouped form -- how they are
+ * grouped. Immutable, and handed to {@link FroalaOptions#withToolbarButtons(FroalaToolbar)} or one of its three
+ * narrower-screen siblings.
+ *
+ * <p>
+ * Froala reads a toolbar in two shapes and treats them differently, so this class offers both:
+ *
+ * <ul>
+ * <li>{@link #of(String...)} -- a flat list. Every button given is shown, always. Froala cuts the list into groups at
+ * the separators itself and switches its overflow panel off.</li>
+ * <li>{@link #ofGroups(FroalaToolbarGroup...)} -- named groups, each with its own alignment and its own count of
+ * buttons shown before the rest move into an overflow panel. This is the shape Froala's own default toolbar uses, and
+ * the only one where the overflow panel exists at all.</li>
+ * </ul>
+ *
+ * <pre>
+ * FroalaToolbar toolbar = FroalaToolbar.ofGroups(
+ *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline"),
+ *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, "undo", "redo").withAlign(FroalaToolbarAlign.RIGHT));
+ *
+ * FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withToolbarButtons(toolbar));
+ * </pre>
+ *
+ * <p>
+ * A button name is a registered command name -- {@code "bold"}, {@code "paragraphFormat"}, {@code "insertImage"},
+ * {@code "fullscreen"} and 179 others in Froala 5.4.0. The list is the one under {@code toolbarButtons} in
+ * <a href="https://froala.com/wysiwyg-editor/docs/options/">Froala's option documentation</a>. A name Froala does not
+ * know is dropped without a word, and so is a button whose plugin is not among the ones
+ * {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} allows.
+ */
+public final class FroalaToolbar implements Serializable {
+
+    /** Set in the flat form, null in the grouped one. Exactly one of the two fields is set. */
+    private final List<String> buttons;
+
+    /** Set in the grouped form, null in the flat one. Exactly one of the two fields is set. */
+    private final List<FroalaToolbarGroup> groups;
+
+    private FroalaToolbar(List<String> buttons, List<FroalaToolbarGroup> groups) {
+        this.buttons = buttons;
+        this.groups = groups;
+    }
+
+    /**
+     * Creates a flat toolbar that shows every button given, in the order given. The overflow panel only exists in the
+     * grouped form, so a flat toolbar longer than the window wraps instead of collapsing.
+     *
+     * <p>
+     * {@code "|"} and {@code "-"} both start a new group here, and neither is drawn: Froala consumes them while cutting
+     * the list into groups, so in this form the two are interchangeable. Inside a {@link FroalaToolbarGroup} they are
+     * separator lines instead, one vertical and one horizontal.
+     *
+     * @param buttons command names in the order they should appear, none of them null
+     * @return a new instance
+     * @throws NullPointerException if any button name is null
+     */
+    public static FroalaToolbar of(String... buttons) {
+        for (String button : buttons) {
+            Objects.requireNonNull(button, "A toolbar button needs a command name");
+        }
+
+        return new FroalaToolbar(List.of(buttons), null);
+    }
+
+    /**
+     * Creates a grouped toolbar from the given groups, in the order given.
+     *
+     * @param groups the button groups, none of them null and no two of them sharing a name
+     * @return a new instance
+     * @throws IllegalArgumentException if two groups share a name
+     * @throws NullPointerException if any group is null
+     */
+    public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
+        return ofGroups(Arrays.asList(groups));
+    }
+
+    /**
+     * Creates a grouped toolbar from the given groups, in the order given.
+     *
+     * @param groups the button groups, none of them null and no two of them sharing a name
+     * @return a new instance
+     * @throws IllegalArgumentException if two groups share a name -- Froala keys its groups by name, so the second
+     *             would silently replace the first
+     * @throws NullPointerException if any group is null
+     */
+    public static FroalaToolbar ofGroups(Collection<FroalaToolbarGroup> groups) {
+        Set<String> names = new LinkedHashSet<>();
+
+        for (FroalaToolbarGroup group : groups) {
+            Objects.requireNonNull(group, "A toolbar group must not be null");
+
+            if (!names.add(group.getName())) {
+                throw new IllegalArgumentException("Two toolbar groups are named '" + group.getName()
+                        + "'. Froala keys its groups by name, so the second one would replace the first.");
+            }
+        }
+
+        return new FroalaToolbar(null, List.copyOf(groups));
+    }
+
+    /** Returns the toolbar as Froala receives it: an array in the flat form, an object of named groups in the other. */
+    JsonValue toJson() {
+        if (groups == null) {
+            JsonArray names = Json.createArray();
+            buttons.forEach(button -> names.set(names.length(), button));
+
+            return names;
+        }
+
+        JsonObject grouped = Json.createObject();
+        groups.forEach(group -> grouped.put(group.getName(), group.toJson()));
+
+        return grouped;
+    }
+
+    /**
+     * Returns the toolbar as the JSON Froala receives. Meant for logging and debugging.
+     *
+     * @return the toolbar as JSON
+     */
+    @Override
+    public String toString() {
+        return toJson().toJson();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof FroalaToolbar toolbar)) {
+            return false;
+        }
+
+        return Objects.equals(buttons, toolbar.buttons) && Objects.equals(groups, toolbar.groups);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(buttons, groups);
+    }
+}

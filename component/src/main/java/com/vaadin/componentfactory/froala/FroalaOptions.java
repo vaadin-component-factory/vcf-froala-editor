@@ -217,31 +217,56 @@ public final class FroalaOptions implements Serializable {
     // -----------------------------------------------------------------------------------------------------------
 
     /**
-     * Sets which buttons the toolbar shows, in the given order. Froala's {@code toolbarButtons}, which is its own
-     * eight-group default when left alone. A button name is a registered command name; {@code "|"} draws a vertical
-     * separator and {@code "-"} a horizontal one. A name Froala does not know, or one whose plugin is not enabled, is
-     * dropped without a word.
+     * Sets which buttons the toolbar shows and how they are grouped. Froala's {@code toolbarButtons}, which is its own
+     * eight-group default when left alone.
      *
      * <p>
-     * This is Froala's flat form, which always shows every button given. Its grouped form -- named groups with
-     * {@code align} and a {@code buttonsVisible} count, and the separate {@code toolbarButtonsMD/SM/XS} for narrower
-     * screens -- is not typed yet and needs {@link FroalaEditor#setOptions(String)}.
+     * This is also the toolbar Froala falls back to on a narrower screen: the three sibling options below are each
+     * consulted first, but only if they were set. Which of the four a given moment uses is decided on the editor's own
+     * width when Froala's {@code toolbarResponsiveToEditor} is on, and on the window's otherwise.
      *
-     * @param buttons command names in the order they should appear, or none to leave Froala's default
+     * @param toolbar the toolbar layout, or null to leave Froala's default
      * @return a new instance
      */
-    public FroalaOptions withToolbarButtons(String... buttons) {
-        if (buttons == null || buttons.length == 0) {
-            return with("toolbarButtons", (JsonValue) null);
-        }
+    public FroalaOptions withToolbarButtons(FroalaToolbar toolbar) {
+        return withToolbar("toolbarButtons", toolbar);
+    }
 
-        JsonArray names = Json.createArray();
+    /**
+     * Sets the toolbar used from 992 to 1199 pixels wide. Froala's {@code toolbarButtonsMD}; without it that width uses
+     * {@link #withToolbarButtons(FroalaToolbar)}, which also documents what the width is measured on.
+     *
+     * @param toolbar the toolbar layout, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withToolbarButtonsMd(FroalaToolbar toolbar) {
+        return withToolbar("toolbarButtonsMD", toolbar);
+    }
 
-        for (String button : buttons) {
-            names.set(names.length(), button);
-        }
+    /**
+     * Sets the toolbar used from 768 to 991 pixels wide. Froala's {@code toolbarButtonsSM}; without it that width uses
+     * {@link #withToolbarButtons(FroalaToolbar)}, which also documents what the width is measured on.
+     *
+     * @param toolbar the toolbar layout, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withToolbarButtonsSm(FroalaToolbar toolbar) {
+        return withToolbar("toolbarButtonsSM", toolbar);
+    }
 
-        return with("toolbarButtons", names);
+    /**
+     * Sets the toolbar used below 768 pixels wide. Froala's {@code toolbarButtonsXS}; without it that width uses
+     * {@link #withToolbarButtons(FroalaToolbar)}, which also documents what the width is measured on.
+     *
+     * @param toolbar the toolbar layout, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withToolbarButtonsXs(FroalaToolbar toolbar) {
+        return withToolbar("toolbarButtonsXS", toolbar);
+    }
+
+    private FroalaOptions withToolbar(String option, FroalaToolbar toolbar) {
+        return with(option, toolbar == null ? null : toolbar.toJson());
     }
 
     /**
