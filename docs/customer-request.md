@@ -88,78 +88,74 @@ string into one). Not exposed for now — a single key covers the customer's cas
 
 ## Open questions back to NST
 
-Each of these blocks scoping. They are written out in full, with Froala's actual
-situation next to them, so they can be asked without knowing Froala's plugin list.
-The measurements they refer to are in the section above.
+Six questions. Each one changes what gets built, so they are written out with
+Froala's actual situation next to them and can be asked without knowing Froala's
+plugin list. The measurements behind them are in the section above.
 
 ### 1. What does "mentions" mean?
 
-The request lists mentions as a wanted feature. Froala offers two unrelated things
-under that word, and they differ by roughly an order of magnitude in effort.
+Froala offers two unrelated things under that word:
 
 | Reading | What the user sees | What Froala provides |
 |---|---|---|
-| **In-document mentions** | Typing `@` while writing opens a name picker and inserts a reference into the document text | **Nothing.** No plugin exists. Trigger detection, the dropdown and a server-side feed of candidate users would all be built from scratch |
-| **Mentions in review comments** | `@name` inside a comment thread attached to the document | Ships in the `collaborative` plugin (`mentionableUsers`) — but that plugin is a collaboration stack: it requires Yjs, a `docId`, `commentsUrl` and `suggestionsUrl` endpoints, and a role model |
+| **In-document mentions** | Typing `@` while writing opens a name picker and inserts a reference into the text | Nothing. No plugin exists. Trigger detection, the dropdown and a server-side feed of candidate users would be built from scratch |
+| **Mentions in review comments** | `@name` inside a comment attached to the document | Ships in the `collaborative` plugin (`mentionableUsers`) — which is a collaboration stack: Yjs, a `docId`, `commentsUrl` and `suggestionsUrl` endpoints, a role model |
 
-The second reading changes the architecture, not just the estimate. **Which one is
+The second reading brings infrastructure with it, not just work. **Which one is
 meant?**
 
 ### 2. What does "templates" mean?
 
-Also on the list. **Froala has no document-template feature.** The
-`RegisterTemplate` / `ICON_TEMPLATES` / `POPUP_TEMPLATES` names in its API are markup
-for Froala's own icons and popups, not prepared documents. So this is custom work
-either way, and the cost depends entirely on the reading:
+Froala has no document-template feature. The `RegisterTemplate` and
+`ICON_TEMPLATES` names in its API are markup for Froala's own icons and popups, not
+prepared documents. So this is custom work either way, and the two readings differ
+in size:
 
-- *"Insert a stored HTML snippet at the caret"* — small: a list of snippets plus an
-  insert call.
-- *"A document skeleton with placeholders that get filled in"* — a variable
-  substitution system, substantially larger.
+- *Insert a stored HTML snippet at the caret* — a list of snippets and an insert call.
+- *A document skeleton with placeholders that get filled in* — a variable
+  substitution system.
 
 **Which one is meant?**
 
 ### 3. Full feature set, or a first cut?
 
-The request says "maximum feature set". Delivering everything on the list is months
-apart from a first release covering rich-text formatting, media, upload and
-localization. **Is a staged delivery acceptable, and if so, what has to be in the
-first stage?**
+The request says "maximum feature set". Building all of it takes noticeably longer
+than a first release covering rich-text formatting, media, upload and localization.
+**Is a staged delivery acceptable, and if so, what has to be in the first stage?**
 
 ### 4. Which Vaadin version does the NST application run?
 
-This add-on targets Vaadin 24, the platform floor, so it excludes as few consumers as
-possible. If NST is on 25, several versions have to move together (Vaadin, the
-browserless test library, the Java baseline). **Which version is NST on?**
+This add-on targets Vaadin 24, the platform floor, so it excludes as few consumers
+as possible. If NST is on 25, several versions move together — Vaadin, the
+browserless test library, the Java baseline. **Which version is NST on?**
 
 ### 5. Are track changes and mentions needed on day one?
 
-They are the two most expensive items on the list. **Can they be in a later stage?**
+They are the two largest items on the list. **Can they be in a later stage?**
 
-### 6. Which of the eight service-backed plugins are needed?
+### 6. Which of the service-backed plugins are needed?
 
-Froala ships 49 plugins. 41 of them work with nothing but a browser, or need only the
-image/file upload endpoint this add-on will provide. The remaining **eight need a
-server or a paid service that is not part of this add-on**, so each one is a separate
-decision — and a cost — for NST:
+Froala ships 49 plugins. 41 need nothing but a browser, or only the image and file
+upload endpoint this add-on provides. The other eight need a server or a paid
+service that is not part of the add-on:
 
 | Plugin | What it gives the user | What it requires |
 |---|---|---|
-| `collaborative` | Several people editing one document at once, review comments, version history | Froala's collaboration server, plus `docId`, `commentsUrl` and `suggestionsUrl` endpoints and a role model. 596 KB of the bundle. This is also where comment mentions live — see question 1 |
-| `ai_assist` | Rewrite, change tone, translate, chat about the text | An AI endpoint and its cost |
-| `filestack` | File upload through Filestack | A paid Filestack account |
-| `spell_checker` | Spell checking as you type | A paid SCAYT subscription |
+| `collaborative` | Several people editing one document at once, review comments, version history | Froala's collaboration server, plus `docId`, `commentsUrl` and `suggestionsUrl` endpoints and a role model. Also where comment mentions live — see question 1 |
+| `ai_assist` | Rewrite, change tone, translate, chat about the text | An AI endpoint |
+| `filestack` | File upload through Filestack | A Filestack account |
+| `spell_checker` | Spell checking as you type | A SCAYT subscription |
 | `import_from_word` | Open a .docx in the editor | Froala's conversion service |
 | `export_to_word` | Save the document as .docx | Froala's conversion service |
-| `save` | The editor posts its content to a URL by itself, on a timer | A save endpoint — and it duplicates what a Flow application does through the value change listener |
+| `save` | The editor posts its content to a URL on a timer | A save endpoint. Overlaps with what a Flow application already does through the value change listener |
 
-All eight are shipped either way, so switching one on later costs nothing. The
-question is what is on by **default**: a button that is visible but does nothing
-because no service stands behind it is worse than no button.
+All eight ship either way, so switching one on later costs nothing. The question is
+what is on by default: a visible button with no service behind it does nothing when
+clicked. **Which of these does NST need, and is the infrastructure for them in
+place?**
 
-**Which of these does NST need, and does the infrastructure for them exist?**
+---
 
 Not open any more, recorded here because the request touches them: the add-on builds
 against **Froala 5.4.0**, not the 4.6.2 the request names, and a consuming application
 supplies its own license key through `setLicenseKey(String)` — the add-on ships none.
-

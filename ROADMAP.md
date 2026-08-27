@@ -795,7 +795,7 @@ not duplicate them here.
 
 What is left below is ours to answer.
 
-- Is `eclipse/license-header.txt` (Apache-2.0, "Copyright $YEAR Vaadin Ltd.") the
-  wording Component Factory actually uses? It was authored during scaffolding to
-  replace the template's `<YOUR NAME OR COMPANY>` placeholder. If it needs to
-  change: edit that file, then `mvn spotless:apply` restamps every source file.
+- Nothing at the moment. The license question is closed: the add-on is Apache-2.0
+  under "Vaadin Ltd.", confirmed by the maintainer 2026-08-27, and `LICENSE` plus a
+  `<licenses>` block in both poms were added then. Most VCF add-ons carry no owner
+  in the per-file header, so `eclipse/license-header.txt` stays as it is.
