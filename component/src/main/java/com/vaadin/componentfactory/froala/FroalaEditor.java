@@ -54,12 +54,16 @@ import com.vaadin.flow.dom.Element;
 public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String> implements HasValidationProperties,
         HasValidator<String>, InputNotifier, HasSize, HasStyle, Focusable<FroalaEditor>, HasLabel, HasHelper {
 
-    public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
-    public static final int DEFAULT_INTERVAL_PERIOD = 2000;
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
 
-    /** Froala floors its own {@code typingTimer} at this value, so anything below it would have no effect. */
+    /// Froala floors its own `typingTimer` at this value, so anything below it would have no effect.
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
+
+    /// The default timeout before a value is sent to the server, when value change mode is "on change".
+    public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
+
+    /// The default interval period for the value change mode "interval".
+    public static final int DEFAULT_INTERVAL_PERIOD = 2000;
 
     private static final String VALUE_PROPERTY = "value";
     private static final String OPTIONS_PROPERTY = "options";
@@ -173,6 +177,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
             String delta = event.getEventData().get("event.detail.delta").asString();
+
+            setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
+            setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
             String newValue;
             try {
