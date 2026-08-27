@@ -114,30 +114,14 @@ in size:
 - *Insert a stored HTML snippet at the caret* — a list of snippets and an insert call.
 - *A document skeleton with placeholders that get filled in* — a variable
   substitution system.
+- ... — something completely different?
 
 **Which one is meant?**
 
-### 3. Full feature set, or a first cut?
-
-The request says "maximum feature set". Building all of it takes noticeably longer
-than a first release covering rich-text formatting, media, upload and localization.
-**Is a staged delivery acceptable, and if so, what has to be in the first stage?**
-
-### 4. Which Vaadin version does the NST application run?
-
-This add-on targets Vaadin 24, the platform floor, so it excludes as few consumers
-as possible. If NST is on 25, several versions move together — Vaadin, the
-browserless test library, the Java baseline. **Which version is NST on?**
-
-### 5. Are track changes and mentions needed on day one?
-
-They are the two largest items on the list. **Can they be in a later stage?**
-
-### 6. Which of the service-backed plugins are needed?
-
-Froala ships 49 plugins. 41 need nothing but a browser, or only the image and file
-upload endpoint this add-on provides. The other eight need a server or a paid
-service that is not part of the add-on:
+### 3. Plugins / "maximum feature set"
+#### "Complex" plugins
+Froala ships 49 plugins from which the 8 below either need an external service, a paid subscription, 
+or an endpoint in the application.
 
 | Plugin | What it gives the user | What it requires |
 |---|---|---|
@@ -149,10 +133,17 @@ service that is not part of the add-on:
 | `export_to_word` | Save the document as .docx | Froala's conversion service |
 | `save` | The editor posts its content to a URL on a timer | A save endpoint. Overlaps with what a Flow application already does through the value change listener |
 
-All eight ship either way, so switching one on later costs nothing. The question is
-what is on by default: a visible button with no service behind it does nothing when
-clicked. **Which of these does NST need, and is the infrastructure for them in
-place?**
+Is any of these plugins needed, and if so is the infrastructure for them in
+place?
+
+#### Upload plugins
+
+Image and file upload is a separate case. Froala posts the file to a URL and expects
+a link back, so it needs an endpoint, storage, and a URL the stored file is served
+from. Froala can also embed images directly in the text instead, or upload to S3 or
+Azure. 
+
+Which of these fits the setup?
 
 ---
 
