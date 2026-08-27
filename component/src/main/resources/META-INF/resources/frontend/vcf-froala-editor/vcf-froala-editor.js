@@ -25,10 +25,8 @@ class FroalaEditorElement extends SlotStylesMixin(
                         PolylitMixin(LitElement)))))))
 {
 
-    // can be overridden by the server using #setConfig
-    rawInitialConfig = {};
-
-    // will be overridden by the server on attachment time
+    // Raw Froala options, set by the server before the editor initializes. Read once, at init -- Froala has no runtime
+    // option API. Our own keys are applied afterwards and win.
     initialConfig = {};
 
     // set by the server before the editor initializes; passed to Froala as its `key` option
@@ -193,6 +191,7 @@ class FroalaEditorElement extends SlotStylesMixin(
             this.append(this.editorElement); // will be put into the default slot
 
             this.editor = new FroalaEditor(this.editorElement, {
+                ...this.initialConfig,
                 key: this.licenseKey ?? undefined,
                 typingTimer: this._valueChangeTimeout,
                 events: {

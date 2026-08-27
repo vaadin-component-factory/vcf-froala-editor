@@ -73,8 +73,42 @@ every requirement is `unverified` until its test exists.
   CFG-8 is no longer overwritten unconditionally, so exposing it as a deprecated
   option is possible if we choose to.
 
+## Toolbar, plugins and what is loaded
+
+Measured 2026-08-27 against froala-editor 5.4.0; the demo views `/check-toolbar`,
+`/check-upload` and `/check-on-demand` show the same results in a browser.
+
+- **CFG-14** A toolbar group name is a **free string**, and it is also the command
+  name of the group's overflow button. If a group holds more buttons than its
+  `buttonsVisible` and no command is registered under the group's name, the
+  overflow buttons are rendered into a collapsed panel that nothing can open. The
+  API therefore takes strings and **says this**, rather than restricting the name to
+  Froala's four `more…` groups. *unverified*
+- **CFG-15** A plugin has **two names**: the file (`font_family.min.js`) and the
+  name it registers itself under, which is what `pluginsEnabled` takes
+  (`fontFamily`). They differ for 20 of the 49, `track_changes` keeps its underscore
+  where every other multi-word plugin is camel-cased, and `edit_in_popup` registers
+  no plugin at all. The Java side carries both per plugin; neither is derived from
+  the other. *unverified*
+- **CFG-16** Plugins and language files are loaded **on demand**, with a dynamic
+  `import()` per file, on top of Froala's core. All 49 plugins and all 39 language
+  files stay shipped; a given editor downloads what its configuration names. This
+  replaces the packaged `froala_editor.pkgd.min.js`, and it replaces it completely —
+  core and packaged bundle on one page are two module instances with two separate
+  plugin registries. *unverified*
+- **CFG-17** Upload is **off until a URL is configured**. With no URL Froala uploads
+  nothing — it inserts a `blob:` URL, which is valid only in the tab that created it,
+  so the value the server stores points at nothing after a reload. A silently broken
+  document is worse than a missing button. *unverified*
+
 ## Known gaps
 
 - `saveInterval: 0` — Froala's `save` plugin schedules a POST to `saveURL` 10 s
   after every `contentChanged`, which then fails on the missing URL. Nobody listens,
   so it is dead work per edit rather than a defect. Turn it off here.
+- Two Froala defaults reach servers that are not the application's:
+  `imageManagerLoadURL` (`https://i.froala.com/load-files`, reached only if
+  `imageManager` is added to `imageInsertButtons`) and `emoticonsUseImage`
+  (`cdnjs.cloudflare.com`, reached out of the box because `emoticons` is in the
+  default toolbar, and it leaves a cdnjs URL in the stored HTML). Decide the
+  defaults for both when the option surface is typed.

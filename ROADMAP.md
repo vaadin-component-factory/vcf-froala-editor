@@ -460,6 +460,27 @@ Goal: expose Froala's options through Java instead of leaking raw JSON.
 Specified in `docs/specs/phase-2-configuration.md` and `phase-2-theming.md`,
 written before the code as agreed in `docs/specs/README.md`.
 
+**The three checks are measured — 2026-08-27.** Each has a demo view, so the
+result can be looked at and not only read. The views feed raw JSON to the editor
+through the connector's `initialConfig` property, which was dead until now; that is
+the temporary stand-in for the options API, not its design.
+
+| | Question | Answer | View |
+|---|---|---|---|
+| 1 | Are toolbar group names free? | **Free**, but a name that is not a registered command loses its overflow button | `/check-toolbar` |
+| 2 | Where does an upload go with no URL? | **Nowhere** — the file stays in the browser as a `blob:` URL. Two other defaults do leave the network | `/check-upload`, with a real upload endpoint as the counter-check |
+| 3 | Can plugins and languages load on demand? | **Yes**, all three verification points pass | `/check-on-demand`, which reports the files the browser fetched and their sizes |
+
+Details are on the items below. Check 3's view is a spike element in `demo/`
+(`froala-ondemand-spike.js`) and not the add-on: it imports Froala's core only and
+pulls each plugin with a dynamic import.
+
+The measurement harness from the planning session is still in the session
+scratchpad (`harness2.html` plus `playwright-core` and small `*.mjs` drivers, served
+over a local `python3 -m http.server`). It drives raw Froala in headless Chromium
+without Vaadin — that is what answered checks 1 and 2; check 3 needed the real
+production build.
+
 Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
 - [ ] `FroalaOptions` — immutable, typed, record plus Lombok `@With`, serialized to
@@ -479,13 +500,29 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
 - [ ] A `vaadin` Froala theme, **active by default**, Lumo-mapped through our own
       custom properties (THM-1, THM-5, THM-7). Vaadin's `HasThemeVariant` was
       considered and dropped — Froala cannot switch a theme at runtime (THM-2)
-- [ ] **Toolbar composition — plain strings, not an enum, for now.** Decided
-      2026-08-27. A toolbar entry is only a command name, and a custom button
+- [ ] **Toolbar composition — plain strings, not an enum, for now.**
+      Decided 2026-08-27. A toolbar entry is only a command name, and a custom button
       (`RegisterCommand`) is a name we do not know in advance, so a string is what
       the API has to carry either way. Narrowing to an enum later is a restriction
-      of the accepted values, not a change of shape. Group names are strings for the
-      same reason until it is established whether `moreText`/`moreParagraph`/
-      `moreRich`/`moreMisc` are fixed or free.
+      of the accepted values, not a change of shape.
+
+      **Check 1, measured 2026-08-27: group names are free strings.** Froala's own
+      default already uses `versionControl`, `exportImport` and `collab` next to the
+      four `more…` names. Any key with a `buttons` array becomes a button group.
+
+      One catch, and it decides how the API has to document this: **the group name
+      is also the command name of the group's overflow button.** When a group holds
+      more buttons than its `buttonsVisible`, Froala builds a collapsed `more`
+      panel for the rest and then looks for `FroalaEditor.COMMANDS[groupName]` to
+      render the button that opens it. With `moreText` it finds one; with
+      `myTextGroup` it finds nothing, and the overflow buttons are in the DOM with
+      no way to reach them. Registering a command under the group's name brings the
+      toggle back — checked both ways.
+
+      Also measured: overflow only exists in the **object** form. Both array forms
+      set `showMoreButtons` to false internally and always render every button,
+      naming the groups `group1`, `group2`, … An unknown button name is dropped
+      silently, and it still counts towards `buttonsVisible`.
 
       Froala accepts three forms, all of which the API has to reach
       ([docs](https://froala.com/wysiwyg-editor/docs/options/)): a flat list of
@@ -493,7 +530,8 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       `buttons` plus optional `align` (`left`/`right`) and `buttonsVisible` (how many
       show before the "more" arrow). `align` and `buttonsVisible` belong to the
       **group**, not to a button. Plus `toolbarButtonsMD` / `SM` / `XS` — the same
-      structure again for ≥992px, ≥768px and below.
+      structure again for ≥992px, ≥768px and below. 183 commands are registered in
+      5.4.0, which is the set a button name can come from.
 
       A button whose plugin is disabled is dropped silently by Froala. Not our
       problem to catch — bad input, bad output.
@@ -507,15 +545,52 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       eight that need a server or a paid service** — `collaborative`, `ai_assist`,
       `filestack`, `spell_checker`, `import_from_word`, `export_to_word`, `save`.
       Decided 2026-08-27; a visible button with no service behind it is worse than
-      no button. Which of the eight NST actually needs is question 6 in
-      `docs/customer-request.md`, still open.
-- [ ] **Where does an upload go when no URL is set?** Verify before the five upload
-      plugins are on by default. `imageUploadURL`, `fileUploadURL` and
-      `videoUploadURL` all default to `null`, and Froala's bundle contains
-      `https://i.froala.com/upload` as its demo endpoint. If an unconfigured upload
-      reaches that host, user files leave the customer's network — that is a data
-      protection problem, not a rough edge. Measure it; if it happens, the upload
-      buttons stay off until a URL is set.
+      no button. Which of the eight the customer actually needs is the plugin
+      question in `docs/customer-request.md`, still open.
+
+      Note the two name spaces measured under check 3: `pluginsEnabled` takes the
+      name a plugin registers itself under (`fontFamily`), the file is called
+      something else (`font_family.min.js`). The five service plugins above are
+      named by file here.
+- [ ] **Where does an upload go when no URL is set?** **Check 2, measured
+      2026-08-27: nowhere.** `imageUploadURL`, `fileUploadURL` and `videoUploadURL`
+      all default to `null`, and Froala treats null — and its own demo endpoint
+      `https://i.froala.com/upload` — as "do not upload": it reads the file with a
+      `FileReader` and inserts a `blob:` URL instead. No request leaves the browser.
+      Counter-checked by setting a URL, which does produce the POST.
+
+      The counter-check is in the demo as case 3 of `/check-upload`: a
+      `FroalaUploadController` (`demo/.../rest/`) takes the multipart POST under the
+      parameter name `file` — the default for image, file and video alike — stores
+      the bytes and answers `{"link": "/froala-upload/<id>"}`, which it then serves
+      the file under. Image and file both round-trip, and the link that reaches the
+      server as part of the value survives a reload. That is also the shape phase 3
+      has to turn into something the add-on offers.
+
+      One rule that carries over to phase 3: the content type and file name the
+      browser sees on the way back are decided **server side**, from the bytes, and
+      never taken from the upload. The endpoint answers on the application's own
+      origin, so handing an uploaded file back inline under a type the uploader
+      chose is stored cross-site scripting. The demo controller serves the image
+      types it recognises inline and everything else as a download, with
+      `X-Content-Type-Options: nosniff`.
+
+      That closes the data-protection question for uploads, and opens a different
+      one. A `blob:` URL lives only in the tab that created it. The editor sends
+      that URL to the server as part of its value, the server stores it, and after
+      a reload the image is gone. So uploads staying on by default is fine for the
+      network but produces broken documents; the honest default is to keep the
+      upload buttons off until a URL is configured, and to say so.
+
+      Two defaults **do** reach other people's servers, neither of them an upload:
+      - `imageManagerLoadURL` defaults to `https://i.froala.com/load-files`. The
+        image manager sends a GET there as soon as it opens. It is not reachable out
+        of the box — `imageManager` is not in the default `imageInsertButtons` — but
+        adding that one button starts talking to Froala's server.
+      - `emoticonsUseImage` defaults to `true`, so the emoji picker loads its icons
+        from `cdnjs.cloudflare.com`, and every inserted emoji keeps a cdnjs URL in
+        the stored HTML. The `emoticons` button **is** in the default toolbar.
+        `emoticonsUseImage: false` inserts the plain character instead.
 - [ ] `typingTimer` is exposed in `FroalaOptions` as **deprecated on arrival**,
       pointing at `setValueChangeTimeout`. Possible since the constructor stopped
       writing the defaults (CFG-13). Anyone who prefers the option can use it and
@@ -526,47 +601,59 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
 - [ ] Decide which plugins ship at all — it sets the size of the theme's coverage
       (THM-10) and of the option surface
 - [ ] **Load plugins and language files on demand instead of shipping one bundle.**
-      Maintainer's idea, 2026-08-27. Today the connector imports
-      `froala_editor.pkgd.min.js` — core plus all 49 plugins, 1956 KB — and no
-      language file at all.
+      **Check 3, measured 2026-08-27: it works.** Maintainer's idea. Today the
+      connector imports `froala_editor.pkgd.min.js` — core plus all 49 plugins,
+      1956 KB — and no language file at all.
 
-      Instead: import the core (532 KB) statically and pull each plugin and the one
-      needed language file with a dynamic `import()`. Vite turns a dynamic import
-      with a static prefix into one chunk per matching file, so everything stays
-      shipped and only what a given configuration asks for is downloaded. An editor
-      with bold/italic, lists, links and tables would fetch roughly 750 KB instead
-      of 1956 KB; an editor that wants everything fetches everything.
+      Instead: import the core statically and pull each plugin and the one needed
+      language file with a dynamic `import()`. Everything stays shipped, only what a
+      configuration asks for is downloaded. Measured in `demo/` with the spike
+      element and a real `-Pproduction` build, all three verification points pass:
 
-      Why it matters beyond size: it dissolves the ship-all-or-select question. No
-      build-time choice is forced on the consumer, which is the objection against
-      selecting plugins in the add-on's own frontend sources.
+      - **The plugin files register themselves into the core we import.** They are
+        UMD, and their CommonJS branch does `require('froala-editor')`, which
+        resolves to `js/froala_editor.min.js` — the same module. No
+        `window.FroalaEditor` global is needed. Measured: `FroalaEditor.PLUGINS`
+        went from 0 to 8 entries, `FroalaEditor.LANGUAGE` from empty to `de`.
+      - **Awaiting the imports before constructing the editor is early enough.**
+        Froala reads its plugin registry once, in the constructor, and the loaded
+        plugins' buttons were in the toolbar afterwards. 64 ms for eight plugins
+        plus a language file, from cache-cold chunks.
+      - **The production build emits one chunk per file.** 49 plugin chunks and 39
+        language chunks under `VAADIN/build/`, none folded into the main bundle, and
+        the browser fetched exactly the eight selected plus `de`.
+
+      Two things this turned up that the API has to handle:
+      - **A plugin's file name is not the name `pluginsEnabled` wants.**
+        `font_family.min.js` registers as `fontFamily`, `find_and_replace` as
+        `findReplace`, `cryptojs` as `cryptoJSPlugin`, `trim_video` as
+        `trimVideoPlugin` — and `track_changes` keeps its underscore, alone among
+        the 49. `edit_in_popup` registers no plugin at all. So the Java side needs
+        both names per plugin, not a string that is converted.
+      - **Two Froala copies on one page do not share a registry.** While the spike
+        ran next to the add-on's own editor, the spike's core reported zero plugins
+        although the packaged bundle had them all. That is expected — different
+        modules — but it means the switch has to be complete: core plus dynamic
+        imports, or the packaged bundle, never both.
 
       `Page.addJavaScript(url)` is **not** the mechanism. It needs a served URL, and
       `node_modules` is build input, not a served directory — using it would mean
       copying the 39 language files (1.4 MB) into `META-INF/resources/` and keeping
-      that copy in step with every Froala upgrade.
+      that copy in step with every Froala upgrade. It is also not needed: a static
+      map of `() => import('froala-editor/js/plugins/<name>.min.js')` literals is
+      what makes Rollup emit the chunks. A variable inside the specifier does not
+      work — Rollup cannot follow one through a bare package id.
 
-      **Verify before planning on it** — a spike in `demo/`, not mid-implementation:
-      - Froala's plugin and language files are UMD modules that self-register into a
-        global `FroalaEditor`. A plain ES module import usually does not create that
-        global. Check whether it exists after Vite's build; if not, the fix is
-        `window.FroalaEditor = FroalaEditor` before the dynamic import — confirm
-        that it is.
-      - Froala reads its plugin registry once when the editor is constructed, so all
-        dynamic imports must have resolved before `_initEditor` builds it. Check
-        that awaiting them does not break the attach timing the lifecycle spec
-        relies on (`phase-1-lifecycle.md`, LC-1, LC-3).
-      - Check that a production build (`-Pproduction`, `forceProductionBuild`)
-        really emits one chunk per file and does not fold them back into the main
-        bundle.
+      Sizes, for the decision: core 545 KB against the packaged 2002 KB, all 49
+      plugins 1549 KB, all 39 language files 1345 KB, core CSS 54 KB against the
+      packaged 301 KB. The demo's main bundle is 2.67 MB today, most of it the
+      packaged Froala.
 
-      If any of the three fails, fall back to the packaged bundle and record why
-      here.
 - [ ] **Language files are not loaded at all today.** Froala's `language` option
       only takes effect when the matching file from `js/languages/` has been loaded;
       39 files, 1.4 MB in total. Setting the language today changes nothing and says
-      nothing — the editor stays English. Covered by the item above if the spike
-      works; otherwise it needs its own answer.
+      nothing — the editor stays English. Covered by the item above: the spike loaded
+      `de` on demand and Froala picked it up.
 
 Re-measure the option count before the typed API freezes: 322 in 5.4.0, 302 in
 5.3.1, so the surface moves between minors. 17 options that exist in the bundle are
@@ -790,8 +877,8 @@ Either way this needs an e2e test against a fixture view that puts the editor in
 ## Open questions
 
 Questions **for the customer** live in `docs/customer-request.md`, next to the request
-that raised them — mentions, templates, scope, Vaadin version, feature priority. Do
-not duplicate them here.
+that raised them. Do not duplicate them here, and do not enumerate them here either —
+the maintainer edits that list.
 
 What is left below is ours to answer.
 
