@@ -481,6 +481,25 @@ over a local `python3 -m http.server`). It drives raw Froala in headless Chromiu
 without Vaadin — that is what answered checks 1 and 2; check 3 needed the real
 production build.
 
+**Done 2026-08-27, in the order agreed with the maintainer:** the grouped toolbar
+form is typed (`FroalaToolbar`, `FroalaToolbarGroup`, `FroalaToolbarAlign`, plus the
+three narrower-screen options), and the two demo views are in — `/options` and
+`/toolbar`, both a form plus a "Reload editor" button that detaches the editor, sets
+the options and attaches it again. The toolbar work went first because a demo built
+on the flat form would have had to be rebuilt once groups landed.
+
+Building the demos turned up a **connector bug they are the first thing to hit**:
+Froala finishes building an editor that was destroyed mid-build and fires its events
+anyway, and the handlers are bound to the element rather than to their instance, so
+a discarded editor's `initialized` ran against its half-built successor and threw.
+Each built editor now carries a generation and a stale handler stays quiet
+(CFG-21, `FroalaOptionsIT.detachSetOptionsAttach_rebuildsWithoutBreakingTheEditor`).
+
+Still open from the same round, deliberately not fixed: a detach that is followed by
+`setOptions` in the same round trip **builds two editors** — one on re-attach with
+the old options, one when the new options arrive an update later. The guard makes
+the wasted one harmless, but it is still a full Froala init nobody sees.
+
 Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
 - [x] `FroalaOptions` — immutable, typed, serialized to the raw JSON Froala expects
@@ -514,7 +533,7 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
 - [ ] A `vaadin` Froala theme, **active by default**, Lumo-mapped through our own
       custom properties (THM-1, THM-5, THM-7). Vaadin's `HasThemeVariant` was
       considered and dropped — Froala cannot switch a theme at runtime (THM-2)
-- [ ] **Toolbar composition — plain strings, not an enum, for now.**
+- [x] **Toolbar composition — plain strings, not an enum, for now.**
       Decided 2026-08-27. A toolbar entry is only a command name, and a custom button
       (`RegisterCommand`) is a name we do not know in advance, so a string is what
       the API has to carry either way. Narrowing to an enum later is a restriction
@@ -538,6 +557,13 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       naming the groups `group1`, `group2`, … An unknown button name is dropped
       silently, and it still counts towards `buttonsVisible`.
 
+      **Typed 2026-08-27** as `FroalaToolbar` — `of(String…)` for the flat form,
+      `ofGroups(FroalaToolbarGroup…)` for the grouped one — with
+      `withToolbarButtonsMd/Sm/Xs` next to `withToolbarButtons`. Two more things
+      measured while typing it: in the **flat** form `|` and `-` are consumed as
+      group breaks and never drawn, and the three narrower-screen options do **not**
+      cascade — each falls back to `toolbarButtons` alone, never to the next one up.
+
       Froala accepts three forms, all of which the API has to reach
       ([docs](https://froala.com/wysiwyg-editor/docs/options/)): a flat list of
       buttons; a flat list with `|` and `-` separators; or named groups, each with
@@ -549,11 +575,11 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
       A button whose plugin is disabled is dropped silently by Froala. Not our
       problem to catch — bad input, bad output.
-- [ ] Editing modes: **inline** (`toolbarInline`) and **document**
+- [x] Editing modes: **inline** (`toolbarInline`) and **document**
       (`documentReady`) are plain options and need nothing beyond the options API.
       **Full-screen is a method, not an option** — and gets **no Java API**, decided
       2026-08-27. The toolbar button is the way to it.
-- [ ] Demo view exercising each mode
+- [x] Demo view exercising each mode — both modes are switches in `/options`
 - [ ] Expose `pluginsEnabled`. **On by default: the 41 plugins that need nothing
       but a browser, or only the upload endpoint of phase 3. Off by default: the
       eight that need a server or a paid service** — `collaborative`, `ai_assist`,

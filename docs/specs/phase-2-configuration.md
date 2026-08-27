@@ -102,9 +102,10 @@ Measured 2026-08-27 against froala-editor 5.4.0; the demo views `/check-toolbar`
   `buttonsVisible` and no command is registered under the group's name, the
   overflow buttons are rendered into a collapsed panel that nothing can open. The
   API therefore takes strings and **says this**, rather than restricting the name to
-  Froala's four `more…` groups. Only Froala's flat form is typed so far
-  (`withToolbarButtons(String…)`); the grouped form and the `MD`/`SM`/`XS`
-  breakpoints need the raw overload. *unverified*
+  Froala's four `more…` groups — `FroalaToolbarGroup` carries the four as constants
+  and its documentation names the trap. Note that a group overflows at **three**
+  buttons unless it says otherwise, so the trap is the default case, not one a
+  caller opts into. *`FroalaToolbarTest`*
 - **CFG-15** A plugin has **two names**: the file (`font_family.min.js`) and the
   name it registers itself under, which is what `pluginsEnabled` takes
   (`fontFamily`). They differ for 20 of the 49, `track_changes` keeps its underscore
@@ -130,6 +131,26 @@ Measured 2026-08-27 against froala-editor 5.4.0; the demo views `/check-toolbar`
 - **CFG-19** `setOptions` on an attached editor really rebuilds, and Froala reads the
   new options: measured on the running editor, not only on the element property.
   *`FroalaOptionsIT`*
+- **CFG-20** The toolbar is typed as `FroalaToolbar`, in **both** of Froala's shapes,
+  because they are not the same toolbar written two ways:
+  `FroalaToolbar.of(String…)` is the flat one — every button shown, `"|"` and `"-"`
+  consumed as group breaks rather than drawn, and Froala's overflow panel switched
+  off — and `FroalaToolbar.ofGroups(…)` is the grouped one, keyed by group name,
+  with `align` and `buttonsVisible` per group. `showMoreButtons` is deliberately not
+  exposed: Froala overwrites it either way, so the only way to keep a grouped
+  toolbar from collapsing is a `buttonsVisible` larger than the group. Two groups of
+  one name are **rejected** — Froala keys by name, so the second would replace the
+  first in silence. The three narrower-screen options are typed too
+  (`withToolbarButtonsMd/Sm/Xs`); there is no cascade between them, each falls back
+  to `toolbarButtons` alone. *`FroalaToolbarTest`*
+- **CFG-21** Froala **finishes building an editor that has already been destroyed**
+  and fires its events regardless, and those handlers are bound to the element, not
+  to the instance that registered them. A rebuild hits this every time: the options
+  arrive one update after the editor was built, so the instance being replaced is
+  usually still bootstrapping. Each editor the element builds therefore carries a
+  generation, and a handler whose generation is no longer the current one does
+  nothing. Without it a discarded editor's `initialized` ran against its half-built
+  successor and threw. *`FroalaOptionsIT`*
 - **CFG-17** Upload is **off until a URL is configured**. With no URL Froala uploads
   nothing — it inserts a `blob:` URL, which is valid only in the tab that created it,
   so the value the server stores points at nothing after a reload. A silently broken
