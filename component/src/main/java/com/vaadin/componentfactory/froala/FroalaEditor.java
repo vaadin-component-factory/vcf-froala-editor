@@ -141,10 +141,6 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // notifying Lit property on the client would quietly open a second update path next to it.
         super(VALUE_PROPERTY, "", true);
 
-        setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
-        setValueChangeTimeout(DEFAULT_VALUE_CHANGE_TIMEOUT);
-        setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
-
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
             String delta = event.getEventData().get("event.detail.delta").asString();
