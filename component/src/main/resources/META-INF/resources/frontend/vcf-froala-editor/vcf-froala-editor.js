@@ -36,6 +36,11 @@ class FroalaEditorElement extends SlotStylesMixin(
     // event has fired -- `this.editor` being assigned is not enough
     _editorInitialized = false;
 
+    // Counts the editors this element has built. Froala's event handlers are bound to the element rather than to the
+    // instance that registered them, so a handler of an editor we destroyed mid-build still runs -- and would run
+    // against its successor. Every handler carries the count it was registered under and stays quiet once it differs.
+    _editorGeneration = 0;
+
     _lastSyncedValue = "";
     _lastSyncedValueTimestamp = 0;
     _valueChangeMode = "change";
@@ -184,6 +189,7 @@ class FroalaEditorElement extends SlotStylesMixin(
         }
 
         this._editorInitialized = false;
+        this._editorGeneration++;
         this._appliedOptions = null;
     }
 
@@ -230,10 +236,20 @@ class FroalaEditorElement extends SlotStylesMixin(
                 options.typingTimer = this._valueChangeTimeout;
             }
 
+            // Froala keeps building an editor that has already been destroyed and fires its events regardless. A
+            // rebuild is exactly when that happens: the options arrive one update after the editor was built, so the
+            // instance being replaced is often still bootstrapping.
+            const generation = ++this._editorGeneration;
+            const fromCurrentEditor = (handler) => (...args) => {
+                if (generation === this._editorGeneration) {
+                    handler(...args);
+                }
+            };
+
             this.editor = new FroalaEditor(this.editorElement, {
                 ...options,
                 events: {
-                    'initialized': () => {
+                    'initialized': fromCurrentEditor(() => {
                         this._editorInitialized = true;
 
                         // anything touching editor modules has to wait for this event, so re-apply what the server may
@@ -243,23 +259,23 @@ class FroalaEditorElement extends SlotStylesMixin(
                         if (this.valueChangeMode === "interval") {
                             this.startValueChangeInterval();
                         }
-                    },
-                    'blur': () => {
+                    }),
+                    'blur': fromCurrentEditor(() => {
                         // Flush in every mode, not just ON_BLUR. Focus leaving usually means a click somewhere
                         // else, and that click can detach the component -- which clears the mode's pending timer on
                         // the way out and would take the last edit with it. An empty delta dispatches nothing, so
                         // the modes that synced already pay nothing for this.
                         this.onValueChange();
                         this.dispatchEvent(new CustomEvent('blur'));
-                    },
-                    'focus': () => {
+                    }),
+                    'focus': fromCurrentEditor(() => {
                         this.dispatchEvent(new CustomEvent('focus'));
-                    },
-                    'contentChanged': () => {
+                    }),
+                    'contentChanged': fromCurrentEditor(() => {
                         if (this.valueChangeMode === "change") {
                             this.onValueChangeThrottled();
                         }
-                    }
+                    })
                 }
             });
         }

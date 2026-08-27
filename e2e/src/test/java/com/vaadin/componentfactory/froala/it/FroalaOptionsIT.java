@@ -15,6 +15,7 @@
  */
 package com.vaadin.componentfactory.froala.it;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.microsoft.playwright.Locator;
@@ -92,6 +93,21 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         // option was really taken away rather than merged over
         assertTrue(toolbarButtons().size() > 2, "expected Froala's own default toolbar, got " + toolbarButtons());
         assertTrue(toolbarButtons().contains("insertImage"));
+    }
+
+    @Test
+    void detachSetOptionsAttach_rebuildsWithoutBreakingTheEditor() {
+        List<String> pageErrors = new ArrayList<>();
+        page.onPageError(pageErrors::add);
+
+        page.locator("#reattach-with-options").click();
+        assertThat(page.locator("#reattach-with-options")).isDisabled();
+
+        // The editor that gets thrown away here is still building, and Froala finishes building it and fires its
+        // events regardless. Those belong to an instance that no longer exists; letting them run touches the
+        // half-built successor.
+        assertEquals(List.of("undo", "redo", "insertLink"), toolbarButtons());
+        assertEquals(List.of(), pageErrors, "the rebuild raised an error in the browser");
     }
 
     @Test
