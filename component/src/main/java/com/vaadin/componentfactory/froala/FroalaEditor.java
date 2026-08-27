@@ -173,13 +173,13 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // that today and nothing should: the client reports changes as deltas over `_value-delta`. Making `value` a
         // notifying Lit property on the client would quietly open a second update path next to it.
         super(VALUE_PROPERTY, "", true);
+        setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
+        setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
         Element element = getElement();
         element.addEventListener("_value-delta", event -> {
             String delta = event.getEventData().get("event.detail.delta").asString();
 
-            setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
-            setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
             String newValue;
             try {
