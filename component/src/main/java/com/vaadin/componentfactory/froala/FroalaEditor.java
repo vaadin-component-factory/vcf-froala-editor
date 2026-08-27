@@ -180,7 +180,6 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         element.addEventListener("_value-delta", event -> {
             String delta = event.getEventData().get("event.detail.delta").asString();
 
-
             String newValue;
             try {
                 newValue = applyDelta(getValue(), delta);
