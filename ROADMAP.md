@@ -563,6 +563,30 @@ no "yet" either. After the release those files do not exist for a consumer at al
 
 **Open, raised by the maintainer 2026-08-27 evening:**
 
+- **`FroalaPlugin.TRACK_CHANGES` and `FroalaPlugin.TRIM_VIDEO` do nothing.** The
+  plugin question was answered wrongly three times, so it was measured properly on
+  2026-08-27 and written down once, in `docs/specs/froala-plugins.md`. **Read that
+  file before answering anything about plugins again.** The finding that matters
+  here: `js/plugins/track_changes.min.js` and `js/plugins/trim_video.min.js` are in
+  no bundle Froala ships. The add-on imports `froala_editor.pkgd.min.js`, which
+  registers **46** plugins, not 48. Confirmed in the browser:
+  `FroalaEditor.PLUGINS` has 46 keys, and `COMMANDS["trackChanges"]` does not exist.
+
+  So both constants put a string into `pluginsEnabled` that matches no loaded
+  plugin. Nothing throws, nothing happens. Two ways out, the maintainer's call:
+  drop the two constants, or import `js/plugins/track_changes.min.js` next to the
+  bundle. **Track changes is on the customer's list**, so dropping it silently is
+  not the whole answer.
+
+- **Restricting `pluginsEnabled` does not reliably remove the matching buttons.**
+  Also in that spec, also measured: the toolbar filter reads `COMMANDS[name].plugin`,
+  and 107 of the 183 commands declare none. `colors` is the clearest case — it
+  registers `textColor` and `backgroundColor` without declaring itself, so
+  restricting plugins leaves those buttons drawn with no plugin behind them. 14 of
+  the 46 plugins are named by no command at all. Decide what the add-on does about
+  it before phase 3 wires uploads; a drawn button that does nothing is the thing we
+  said we did not want.
+
 - **A custom-named toolbar group needs something to open.** `FroalaToolbar.ofGroups`
   currently *rejects* a freely named group that would overflow (CFG-14), because
   Froala renders no toggle for it. That satisfies the compiler and leaves the
