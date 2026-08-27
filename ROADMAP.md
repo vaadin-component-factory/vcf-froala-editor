@@ -457,23 +457,122 @@ Rejected on the way, worth writing down so it is not tried again:
 ## Phase 2 — Configuration API
 
 Goal: expose Froala's options through Java instead of leaking raw JSON.
+Specified in `docs/specs/phase-2-configuration.md` and `phase-2-theming.md`,
+written before the code as agreed in `docs/specs/README.md`.
 
-- [ ] A `FroalaConfig` builder mapping Froala options to typed Java setters,
-      serialized to the connector as JSON
-- [ ] Toolbar composition: enum/constant per Froala button, ordered groups,
-      responsive breakpoints
-- [ ] Editing modes: inline, document, full-screen
-- [ ] Escape hatch: `setOption(String, Object)` for anything not yet typed —
-      cheaper than chasing Froala's full option surface up front
+Design decided 2026-08-27 with the maintainer, reasons in the specs:
+
+- [ ] `FroalaOptions` — immutable, typed, record plus Lombok `@With`, serialized to
+      the raw JSON Froala expects (CFG-6, CFG-7)
+- [ ] `FroalaEditor(FroalaOptions)` plus `setOptions` in three overloads —
+      `FroalaOptions`, `JsonObject`, `String` (CFG-8). **No `setOption(String,
+      Object)`** — the raw overloads are the escape hatch (CFG-9), and they are also
+      the answer to the `initialConfig` / `rawInitialConfig` split carried over from
+      `hugerte` and `vaadin-fullcalendar` (CFG-10)
+- [ ] Options are **init-only**; `setOptions` on an attached editor rebuilds
+      (CFG-1..CFG-4). One rebuild per round trip, batched in `beforeClientResponse`
+      via the existing `liveOnClient` (CFG-5) — do not add a second flag
+- [ ] Our setters are applied after the options and win (CFG-11).
+      `setValueChangeTimeout` stays a setter (CFG-12)
+- [x] Constructor no longer writes the three value-change defaults — removed
+      2026-08-27, they restated the client's own defaults (CFG-13)
+- [ ] A `vaadin` Froala theme, **active by default**, Lumo-mapped through our own
+      custom properties (THM-1, THM-5, THM-7). Vaadin's `HasThemeVariant` was
+      considered and dropped — Froala cannot switch a theme at runtime (THM-2)
+- [ ] **Toolbar composition — plain strings, not an enum, for now.** Decided
+      2026-08-27. A toolbar entry is only a command name, and a custom button
+      (`RegisterCommand`) is a name we do not know in advance, so a string is what
+      the API has to carry either way. Narrowing to an enum later is a restriction
+      of the accepted values, not a change of shape. Group names are strings for the
+      same reason until it is established whether `moreText`/`moreParagraph`/
+      `moreRich`/`moreMisc` are fixed or free.
+
+      Froala accepts three forms, all of which the API has to reach
+      ([docs](https://froala.com/wysiwyg-editor/docs/options/)): a flat list of
+      buttons; a flat list with `|` and `-` separators; or named groups, each with
+      `buttons` plus optional `align` (`left`/`right`) and `buttonsVisible` (how many
+      show before the "more" arrow). `align` and `buttonsVisible` belong to the
+      **group**, not to a button. Plus `toolbarButtonsMD` / `SM` / `XS` — the same
+      structure again for ≥992px, ≥768px and below.
+
+      A button whose plugin is disabled is dropped silently by Froala. Not our
+      problem to catch — bad input, bad output.
+- [ ] Editing modes: **inline** (`toolbarInline`) and **document**
+      (`documentReady`) are plain options and need nothing beyond the options API.
+      **Full-screen is a method, not an option** — and gets **no Java API**, decided
+      2026-08-27. The toolbar button is the way to it.
 - [ ] Demo view exercising each mode
-- [ ] Whatever guards "this option can no longer be changed" must reuse
-      `FroalaEditor.liveOnClient`, which already flips in `beforeClientResponse` for
-      exactly that purpose (VT-11) — do not add a second flag with attach timing
-- [ ] `saveInterval: 0` turns off Froala's `save` plugin, which today schedules a POST
-      to `saveURL` 10 s after every `contentChanged` and then fails on the missing URL.
-      Nobody listens to that failure, so it is dead work rather than a defect — but it
-      is dead work per edit. (`typingTimer`, the other option the value-change work
-      turned up, is already exposed as `setValueChangeTimeout`.)
+- [ ] Expose `pluginsEnabled`. **On by default: the 41 plugins that need nothing
+      but a browser, or only the upload endpoint of phase 3. Off by default: the
+      eight that need a server or a paid service** — `collaborative`, `ai_assist`,
+      `filestack`, `spell_checker`, `import_from_word`, `export_to_word`, `save`.
+      Decided 2026-08-27; a visible button with no service behind it is worse than
+      no button. Which of the eight NST actually needs is question 6 in
+      `docs/customer-request.md`, still open.
+- [ ] **Where does an upload go when no URL is set?** Verify before the five upload
+      plugins are on by default. `imageUploadURL`, `fileUploadURL` and
+      `videoUploadURL` all default to `null`, and Froala's bundle contains
+      `https://i.froala.com/upload` as its demo endpoint. If an unconfigured upload
+      reaches that host, user files leave the customer's network — that is a data
+      protection problem, not a rough edge. Measure it; if it happens, the upload
+      buttons stay off until a URL is set.
+- [ ] `typingTimer` is exposed in `FroalaOptions` as **deprecated on arrival**,
+      pointing at `setValueChangeTimeout`. Possible since the constructor stopped
+      writing the defaults (CFG-13). Anyone who prefers the option can use it and
+      leave the setter alone.
+- [ ] `saveInterval: 0` turns off Froala's `save` plugin, which today schedules a
+      POST to `saveURL` 10 s after every `contentChanged` and then fails on the
+      missing URL. Dead work per edit rather than a defect
+- [ ] Decide which plugins ship at all — it sets the size of the theme's coverage
+      (THM-10) and of the option surface
+- [ ] **Load plugins and language files on demand instead of shipping one bundle.**
+      Maintainer's idea, 2026-08-27. Today the connector imports
+      `froala_editor.pkgd.min.js` — core plus all 49 plugins, 1956 KB — and no
+      language file at all.
+
+      Instead: import the core (532 KB) statically and pull each plugin and the one
+      needed language file with a dynamic `import()`. Vite turns a dynamic import
+      with a static prefix into one chunk per matching file, so everything stays
+      shipped and only what a given configuration asks for is downloaded. An editor
+      with bold/italic, lists, links and tables would fetch roughly 750 KB instead
+      of 1956 KB; an editor that wants everything fetches everything.
+
+      Why it matters beyond size: it dissolves the ship-all-or-select question. No
+      build-time choice is forced on the consumer, which is the objection against
+      selecting plugins in the add-on's own frontend sources.
+
+      `Page.addJavaScript(url)` is **not** the mechanism. It needs a served URL, and
+      `node_modules` is build input, not a served directory — using it would mean
+      copying the 39 language files (1.4 MB) into `META-INF/resources/` and keeping
+      that copy in step with every Froala upgrade.
+
+      **Verify before planning on it** — a spike in `demo/`, not mid-implementation:
+      - Froala's plugin and language files are UMD modules that self-register into a
+        global `FroalaEditor`. A plain ES module import usually does not create that
+        global. Check whether it exists after Vite's build; if not, the fix is
+        `window.FroalaEditor = FroalaEditor` before the dynamic import — confirm
+        that it is.
+      - Froala reads its plugin registry once when the editor is constructed, so all
+        dynamic imports must have resolved before `_initEditor` builds it. Check
+        that awaiting them does not break the attach timing the lifecycle spec
+        relies on (`phase-1-lifecycle.md`, LC-1, LC-3).
+      - Check that a production build (`-Pproduction`, `forceProductionBuild`)
+        really emits one chunk per file and does not fold them back into the main
+        bundle.
+
+      If any of the three fails, fall back to the packaged bundle and record why
+      here.
+- [ ] **Language files are not loaded at all today.** Froala's `language` option
+      only takes effect when the matching file from `js/languages/` has been loaded;
+      39 files, 1.4 MB in total. Setting the language today changes nothing and says
+      nothing — the editor stays English. Covered by the item above if the spike
+      works; otherwise it needs its own answer.
+
+Re-measure the option count before the typed API freezes: 322 in 5.4.0, 302 in
+5.3.1, so the surface moves between minors. 17 options that exist in the bundle are
+**missing from `index.d.ts`** (`toolbarResponsiveToEditor`, `imageUploadToAzure`,
+`filesInsertButtons`, `keepTextFormatOnTable`, …), so the d.ts is not a complete
+inventory on its own.
 
 ---
 
@@ -488,6 +587,14 @@ Goal: expose Froala's options through Java instead of leaking raw JSON.
 ---
 
 ## Phase 4 — Feature coverage
+
+- [ ] **Custom toolbar buttons.** Not phase 2, decided 2026-08-27. Froala's
+      `RegisterCommand(name, {...})` takes a title, an icon, and a `callback` that
+      would have to reach a server-side listener — plus `undo`, `focus`, `toggle`,
+      `showOnMobile`, `refreshAfterCallback`. It is also **static**: a registered
+      command exists for every editor on the page, not per instance.
+      Phase 2's only obligation is not to make this harder: the toolbar API carries
+      strings, so a name Froala does not know is already expressible.
 
 Ordered by customer priority. Each item = Java API + demo + at least one e2e
 assertion.

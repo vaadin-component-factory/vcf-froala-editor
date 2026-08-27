@@ -31,3 +31,7 @@ behaviour rather than intent. From phase 2 on, the spec is written first.
   what Froala's asynchronous init means for every setter
 - [`phase-1-component-api.md`](phase-1-component-api.md) — the Vaadin field
   contract, license key, read-only/disabled, focus, `FroalaViewer`
+- [`phase-2-configuration.md`](phase-2-configuration.md) — how Froala's options
+  reach the editor, and why none of them is changed on a live one
+- [`phase-2-theming.md`](phase-2-theming.md) — the `vaadin` Froala theme, its
+  Lumo mapping and what it has to cover

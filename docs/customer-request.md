@@ -136,6 +136,29 @@ browserless test library, the Java baseline). **Which version is NST on?**
 
 They are the two most expensive items on the list. **Can they be in a later stage?**
 
+### 6. Which of the eight service-backed plugins are needed?
+
+Froala ships 49 plugins. 41 of them work with nothing but a browser, or need only the
+image/file upload endpoint this add-on will provide. The remaining **eight need a
+server or a paid service that is not part of this add-on**, so each one is a separate
+decision — and a cost — for NST:
+
+| Plugin | What it gives the user | What it requires |
+|---|---|---|
+| `collaborative` | Several people editing one document at once, review comments, version history | Froala's collaboration server, plus `docId`, `commentsUrl` and `suggestionsUrl` endpoints and a role model. 596 KB of the bundle. This is also where comment mentions live — see question 1 |
+| `ai_assist` | Rewrite, change tone, translate, chat about the text | An AI endpoint and its cost |
+| `filestack` | File upload through Filestack | A paid Filestack account |
+| `spell_checker` | Spell checking as you type | A paid SCAYT subscription |
+| `import_from_word` | Open a .docx in the editor | Froala's conversion service |
+| `export_to_word` | Save the document as .docx | Froala's conversion service |
+| `save` | The editor posts its content to a URL by itself, on a timer | A save endpoint — and it duplicates what a Flow application does through the value change listener |
+
+All eight are shipped either way, so switching one on later costs nothing. The
+question is what is on by **default**: a button that is visible but does nothing
+because no service stands behind it is worse than no button.
+
+**Which of these does NST need, and does the infrastructure for them exist?**
+
 Not open any more, recorded here because the request touches them: the add-on builds
 against **Froala 5.4.0**, not the 4.6.2 the request names, and a consuming application
 supplies its own license key through `setLicenseKey(String)` — the add-on ships none.
