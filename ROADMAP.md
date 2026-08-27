@@ -461,9 +461,9 @@ Specified in `docs/specs/phase-2-configuration.md` and `phase-2-theming.md`,
 written before the code as agreed in `docs/specs/README.md`.
 
 **The three checks are measured — 2026-08-27.** Each has a demo view, so the
-result can be looked at and not only read. The views feed raw JSON to the editor
-through the connector's `initialConfig` property, which was dead until now; that is
-the temporary stand-in for the options API, not its design.
+result can be looked at and not only read. The views were built against the
+connector's dead `initialConfig` property and moved onto `setOptions(String)` once
+that existed.
 
 | | Question | Answer | View |
 |---|---|---|---|
@@ -483,18 +483,32 @@ production build.
 
 Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
-- [ ] `FroalaOptions` — immutable, typed, record plus Lombok `@With`, serialized to
-      the raw JSON Froala expects (CFG-6, CFG-7)
-- [ ] `FroalaEditor(FroalaOptions)` plus `setOptions` in three overloads —
+- [x] `FroalaOptions` — immutable, typed, serialized to the raw JSON Froala expects
+      (CFG-6, CFG-7). **Not a record**, decided 2026-08-27: a record's canonical
+      constructor is public API and would change signature with every option we type,
+      and the option surface moves between Froala minors. It holds an
+      `elemental.json.JsonObject`; each `with…` is a one-liner naming its option.
+      Lombok is not needed and was not added.
+- [x] `FroalaEditor(FroalaOptions)` plus `setOptions` in three overloads —
       `FroalaOptions`, `JsonObject`, `String` (CFG-8). **No `setOption(String,
       Object)`** — the raw overloads are the escape hatch (CFG-9), and they are also
       the answer to the `initialConfig` / `rawInitialConfig` split carried over from
-      `hugerte` and `vaadin-fullcalendar` (CFG-10)
-- [ ] Options are **init-only**; `setOptions` on an attached editor rebuilds
-      (CFG-1..CFG-4). One rebuild per round trip, batched in `beforeClientResponse`
-      via the existing `liveOnClient` (CFG-5) — do not add a second flag
-- [ ] Our setters are applied after the options and win (CFG-11).
-      `setValueChangeTimeout` stays a setter (CFG-12)
+      `hugerte` and `vaadin-fullcalendar` (CFG-10). The dead `rawInitialConfig` field
+      is gone, `initialConfig` became the `options` property
+- [x] Options are **init-only**; `setOptions` on an attached editor rebuilds
+      (CFG-1..CFG-4). No batching machinery was needed after all: Flow already sends
+      one property update per round trip however often it was set, and the client
+      compares the options it built with against the ones it was given, so a
+      re-attach re-sending the same property does not rebuild for nothing
+- [x] Our setters are applied after the options and win (CFG-11).
+      `setValueChangeTimeout` stays a setter (CFG-12) — and its client-side default
+      became null, so a `typingTimer` from the options is not overwritten by a
+      default nobody asked for
+- [ ] **Options still to type.** 322 exist; the first cut types 21 of them plus the
+      `FroalaPlugin` enum. What the raw overload is still needed for: the grouped
+      toolbar form, the `MD`/`SM`/`XS` breakpoints, HTML sanitization
+      (`htmlAllowedTags` and its eight neighbours), paste handling, and the
+      per-plugin button lists
 - [x] Constructor no longer writes the three value-change defaults — removed
       2026-08-27, they restated the client's own defaults (CFG-13)
 - [ ] A `vaadin` Froala theme, **active by default**, Lumo-mapped through our own
@@ -591,13 +605,22 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
         from `cdnjs.cloudflare.com`, and every inserted emoji keeps a cdnjs URL in
         the stored HTML. The `emoticons` button **is** in the default toolbar.
         `emoticonsUseImage: false` inserts the plain character instead.
-- [ ] `typingTimer` is exposed in `FroalaOptions` as **deprecated on arrival**,
+- [x] `typingTimer` is exposed in `FroalaOptions` as **deprecated on arrival**,
       pointing at `setValueChangeTimeout`. Possible since the constructor stopped
       writing the defaults (CFG-13). Anyone who prefers the option can use it and
       leave the setter alone.
+- [x] **Callback options are out of reach from Java** (CFG-18). Of Froala's 322
+      typed options exactly one takes a function, `aiAssistRequest`; the other
+      callback surface is `events`, itself an option, holding 159 handlers. All
+      three `setOptions` overloads end as JSON and JSON has no functions, so
+      `setOptions` rejects `events` rather than letting it arrive as data Froala
+      would then try to call. Parked for phase 4, with `vaadin-fullcalendar`'s
+      `JsCallback` as the shape to copy.
 - [ ] `saveInterval: 0` turns off Froala's `save` plugin, which today schedules a
       POST to `saveURL` 10 s after every `contentChanged` and then fails on the
-      missing URL. Dead work per edit rather than a defect
+      missing URL. Dead work per edit rather than a defect. Settable now
+      (`withSaveInterval`); what is still open is whether the add-on should default
+      it to 0 rather than leave Froala's 10
 - [ ] Decide which plugins ship at all — it sets the size of the theme's coverage
       (THM-10) and of the option surface
 - [ ] **Load plugins and language files on demand instead of shipping one bundle.**
@@ -675,6 +698,17 @@ inventory on its own.
 
 ## Phase 4 — Feature coverage
 
+- [ ] **Server-set callbacks.** Not phase 2, parked 2026-08-27. Two of Froala's
+      options take functions, and neither can travel as JSON: `events`, a map of 159
+      handlers, and `aiAssistRequest`. `setOptions` rejects `events` today (CFG-18).
+
+      When one of them is actually needed — `aiAssistRequest` is the realistic case,
+      not `events` — **take the shape from `vaadin-fullcalendar`, which already has
+      it as `JsCallback`** (maintainer's pointer). Related prior art for the
+      connector is already in the notes for its lifecycle handling.
+
+      `events` stays a separate question: Froala's events want server-side listeners
+      next to `addValueChangeListener`, not an option carrying a function.
 - [ ] **Custom toolbar buttons.** Not phase 2, decided 2026-08-27. Froala's
       `RegisterCommand(name, {...})` takes a title, an icon, and a `callback` that
       would have to reach a server-side listener — plus `undo`, `focus`, `toggle`,

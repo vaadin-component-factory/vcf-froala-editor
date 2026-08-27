@@ -216,6 +216,81 @@ class FroalaEditorKaribuTest {
         UI.getCurrent().getInternals().dumpPendingJavaScriptInvocations();
     }
 
+    @Test
+    void options_reachTheElementAsJson() {
+        FroalaEditor editor = new FroalaEditor();
+        layout.add(editor);
+
+        editor.setOptions(FroalaOptions.defaults().withPlaceholderText("Write something"));
+
+        assertEquals("{\"placeholderText\":\"Write something\"}", optionsOn(editor));
+        assertEquals("{\"placeholderText\":\"Write something\"}", editor.getOptionsJson());
+    }
+
+    @Test
+    void options_canBeGivenToTheConstructor() {
+        // A configured editor has to arrive configured: options are read once, when Froala builds, so setting them
+        // after the first attach would cost a rebuild for nothing.
+        FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withToolbarInline(true));
+
+        assertEquals("{\"toolbarInline\":true}", optionsOn(editor));
+    }
+
+    @Test
+    void rawOptions_takeTheSamePath() {
+        // The three overloads exist so that anything FroalaOptions does not type yet is still reachable. They have to
+        // end in the same property, or "not typed yet" would mean "behaves differently".
+        FroalaEditor typed = new FroalaEditor(FroalaOptions.defaults().withCharCounterMax(10));
+        FroalaEditor raw = new FroalaEditor();
+        raw.setOptions("{\"charCounterMax\": 10}");
+
+        assertEquals(optionsOn(typed), optionsOn(raw));
+    }
+
+    @Test
+    void settingOptionsAgain_replacesRatherThanMerges() {
+        FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withLanguage("de"));
+
+        editor.setOptions(FroalaOptions.defaults().withPlaceholderText("Write something"));
+
+        assertEquals("{\"placeholderText\":\"Write something\"}", optionsOn(editor));
+    }
+
+    @Test
+    void nullOptions_leaveFroalaOnItsOwnDefaults() {
+        FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withLanguage("de"));
+
+        editor.setOptions((FroalaOptions) null);
+
+        assertNull(editor.getElement().getPropertyRaw("options"));
+        assertNull(editor.getOptionsJson());
+    }
+
+    @Test
+    void brokenJson_isRejectedWhereItWasWritten() {
+        FroalaEditor editor = new FroalaEditor();
+
+        assertThrows(IllegalArgumentException.class, () -> editor.setOptions("{not json"));
+        assertThrows(IllegalArgumentException.class, () -> editor.setOptions("[1, 2, 3]"));
+    }
+
+    @Test
+    void eventsOption_isRejected() {
+        // Froala's `events` is a map of callbacks and JSON carries no functions, so it can only ever arrive here as
+        // data Froala would then try to call. Failing in Java beats failing in the browser.
+        FroalaEditor editor = new FroalaEditor();
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
+                () -> editor.setOptions("{\"events\": {\"initialized\": \"nope\"}}"));
+
+        assertTrue(thrown.getMessage().contains("callbacks"));
+    }
+
+    /** The options as they sit on the element, which is what the client will read them from. */
+    private String optionsOn(FroalaEditor editor) {
+        return ((elemental.json.JsonObject) editor.getElement().getPropertyRaw("options")).toJson();
+    }
+
     /** The invocations only exist once the before-client-response tasks have run, so run them first. */
     private boolean hasPendingValuePush() {
         UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();

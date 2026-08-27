@@ -19,6 +19,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import elemental.json.Json;
+import elemental.json.JsonException;
+import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
@@ -59,6 +62,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
 
     private static final String VALUE_PROPERTY = "value";
+    private static final String OPTIONS_PROPERTY = "options";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
@@ -68,6 +72,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * it clears the node's parent, so the node is still reachable from the tree at that point.
      */
     private boolean liveOnClient;
+
+    /** The JSON the editor was last configured with, kept for {@link #getOptionsJson()}. Null when nothing was set. */
+    private String optionsJson;
 
     /**
      * Creates a new instance with the given label.
@@ -130,6 +137,28 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
         this();
         addValueChangeListener(valueChangeListener);
+    }
+
+    /**
+     * Creates a new instance configured with the given options.
+     *
+     * @param options Froala options, or null for Froala's defaults
+     */
+    public FroalaEditor(FroalaOptions options) {
+        this();
+        setOptions(options);
+    }
+
+    /**
+     * Creates a new instance with the given label, configured with the given options.
+     *
+     * @param label label
+     * @param options Froala options, or null for Froala's defaults
+     */
+    public FroalaEditor(String label, FroalaOptions options) {
+        this();
+        setLabel(label);
+        setOptions(options);
     }
 
     /**
@@ -237,6 +266,90 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * Configures the underlying Froala editor.
+     *
+     * <p>
+     * <b>Options are read once, when the editor is built.</b> Froala has no API to change one on a running editor, so
+     * calling this on an attached instance destroys the editor and builds a new one. The value survives that; caret,
+     * selection, scroll position and undo history do not. Several calls within one server round trip cost one rebuild,
+     * not one each.
+     *
+     * <p>
+     * Each call replaces the options set before it -- they are not merged.
+     *
+     * <p>
+     * Whatever this add-on has a setter for is applied after the options and wins over them, so a {@code key} in the
+     * options is only used when {@link #setLicenseKey(String)} was not called.
+     *
+     * @param options Froala options, or null for Froala's defaults
+     */
+    public void setOptions(FroalaOptions options) {
+        setOptions(options == null ? null : options.toJson());
+    }
+
+    /**
+     * Configures the underlying Froala editor from a JSON object, for options {@link FroalaOptions} does not type yet.
+     * Behaves like {@link #setOptions(FroalaOptions)} in every other respect.
+     *
+     * @param options Froala options as JSON, or null for Froala's defaults
+     * @throws IllegalArgumentException if the options carry Froala's {@code events} option
+     */
+    public void setOptions(JsonObject options) {
+        if (options == null) {
+            optionsJson = null;
+            getElement().removeProperty(OPTIONS_PROPERTY);
+            return;
+        }
+
+        // Froala's `events` option is a map of callbacks, and JSON has no functions -- whatever arrived here under that
+        // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped: the
+        // options were written to do something, and silently doing nothing is the worse answer.
+        if (options.hasKey("events")) {
+            throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
+                    + " it cannot be set from the server. Value changes are reported through"
+                    + " addValueChangeListener; anything else Froala fires has no server side listener yet.");
+        }
+
+        optionsJson = options.toJson();
+        getElement().setPropertyJson(OPTIONS_PROPERTY, options);
+    }
+
+    /**
+     * Configures the underlying Froala editor from raw JSON, for options {@link FroalaOptions} does not type yet.
+     * Behaves like {@link #setOptions(FroalaOptions)} in every other respect.
+     *
+     * @param options Froala options as a JSON object literal, or null for Froala's defaults
+     * @throws IllegalArgumentException if the given string is not parseable as a JSON object
+     */
+    public void setOptions(String options) {
+        if (options == null) {
+            setOptions((JsonObject) null);
+            return;
+        }
+
+        JsonObject parsed;
+        try {
+            parsed = Json.parse(options);
+        } catch (JsonException | ClassCastException e) {
+            // ClassCastException is elemental's answer to valid JSON that is not an object -- Json.parse is typed as
+            // returning one and only fails on the way out.
+            throw new IllegalArgumentException("Froala options must be a JSON object: " + e.getMessage(), e);
+        }
+
+        setOptions(parsed);
+    }
+
+    /**
+     * Returns the JSON the editor is configured with, whichever of the {@code setOptions} overloads was used. Null when
+     * none was called, which means Froala's defaults.
+     *
+     * @return the options as JSON, or null
+     */
+    public String getOptionsJson() {
+        return optionsJson;
+    }
+
+    /**
      * Sets the license key of this instance. Maps onto Froala's {@code key} option.
      *
      * <p>
@@ -325,6 +438,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Returns the idle time in milliseconds that has to pass after the last keystroke before the editor reports the
      * change. Default is 500.
+     *
+     * <p>
+     * This reports what {@link #setValueChangeTimeout(int)} was given, not what the editor runs on: a
+     * {@code typingTimer} passed through {@link #setOptions(FroalaOptions)} takes effect when the setter was never
+     * called, and is not visible here.
      *
      * @return idle time in milliseconds
      */

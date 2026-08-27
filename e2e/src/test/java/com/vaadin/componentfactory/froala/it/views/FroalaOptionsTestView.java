@@ -1,0 +1,84 @@
+/*
+ * Copyright 2026 Vaadin Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.vaadin.componentfactory.froala.it.views;
+
+import com.vaadin.componentfactory.froala.FroalaEditor;
+import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
+
+/**
+ * Fixture view for {@code FroalaOptionsIT}, owned by the tests.
+ *
+ * <p>
+ * The toolbar is the assertion channel: options are only observable once Froala has read them, and a configured toolbar
+ * is the cheapest thing to read back out of the DOM. Each button disables itself, so a test can wait for the round trip
+ * to have landed before it looks at the client — a click returns when it is dispatched, not when the server has
+ * answered.
+ */
+@Route(FroalaOptionsTestView.ROUTE)
+@AnonymousAllowed
+public class FroalaOptionsTestView extends VerticalLayout {
+
+    public static final String ROUTE = "it/froala-options";
+
+    public static final String INITIAL_VALUE = "<p>seeded by the server</p>";
+    public static final String PLACEHOLDER = "options placeholder under test";
+
+    /** Not Froala's own default toolbar, so no default can pass for a configured one. */
+    public static final FroalaOptions INITIAL_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
+            .withToolbarButtons("bold", "italic");
+
+    /** A second set, to show that options really are re-read when they change on a running editor. */
+    public static final FroalaOptions OTHER_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
+            .withToolbarButtons("undo", "redo", "insertLink");
+
+    public FroalaOptionsTestView() {
+        setSizeFull();
+
+        FroalaEditor editor = new FroalaEditor("Editor under test", INITIAL_OPTIONS);
+        editor.setId("editor");
+        editor.setHeight("300px");
+
+        FroalaViewer viewer = new FroalaViewer();
+        viewer.setId("viewer");
+        viewer.setMinHeight("100px");
+
+        editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
+
+        Button otherOptions = new Button("Other options");
+        otherOptions.addClickListener(event -> {
+            editor.setOptions(OTHER_OPTIONS);
+            otherOptions.setEnabled(false);
+        });
+        otherOptions.setId("other-options");
+
+        Button clearOptions = new Button("Clear options");
+        clearOptions.addClickListener(event -> {
+            editor.setOptions((FroalaOptions) null);
+            clearOptions.setEnabled(false);
+        });
+        clearOptions.setId("clear-options");
+
+        add(otherOptions, clearOptions, editor, viewer);
+
+        // set last, so the value is on the server before the first attach reaches the client
+        editor.setValue(INITIAL_VALUE);
+    }
+}

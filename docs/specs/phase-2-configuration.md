@@ -38,15 +38,34 @@ every requirement is `unverified` until its test exists.
 
 ## Shape
 
-- **CFG-6** `FroalaOptions` is an immutable object with a `with…` style builder (a
-  record plus Lombok `@With`), typed per option. It is **not** a `FroalaBuilder`:
-  the object is the thing that is passed around and stored, the builder is only how
-  it is written.
+- **CFG-6** `FroalaOptions` is an immutable object with a `with…` style builder,
+  typed per option. It is **not** a `FroalaBuilder`: the object is the thing that is
+  passed around and stored, the builder is only how it is written. Every `with…`
+  answers a new instance, so one configured object can be shared between editors.
+  *`FroalaOptionsTest`*
+
+  **Not a record, decided 2026-08-27** — this replaces the earlier "record plus
+  Lombok `@With`". A record with one component per option makes its canonical
+  constructor public API, and that constructor's signature would change with every
+  option we type. The option surface moves between Froala minors (302 in 5.3.1, 322
+  in 5.4.0), so that is a broken build for consumers on every upgrade. What a record
+  would add on top — destructuring, pattern matching, exhaustive components — is
+  nothing a configuration object is used for. Inside, it holds an
+  `elemental.json.JsonObject`; each `with…` is a one-liner naming its Froala option,
+  and adding an option adds a method and breaks nothing.
+
+  The trade is that the option name is a string literal rather than a field name, so
+  the compiler does not catch a typo in it. It sits on the same line as the typed
+  signature, and `FroalaOptionsTest` asserts the emitted JSON key for every option.
 - **CFG-7** `FroalaOptions` serializes to the raw JSON Froala expects. That
   serialization is the single path — every other entry point below ends in the same
   string.
-- **CFG-8** Entry points: a `FroalaEditor(FroalaOptions)` constructor, and
-  `setOptions` in three overloads — `FroalaOptions`, `JsonObject`, `String`.
+- **CFG-8** Entry points: `FroalaEditor(FroalaOptions)` and
+  `FroalaEditor(String, FroalaOptions)` constructors, and `setOptions` in three
+  overloads — `FroalaOptions`, `elemental.json.JsonObject`, `String`. All three end
+  on one element property, so an option that is not typed yet does not behave
+  differently from one that is. `getOptionsJson()` reads back what was set, whichever
+  overload wrote it. *`FroalaEditorKaribuTest`*
 - **CFG-9** There is **no `setOption(String, Object)`**. The `JsonObject` and
   `String` overloads are the escape hatch for anything not yet typed, and a single
   option is a one-entry object. A per-key setter would be a fourth way to say the
@@ -83,19 +102,34 @@ Measured 2026-08-27 against froala-editor 5.4.0; the demo views `/check-toolbar`
   `buttonsVisible` and no command is registered under the group's name, the
   overflow buttons are rendered into a collapsed panel that nothing can open. The
   API therefore takes strings and **says this**, rather than restricting the name to
-  Froala's four `more…` groups. *unverified*
+  Froala's four `more…` groups. Only Froala's flat form is typed so far
+  (`withToolbarButtons(String…)`); the grouped form and the `MD`/`SM`/`XS`
+  breakpoints need the raw overload. *unverified*
 - **CFG-15** A plugin has **two names**: the file (`font_family.min.js`) and the
   name it registers itself under, which is what `pluginsEnabled` takes
   (`fontFamily`). They differ for 20 of the 49, `track_changes` keeps its underscore
   where every other multi-word plugin is camel-cased, and `edit_in_popup` registers
   no plugin at all. The Java side carries both per plugin; neither is derived from
-  the other. *unverified*
+  the other — that is the `FroalaPlugin` enum, and `withPluginsEnabled` takes it
+  rather than a string. *`FroalaOptionsTest`*
 - **CFG-16** Plugins and language files are loaded **on demand**, with a dynamic
   `import()` per file, on top of Froala's core. All 49 plugins and all 39 language
   files stay shipped; a given editor downloads what its configuration names. This
   replaces the packaged `froala_editor.pkgd.min.js`, and it replaces it completely —
   core and packaged bundle on one page are two module instances with two separate
   plugin registries. *unverified*
+- **CFG-18** **Callback options cannot be set from the server**, whichever overload
+  is used, because all three end as JSON and JSON has no functions. Froala has two:
+  `events`, a map of 159 handlers, and `aiAssistRequest`. `setOptions` **rejects**
+  `events` with an `IllegalArgumentException` rather than letting it arrive as data
+  Froala would then try to call. Server-side listeners for Froala's events are a
+  feature of their own, next to `addValueChangeListener`, not an option. If a
+  callback option ever has to be settable from the server — `aiAssistRequest` is the
+  realistic candidate — the shape to copy is `vaadin-fullcalendar`'s `JsCallback`;
+  see phase 4 in `ROADMAP.md`. *`FroalaEditorKaribuTest`*
+- **CFG-19** `setOptions` on an attached editor really rebuilds, and Froala reads the
+  new options: measured on the running editor, not only on the element property.
+  *`FroalaOptionsIT`*
 - **CFG-17** Upload is **off until a URL is configured**. With no URL Froala uploads
   nothing — it inserts a `blob:` URL, which is valid only in the tab that created it,
   so the value the server stores points at nothing after a reload. A silently broken

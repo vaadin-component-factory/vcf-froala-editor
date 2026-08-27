@@ -26,7 +26,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.internal.JacksonUtils;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
@@ -119,7 +118,7 @@ public class UploadCheckView extends VerticalLayout {
         editor.setId("editor");
         editor.setWidthFull();
         editor.setHeight("400px");
-        editor.getElement().setPropertyJson("initialConfig", JacksonUtils.readTree(rawJson));
+        editor.setOptions(rawJson);
         editor.addValueChangeListener(event -> html.setValue(event.getValue() == null ? "" : event.getValue()));
 
         editorSlot.add(editor);

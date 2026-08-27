@@ -25,12 +25,12 @@ class FroalaEditorElement extends SlotStylesMixin(
                         PolylitMixin(LitElement)))))))
 {
 
-    // Raw Froala options, set by the server before the editor initializes. Read once, at init -- Froala has no runtime
-    // option API. Our own keys are applied afterwards and win.
-    initialConfig = {};
-
     // set by the server before the editor initializes; passed to Froala as its `key` option
     licenseKey = null;
+
+    // The options the current editor was built with, as JSON. Compared against `options` to tell a real change from
+    // Flow re-sending the same property, which happens on every re-attach.
+    _appliedOptions = null;
 
     // Froala builds asynchronously, so its modules (edit, html, ...) must not be touched before its `initialized`
     // event has fired -- `this.editor` being assigned is not enough
@@ -41,7 +41,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     _valueChangeMode = "change";
 
     // Froala's own typing debounce, its `typingTimer` option. Not one of our timers -- see #valueChangeTimeout.
-    _valueChangeTimeout = 500;
+    // Null until the server sets one, so that a `typingTimer` coming in through the options is not overwritten by a
+    // default nobody asked for.
+    _valueChangeTimeout = null;
 
     _intervalPeriod = 2_000;
 
@@ -53,6 +55,12 @@ class FroalaEditorElement extends SlotStylesMixin(
             type: Boolean,
             value: false,
             reflectToAttribute: true
+        },
+
+        // Froala's own options, as the server sent them. A declared property rather than a plain field: Lit rescues a
+        // value that was assigned before the element upgraded, a bare setter on the prototype would be shadowed by it.
+        options: {
+            type: Object
         }
     }
 
@@ -151,6 +159,10 @@ class FroalaEditorElement extends SlotStylesMixin(
         // FocusMixin, ControllerMixin and Vaadin's ResizeMixin all call super first and tear down afterwards
         super.disconnectedCallback();
 
+        this._destroyEditor();
+    }
+
+    _destroyEditor() {
         // these outlive the element otherwise: an interval keeps firing against a destroyed editor, and a re-attach
         // starts a second one on top of it
         clearInterval(this._valueChangeHandleForInterval);
@@ -172,6 +184,21 @@ class FroalaEditorElement extends SlotStylesMixin(
         }
 
         this._editorInitialized = false;
+        this._appliedOptions = null;
+    }
+
+    /**
+     * Applies a changed set of options by throwing the editor away and building a new one. Froala has no API to change
+     * an option on a running instance -- its own answer is to destroy and initialize again -- so this is the whole
+     * mechanism, not a fallback for options that resist.
+     *
+     * What the user typed is flushed first and seeds the new editor. Everything else Froala holds -- caret, selection,
+     * scroll position, undo history -- is gone, the same trade a detach and re-attach already makes.
+     */
+    _rebuildEditor() {
+        this.onValueChange();
+        this._destroyEditor();
+        this._initEditor();
     }
 
     async _initEditor() {
@@ -190,10 +217,21 @@ class FroalaEditorElement extends SlotStylesMixin(
             this.editorElement.innerHTML = this._lastSyncedValue;
             this.append(this.editorElement); // will be put into the default slot
 
+            // The server's options first, ours on top: where this add-on owns a setter for something Froala also has as
+            // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
+            // overwritten with an undefined we do not have.
+            const options = {...this.options};
+            this._appliedOptions = JSON.stringify(this.options ?? null);
+
+            if (this.licenseKey) {
+                options.key = this.licenseKey;
+            }
+            if (this._valueChangeTimeout !== null) {
+                options.typingTimer = this._valueChangeTimeout;
+            }
+
             this.editor = new FroalaEditor(this.editorElement, {
-                ...this.initialConfig,
-                key: this.licenseKey ?? undefined,
-                typingTimer: this._valueChangeTimeout,
+                ...options,
                 events: {
                     'initialized': () => {
                         this._editorInitialized = true;
@@ -345,7 +383,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     get valueChangeTimeout() {
-        return this._valueChangeTimeout;
+        return this._valueChangeTimeout ?? this.editor?.opts?.typingTimer ?? 500;
     }
 
     /** The time between two syncs in INTERVAL mode, in milliseconds. */
@@ -402,8 +440,15 @@ class FroalaEditorElement extends SlotStylesMixin(
 
     updated(changedProperties) {
         super.updated(changedProperties);
+
         if (changedProperties.has("disabled") || changedProperties.has("readonly")) {
             this.updateReadonlyMode();
+        }
+
+        // Compared by content, not by `changedProperties.has`: on the update that builds the editor the options are
+        // already in it, and Flow re-sends every property on a re-attach. Both would otherwise rebuild for nothing.
+        if (this.editor && JSON.stringify(this.options ?? null) !== this._appliedOptions) {
+            this._rebuildEditor();
         }
     }
 
