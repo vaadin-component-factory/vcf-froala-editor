@@ -43,8 +43,14 @@ import com.vaadin.flow.dom.Element;
  * Flow integration of the Froala WYSIWYG editor.
  *
  * <p>
- * Please note, that html values are not parsed or sanitized by the Java code, but the client side only. Therefore
- * handle every input with care before saving or presenting it.
+ * Configure the editor with {@link #setOptions(FroalaOptions)}, its toolbar with {@link FroalaToolbar}, and its license
+ * key with {@link #setLicenseKey(String)}. Without a key Froala shows a watermark. To render the value outside an
+ * editor, use {@link FroalaViewer}.
+ *
+ * <p>
+ * The value is HTML. This component does not parse, escape or sanitize it on the server. Froala cleans the content it
+ * is given, but only in the browser, so a value that reached the server by any other route was not cleaned at all.
+ * Treat the value as untrusted input before storing it or rendering it.
  */
 @Tag("vcf-froala-editor")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
@@ -54,15 +60,16 @@ import com.vaadin.flow.dom.Element;
 public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String> implements HasValidationProperties,
         HasValidator<String>, InputNotifier, HasSize, HasStyle, Focusable<FroalaEditor>, HasLabel, HasHelper {
 
+    /** The value change mode of a new editor. */
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
 
-    /// Froala floors its own `typingTimer` at this value, so anything below it would have no effect.
+    /** The lowest accepted value change timeout. Froala floors its {@code typingTimer} at 250 ms. */
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
 
-    /// The default timeout before a value is sent to the server, when value change mode is "on change".
+    /** The default value change timeout in milliseconds. Same as Froala's {@code typingTimer} default. */
     public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
 
-    /// The default interval period for the value change mode "interval".
+    /** The default interval period in milliseconds, used by {@link ValueChangeMode#INTERVAL}. */
     public static final int DEFAULT_INTERVAL_PERIOD = 2000;
 
     private static final String VALUE_PROPERTY = "value";
@@ -83,7 +90,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Creates a new instance with the given label.
      *
-     * @param label label
+     * @param label the label shown above the editor, or null for none
      */
     public FroalaEditor(String label) {
         this();
@@ -91,11 +98,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Creates a new instance with the given label and initial value. The initial value is set as it is without any
-     * further processing.
+     * Creates a new instance with the given label and initial value.
      *
-     * @param label label
-     * @param initialValue initial value
+     * @param label the label shown above the editor, or null for none
+     * @param initialValue the HTML the editor starts with
      */
     public FroalaEditor(String label, String initialValue) {
         this();
@@ -104,12 +110,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Creates a new instance with the given label, initial value and value change listener. The initial value is set as
-     * it is without any further processing.
+     * Creates a new instance with the given label, initial value and value change listener.
      *
-     * @param label label
-     * @param initialValue initial value
-     * @param valueChangeListener value change listener
+     * @param label the label shown above the editor, or null for none
+     * @param initialValue the HTML the editor starts with
+     * @param valueChangeListener notified of every later change; not notified of the initial value, which is set before
+     *            the listener is added
      */
     public FroalaEditor(String label, String initialValue,
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
@@ -122,8 +128,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Creates a new instance with the given label and value change listener.
      *
-     * @param label label
-     * @param valueChangeListener value change listener
+     * @param label the label shown above the editor, or null for none
+     * @param valueChangeListener notified of every change of the value
      */
     public FroalaEditor(String label,
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
@@ -135,7 +141,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Creates a new instance with the given value change listener.
      *
-     * @param valueChangeListener value change listener
+     * @param valueChangeListener notified of every change of the value
      */
     public FroalaEditor(
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
@@ -156,7 +162,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Creates a new instance with the given label, configured with the given options.
      *
-     * @param label label
+     * @param label the label shown above the editor, or null for none
      * @param options Froala options, or null for Froala's defaults
      */
     public FroalaEditor(String label, FroalaOptions options) {
@@ -237,12 +243,17 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Applies the given delta onto the "old" value. Returns the "new", resulting value.
+     * Applies a delta to the value it was computed against and returns the result.
      *
-     * @param oldValue old value
-     * @param delta delta to apply
-     * @return new value
-     * @throws DeltaMismatchException if the delta cannot be applied to the given old value
+     * <p>
+     * A delta is a diff-match-patch patch text. The client sends every change the user makes in this form, so that a
+     * keystroke does not transfer the whole document. The editor applies incoming deltas itself; this method is public
+     * so the same conversion can be used outside it.
+     *
+     * @param oldValue the value the delta was computed against
+     * @param delta a diff-match-patch patch text
+     * @return the value with the delta applied
+     * @throws DeltaMismatchException if the delta does not apply to the given old value
      */
     public static String applyDelta(String oldValue, String delta) {
         List<DiffMatchPatch.Patch> patches = DIFF_MATCH_PATCH.patchFromText(delta);
@@ -275,17 +286,19 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Configures the underlying Froala editor.
      *
      * <p>
-     * <b>Options are read once, when the editor is built.</b> Froala has no API to change one on a running editor, so
-     * calling this on an attached instance destroys the editor and builds a new one. The value survives that; caret,
-     * selection, scroll position and undo history do not. Several calls within one server round trip cost one rebuild,
-     * not one each.
+     * Froala reads its options once, when the editor is built, and has no API to change one on a running editor.
+     * Calling this on an attached instance therefore destroys the editor and builds a new one. The value is kept;
+     * caret, selection, scroll position and undo history are lost. Several calls within one server round trip cause one
+     * rebuild.
      *
      * <p>
-     * Each call replaces the options set before it -- they are not merged.
+     * Each call replaces the previous options. They are not merged.
      *
      * <p>
-     * Whatever this add-on has a setter for is applied after the options and wins over them, so a {@code key} in the
-     * options is only used when {@link #setLicenseKey(String)} was not called.
+     * Two options are applied after the given ones and take precedence over them, whichever {@code setOptions} overload
+     * was used: {@code key} while {@link #setLicenseKey(String)} holds a key, and {@code typingTimer} once
+     * {@link #setValueChangeTimeout(int)} has been called. An option given here is used only while the matching setter
+     * was not.
      *
      * @param options Froala options, or null for Froala's defaults
      */
@@ -294,11 +307,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Configures the underlying Froala editor from a JSON object, for options {@link FroalaOptions} does not type yet.
-     * Behaves like {@link #setOptions(FroalaOptions)} in every other respect.
+     * Configures the underlying Froala editor from a JSON object, for options {@link FroalaOptions} has no method for.
+     * Identical to {@link #setOptions(FroalaOptions)} in every other respect.
      *
      * @param options Froala options as JSON, or null for Froala's defaults
-     * @throws IllegalArgumentException if the options carry Froala's {@code events} option
+     * @throws IllegalArgumentException if the options contain Froala's {@code events} option
      */
     public void setOptions(JsonObject options) {
         if (options == null) {
@@ -313,7 +326,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         if (options.hasKey("events")) {
             throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
                     + " it cannot be set from the server. Value changes are reported through"
-                    + " addValueChangeListener; anything else Froala fires has no server side listener yet.");
+                    + " addValueChangeListener; anything else Froala fires has no server side listener.");
         }
 
         optionsJson = options.toJson();
@@ -321,8 +334,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Configures the underlying Froala editor from raw JSON, for options {@link FroalaOptions} does not type yet.
-     * Behaves like {@link #setOptions(FroalaOptions)} in every other respect.
+     * Configures the underlying Froala editor from raw JSON, for options {@link FroalaOptions} has no method for.
+     * Identical to {@link #setOptions(FroalaOptions)} in every other respect.
      *
      * @param options Froala options as a JSON object literal, or null for Froala's defaults
      * @throws IllegalArgumentException if the given string is not parseable as a JSON object
@@ -346,8 +359,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Returns the JSON the editor is configured with, whichever of the {@code setOptions} overloads was used. Null when
-     * none was called, which means Froala's defaults.
+     * Returns the JSON the editor is configured with, whichever {@code setOptions} overload was used. Null if none was
+     * called, in which case Froala uses its defaults.
      *
      * @return the options as JSON, or null
      */
@@ -359,8 +372,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Sets the license key of this instance. Maps onto Froala's {@code key} option.
      *
      * <p>
-     * Froala is commercial software and the key is customer specific, therefore this add-on ships none. Without a key
-     * the editor still works, but shows Froala's unlicensed watermark.
+     * Froala is commercial software and the key is customer specific, so this add-on ships none. Without a key the
+     * editor works, but shows Froala's unlicensed watermark.
      *
      * <p>
      * The key is only read when the client side editor initializes, so calling this on an already attached instance has
@@ -389,7 +402,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Sets the value change mode of this instance. By default the editor uses {@link ValueChangeMode#ON_CHANGE}. Null
      * resets the mode to the default.
      *
-     * @param valueChangeMode new value change mode
+     * @param valueChangeMode the new value change mode, or null for the default
      */
     public void setValueChangeMode(ValueChangeMode valueChangeMode) {
         if (valueChangeMode == null) {
@@ -410,24 +423,21 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the idle time in milliseconds that has to pass after the last keystroke before the editor reports the
-     * change. This is Froala's own {@code typingTimer} option, not a timer of this add-on: Froala restarts it on every
-     * keystroke and only then reports, which is why {@link ValueChangeMode#ON_CHANGE} syncs once the user pauses rather
-     * than per key.
+     * Sets the idle time in milliseconds after the last keystroke before the editor reports the change. This is
+     * Froala's {@code typingTimer} option, not a timer of this component. Froala restarts it on every keystroke, which
+     * is why {@link ValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
      *
      * <p>
-     * Default is 500, Froala's own default. The minimum is {@value #MIN_VALUE_CHANGE_TIMEOUT} -- Froala floors the
-     * option there, so a smaller value would be silently ignored and is rejected here instead. The client rejects it
-     * with the same message.
+     * The default is 500, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala floors the option at that minimum and
+     * ignores smaller values silently, so this setter throws instead.
      *
      * <p>
-     * Note that the option is not exclusive to the value sync: Froala uses the same timespan for its selection-change
-     * flush, which drives the active state of the toolbar buttons, and for the reveal delay of the inline toolbar. A
-     * long timeout slows those down as well.
+     * Froala uses the option for more than the value sync. It is also the delay before the inline toolbar is shown
+     * again after a keystroke, so a long timeout delays that as well.
      *
      * <p>
-     * {@link ValueChangeMode#ON_BLUR} and {@link ValueChangeMode#INTERVAL} do not depend on it -- neither waits for a
-     * reported change.
+     * Only {@link ValueChangeMode#ON_CHANGE} uses this value. {@link ValueChangeMode#ON_BLUR} and
+     * {@link ValueChangeMode#INTERVAL} are triggered by something else and are not delayed by it.
      *
      * @param timeoutInMilliseconds idle time before a change is reported, at least {@value #MIN_VALUE_CHANGE_TIMEOUT}
      * @throws IllegalArgumentException if the given timeout is below {@value #MIN_VALUE_CHANGE_TIMEOUT}
@@ -446,9 +456,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * change. Default is 500.
      *
      * <p>
-     * This reports what {@link #setValueChangeTimeout(int)} was given, not what the editor runs on: a
-     * {@code typingTimer} passed through {@link #setOptions(FroalaOptions)} takes effect when the setter was never
-     * called, and is not visible here.
+     * This returns what {@link #setValueChangeTimeout(int)} was given, not what the editor runs on. A
+     * {@code typingTimer} passed through {@link #setOptions(FroalaOptions)} takes effect as long as the setter was
+     * never called, but is not reported here.
      *
      * @return idle time in milliseconds
      */
@@ -461,8 +471,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * the first one. Has no effect in any other mode.
      *
      * <p>
-     * Default is 2000. Must be greater than zero -- the mode has no meaningful behaviour at zero, and the client
-     * rejects it as well.
+     * The default is 2000. The value must be greater than zero; the client rejects zero and negative values as well.
      *
      * @param periodInMilliseconds time between two value syncs, greater than zero
      * @throws IllegalArgumentException if the given period is zero or negative

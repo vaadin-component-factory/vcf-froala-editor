@@ -15,30 +15,17 @@
  */
 package com.vaadin.componentfactory.froala;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
-
 /**
- * Interface, that marks a class to have a single string client side representation.
+ * Implemented by a type whose instances have one fixed string form for the client side, typically an enum whose
+ * constants stand for the values a Froala option accepts.
  */
 @FunctionalInterface
 public interface ClientSideReference {
 
     /**
-     * Returns the client side representation of this instance.
-     * 
-     * @return client side representation
+     * Returns the string the client side expects for this instance.
+     *
+     * @return the client side string, never null
      */
     String getClientSideRepresentation();
-
-    /**
-     * Returns a joined string of the given client side references, separated by a single space.
-     * 
-     * @param clientSideReferences references to join
-     * @return joined string
-     */
-    static String join(ClientSideReference[] clientSideReferences) {
-        return Arrays.stream(clientSideReferences).map(ClientSideReference::getClientSideRepresentation)
-                .collect(Collectors.joining(" "));
-    }
 }

@@ -16,32 +16,35 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * Enumeration of value change modes for the FroalaEditor.
+ * Determines when the editor sends its value from the browser to the server. Set with
+ * {@link FroalaEditor#setValueChangeMode(ValueChangeMode)}.
+ *
+ * <p>
+ * Not {@link com.vaadin.flow.data.value.ValueChangeMode}, which shares this name and has five constants. Froala reports
+ * no change during an uninterrupted burst of typing, so there is no equivalent of Vaadin's {@code EAGER} or
+ * {@code LAZY}.
  */
 public enum ValueChangeMode implements ClientSideReference {
 
     /**
-     * Syncs the value with the server on every "change" event, that is fired by the editor. Froala debounces typing
-     * itself, so while the user types this happens once they pause -- after
-     * {@link FroalaEditor#setValueChangeTimeout(int)} milliseconds. Everything that is not typing (toolbar commands,
-     * paste, cut, undo/redo) is reported at once.
+     * Sends the value on every change event the editor reports. Froala debounces typing itself, so while the user types
+     * the value is sent once they pause, after {@link FroalaEditor#setValueChangeTimeout(int)} milliseconds. Changes
+     * that are not typing, such as toolbar commands, paste, cut and undo, are reported immediately.
      */
     ON_CHANGE("change"),
 
     /**
-     * Syncs the value with the server, when the editor loses the focus ("blur event").
+     * Sends the value when the editor loses focus.
      */
     ON_BLUR("blur"),
 
     /**
+     * Sends the value every {@link FroalaEditor#setIntervalPeriod(int)} milliseconds while there are changes to send,
+     * independently of user events. This is the only mode that sends anything while the user types without pausing,
+     * because Froala reports no change during an uninterrupted burst of typing.
+     *
      * <p>
-     * Syncs the value every {@link FroalaEditor#setIntervalPeriod(int)} milliseconds, regardless of any user events, as
-     * long as there are changes to sync. The only mode that sends anything at all while the user types without pausing
-     * -- Froala reports nothing during an uninterrupted burst.
-     * </p>
-     * <p>
-     * This is the equivalent to Vaadin's native {@link com.vaadin.flow.data.value.ValueChangeMode#TIMEOUT}
-     * </p>
+     * Equivalent to Vaadin's own {@link com.vaadin.flow.data.value.ValueChangeMode#TIMEOUT}.
      */
     INTERVAL("interval");
 
@@ -57,11 +60,11 @@ public enum ValueChangeMode implements ClientSideReference {
     }
 
     /**
-     * Interprets the given string as the client side representation of an enum and returns the matching instance.
-     * 
-     * @param clientSide client side representation
-     * @return instance
-     * @throws IllegalArgumentException on any unknown string
+     * Returns the mode whose client side representation equals the given string.
+     *
+     * @param clientSide the client side representation to match, for example {@code "change"}
+     * @return the matching mode
+     * @throws IllegalArgumentException if no mode has that representation
      */
     public static ValueChangeMode fromClientSide(String clientSide) {
         for (ValueChangeMode mode : values()) {

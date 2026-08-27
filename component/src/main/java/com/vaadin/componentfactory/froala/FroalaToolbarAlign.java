@@ -16,14 +16,15 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * Which side of the toolbar a button group sits on, Froala's {@code align} inside a toolbar group.
+ * Which side of the toolbar a button group sits on. Maps to Froala's {@code align} option inside a toolbar group, which
+ * defaults to {@link #LEFT}.
  */
 public enum FroalaToolbarAlign {
 
-    /** At the left end of the toolbar. Froala's default for a group that does not say. */
+    /** At the left end of the toolbar. Froala's default for a group that does not set the option. */
     LEFT("left"),
 
-    /** At the right end of the toolbar, where Froala's own default puts undo, redo and full screen. */
+    /** At the right end of the toolbar. Froala's default toolbar places undo, redo and full screen there. */
     RIGHT("right");
 
     private final String optionValue;
@@ -33,9 +34,9 @@ public enum FroalaToolbarAlign {
     }
 
     /**
-     * Returns the value Froala's {@code align} expects.
+     * Returns the value Froala's {@code align} option expects.
      *
-     * @return option value
+     * @return the option value, for example {@code "right"}
      */
     public String getOptionValue() {
         return optionValue;

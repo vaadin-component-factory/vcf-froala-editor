@@ -37,11 +37,11 @@ import elemental.json.JsonValue;
  * Froala reads a toolbar in two shapes and treats them differently, so this class offers both:
  *
  * <ul>
- * <li>{@link #of(String...)} -- a flat list. Every button given is shown, always. Froala cuts the list into groups at
- * the separators itself and switches its overflow panel off.</li>
+ * <li>{@link #of(String...)} -- a flat list. Every button given is shown. Froala splits the list into groups at the
+ * separators and disables its overflow panel.</li>
  * <li>{@link #ofGroups(FroalaToolbarGroup...)} -- named groups, each with its own alignment and its own count of
- * buttons shown before the rest move into an overflow panel. This is the shape Froala's own default toolbar uses, and
- * the only one where the overflow panel exists at all.</li>
+ * buttons shown before the rest move into an overflow panel. This is the shape Froala's default toolbar uses, and the
+ * only one with an overflow panel.</li>
  * </ul>
  *
  * <pre>
@@ -53,11 +53,10 @@ import elemental.json.JsonValue;
  * </pre>
  *
  * <p>
- * A button name is a registered command name -- {@code "bold"}, {@code "paragraphFormat"}, {@code "insertImage"},
- * {@code "fullscreen"} and 179 others in Froala 5.4.0. The list is the one under {@code toolbarButtons} in
- * <a href="https://froala.com/wysiwyg-editor/docs/options/">Froala's option documentation</a>. A name Froala does not
- * know is dropped without a word, and so is a button whose plugin is not among the ones
- * {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} allows.
+ * A button name is a registered command name, for example {@code "bold"}, {@code "paragraphFormat"},
+ * {@code "insertImage"} or {@code "fullscreen"}. Froala 5.4.0 registers 183 of them; they are listed under
+ * {@code toolbarButtons} in <a href="https://froala.com/wysiwyg-editor/docs/options/">Froala's option
+ * documentation</a>. A name Froala does not know is dropped silently.
  */
 public final class FroalaToolbar implements Serializable {
 
@@ -73,13 +72,13 @@ public final class FroalaToolbar implements Serializable {
     }
 
     /**
-     * Creates a flat toolbar that shows every button given, in the order given. The overflow panel only exists in the
-     * grouped form, so a flat toolbar longer than the window wraps instead of collapsing.
+     * Creates a flat toolbar that shows every button given, in the order given. The overflow panel exists only in the
+     * grouped form, so a flat toolbar wider than the window wraps instead of collapsing.
      *
      * <p>
-     * {@code "|"} and {@code "-"} both start a new group here, and neither is drawn: Froala consumes them while cutting
-     * the list into groups, so in this form the two are interchangeable. Inside a {@link FroalaToolbarGroup} they are
-     * separator lines instead, one vertical and one horizontal.
+     * {@code "|"} and {@code "-"} both start a new group and neither is drawn: Froala consumes them while splitting the
+     * list into groups, so in this form the two are interchangeable. Inside a {@link FroalaToolbarGroup} they are drawn
+     * as separator lines instead, one vertical and one horizontal.
      *
      * @param buttons command names in the order they should appear, none of them null
      * @return a new instance
@@ -98,8 +97,7 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws IllegalArgumentException if two groups share a name, or if a freely named group would send buttons into
-     *             an overflow panel nothing can open
+     * @throws IllegalArgumentException under the same conditions as {@link #ofGroups(Collection)}
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
@@ -111,9 +109,12 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws IllegalArgumentException if two groups share a name -- Froala keys its groups by name, so the second
-     *             would silently replace the first -- or if a group holds more buttons than it shows under a name
-     *             Froala has no overflow button for
+     * @throws IllegalArgumentException if two groups share a name, since Froala keys its groups by name and the second
+     *             would replace the first; or if a group shows fewer buttons than it holds under a name other than
+     *             {@link FroalaToolbarGroup#MORE_TEXT}, {@link FroalaToolbarGroup#MORE_PARAGRAPH},
+     *             {@link FroalaToolbarGroup#MORE_RICH} or {@link FroalaToolbarGroup#MORE_MISC}, since Froala then
+     *             renders an overflow panel that cannot be opened. Rename the group to one of those four, or raise
+     *             {@link FroalaToolbarGroup#withButtonsVisible(int)} to the number of buttons in the group
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(Collection<FroalaToolbarGroup> groups) {

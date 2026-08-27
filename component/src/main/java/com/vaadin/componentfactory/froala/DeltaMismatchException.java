@@ -16,19 +16,19 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * Thrown by {@link FroalaEditor#applyDelta(String, String)} when a delta cannot be applied to the value it is handed.
+ * Thrown by {@link FroalaEditor#applyDelta(String, String)} when a delta cannot be applied to the given value.
  *
  * <p>
- * Usually that means the client built the delta against a different base and the two sides have drifted apart. It also
- * covers diff-match-patch answering with something other than its documented result shape. Both are answered the same
- * way -- the client is asked to resend its full value -- which is why they share one exception.
+ * The usual cause is that the client computed the delta against a different base value, so the two sides no longer
+ * agree. The exception also covers diff-match-patch returning a result of an unexpected shape. Both cases are handled
+ * the same way: the client is asked to resend its full value.
  */
 public class DeltaMismatchException extends RuntimeException {
 
     /**
      * Creates a new instance with the given message.
      *
-     * @param message message
+     * @param message the detail message
      */
     public DeltaMismatchException(String message) {
         super(message);

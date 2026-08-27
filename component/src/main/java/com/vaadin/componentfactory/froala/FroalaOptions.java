@@ -26,8 +26,8 @@ import elemental.json.JsonObject;
 import elemental.json.JsonValue;
 
 /**
- * Froala's options, typed. Immutable: every {@code with…} method answers a new instance and leaves this one alone, so
- * one configured object can be shared between editors.
+ * Froala's options, typed. Immutable: every {@code with…} method returns a new instance and leaves this one unchanged,
+ * so one configured object can be shared between editors.
  *
  * <pre>
  * FroalaOptions options = FroalaOptions.defaults().withPlaceholderText("Write something").withCharCounterMax(2000);
@@ -36,30 +36,30 @@ import elemental.json.JsonValue;
  * </pre>
  *
  * <p>
- * <b>Options are read once, when the editor is built.</b> Froala has no API to change one on a running editor -- its
- * own answer is to destroy the instance and initialize it again -- so passing a different object to
- * {@link FroalaEditor#setOptions(FroalaOptions)} rebuilds the editor. The value survives that; caret, selection, scroll
- * position and undo history do not.
+ * Froala reads its options once, when the editor is built, and has no API to change one on a running editor. Passing a
+ * different object to {@link FroalaEditor#setOptions(FroalaOptions)} therefore rebuilds the editor. The value is kept;
+ * caret, selection, scroll position and undo history are lost.
  *
  * <p>
- * Only options that have been set appear in the JSON, so everything left alone keeps Froala's own default. Froala's
- * defaults are documented at <a href="https://froala.com/wysiwyg-editor/docs/options/">froala.com</a>.
+ * Only options that were set appear in the JSON sent to the browser. Every other option keeps Froala's default, as
+ * documented at <a href="https://froala.com/wysiwyg-editor/docs/options/">froala.com</a>.
  *
  * <p>
- * Not every one of Froala's 322 options is typed here. What is missing can be passed as raw JSON through
- * {@link FroalaEditor#setOptions(String)}; there is deliberately no per-key setter next to these methods.
+ * Froala has 322 options and not all of them are typed here. Untyped options can be passed as raw JSON through
+ * {@link FroalaEditor#setOptions(String)}. There is no per-key setter.
  *
  * <p>
- * Three options are <b>not</b> offered and will not be: {@code key} belongs to
- * {@link FroalaEditor#setLicenseKey(String)}, and {@code height} and {@code width} fight the Vaadin field that wraps
- * the editor -- size it with {@link FroalaEditor#setHeight(String)} and friends instead.
+ * Three options are not offered: {@code key} is set with {@link FroalaEditor#setLicenseKey(String)}, and {@code height}
+ * and {@code width} conflict with the size of the Vaadin component, which is set with
+ * {@link FroalaEditor#setHeight(String)} and the other {@code HasSize} methods.
  *
  * <p>
- * <b>Two of Froala's options take callbacks and are therefore out of reach from Java</b>, whichever overload is used,
- * because every one of them ends as JSON and JSON has no functions: {@code events}, a map of 159 handlers, and
- * {@code aiAssistRequest}. {@link FroalaEditor#setOptions(String)} rejects {@code events} rather than let it arrive as
- * data Froala would then try to call. Value changes have a server side listener already
- * ({@link FroalaEditor#addValueChangeListener}); everything else Froala fires does not yet.
+ * Two options cannot be set from Java at all: {@code events}, a map of 159 handlers, and {@code aiAssistRequest}. Both
+ * take JavaScript functions, and options are transferred as JSON, which cannot hold a function.
+ * {@link FroalaEditor#setOptions(String)} throws if the options contain {@code events}, since Froala would try to call
+ * what arrived. It does not check for {@code aiAssistRequest}: passing that as raw JSON is accepted and has no effect.
+ * Value changes are reported through {@link FroalaEditor#addValueChangeListener}; no other Froala event has a server
+ * side listener.
  */
 public final class FroalaOptions implements Serializable {
 
@@ -86,8 +86,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Answers a copy with the given option set, or removed when the value is null. The only place that knows an option
-     * name is the {@code with…} method next to it, which is what keeps the name and its type together.
+     * Returns a copy with the given option set, or removed if the value is null. Each option name appears in exactly
+     * one {@code with…} method, so the name and its type stay together.
      */
     private FroalaOptions with(String option, JsonValue value) {
         JsonObject copy = copyOf(values);
@@ -143,10 +143,8 @@ public final class FroalaOptions implements Serializable {
      * {@code language}, which takes a language file's name such as {@code de}, {@code pt_br} or {@code zh_cn}.
      *
      * <p>
-     * <b>This has no effect yet.</b> Froala only applies the option once the matching file from {@code js/languages/}
-     * has been loaded, and this add-on loads none, so the editor stays English whatever is set here. Loading language
-     * files on demand is an open item in the roadmap; the option is here so configurations written today do not have to
-     * change afterwards.
+     * <b>Setting this alone changes nothing.</b> Froala reads the option only after the matching file from
+     * {@code js/languages/} has been loaded, and this add-on loads no language file, so the editor stays English.
      *
      * @param language language file name, or null to leave Froala's default
      * @return a new instance
@@ -221,9 +219,10 @@ public final class FroalaOptions implements Serializable {
      * eight-group default when left alone.
      *
      * <p>
-     * This is also the toolbar Froala falls back to on a narrower screen: the three sibling options below are each
-     * consulted first, but only if they were set. Which of the four a given moment uses is decided on the editor's own
-     * width when Froala's {@code toolbarResponsiveToEditor} is on, and on the window's otherwise.
+     * This is also the toolbar Froala falls back to on a narrower screen: {@link #withToolbarButtonsMd(FroalaToolbar)},
+     * {@link #withToolbarButtonsSm(FroalaToolbar)} and {@link #withToolbarButtonsXs(FroalaToolbar)} are each consulted
+     * first, but only if they were set. Which of the four is used at a given moment follows the editor's own width when
+     * Froala's {@code toolbarResponsiveToEditor} is on, and the window's otherwise.
      *
      * @param toolbar the toolbar layout, or null to leave Froala's default
      * @return a new instance
@@ -343,7 +342,7 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Shows or hides the word count below the editing area. Froala's {@code wordCounterCount}.
+     * Shows or hides the word count below the editing area. Froala's {@code wordCounterCount}, on by default.
      *
      * @param wordCounterCount whether the word count is shown
      * @return a new instance
@@ -369,9 +368,11 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}, which is all of them when left alone.
-     * A toolbar button whose plugin is not enabled is dropped without a word.
+     * A toolbar button is dropped silently when its command declares a plugin that is not enabled: it is neither drawn
+     * nor counted towards a group's {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no
+     * plugin, among them {@code bold} and {@code italic}, are drawn whatever this option holds.
      *
-     * @param plugins the plugins the editor may use
+     * @param plugins the plugins the editor may use, or null to leave Froala's default
      * @return a new instance
      */
     public FroalaOptions withPluginsEnabled(FroalaPlugin... plugins) {
@@ -380,7 +381,9 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}, which is all of them when left alone.
-     * A toolbar button whose plugin is not enabled is dropped without a word.
+     * A toolbar button is dropped silently when its command declares a plugin that is not enabled: it is neither drawn
+     * nor counted towards a group's {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no
+     * plugin, among them {@code bold} and {@code italic}, are drawn whatever this option holds.
      *
      * @param plugins the plugins the editor may use, or null to leave Froala's default
      * @return a new instance
@@ -455,14 +458,15 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets how many seconds after a change Froala's {@code save} plugin posts the content to its {@code saveURL}.
-     * Froala's {@code saveInterval}; {@code 0} turns the plugin off.
+     * Sets how many milliseconds after a change Froala's {@code save} plugin posts the content to its {@code saveURL}.
+     * Froala's {@code saveInterval}, 10000 by default; {@code 0} turns the plugin off.
      *
      * <p>
      * A Flow application gets the content through the value change listener, so this is normally not what saves
-     * anything -- and left at its default the plugin schedules a request per edit that then fails on the missing URL.
+     * anything. At the default interval and without a {@code saveURL}, the plugin schedules a request per edit that
+     * then fails.
      *
-     * @param saveInterval seconds between two saves, or 0 to switch the save plugin off
+     * @param saveInterval milliseconds between two saves, or 0 to switch the save plugin off
      * @return a new instance
      */
     public FroalaOptions withSaveInterval(int saveInterval) {
@@ -470,14 +474,14 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets the idle time in milliseconds after the last keystroke before Froala reports a change.
+     * Sets the idle time in milliseconds after the last keystroke before Froala reports a change. Froala's
+     * {@code typingTimer}.
      *
      * @param typingTimer idle time in milliseconds, at least {@value FroalaEditor#MIN_VALUE_CHANGE_TIMEOUT}
      * @return a new instance
-     * @deprecated Use {@link FroalaEditor#setValueChangeTimeout(int)}. It is the same Froala option, but the add-on's
-     *             other value change settings are setters and Vaadin's own fields carry that name, so having it in two
-     *             places for one thing is the odd one out. If the setter is never called this option still takes
-     *             effect; if it is called, it wins.
+     * @deprecated Use {@link FroalaEditor#setValueChangeTimeout(int)}, which sets the same Froala option. The other
+     *             value change settings of this component are setters as well, and Vaadin's own fields use that name.
+     *             This option takes effect as long as the setter is never called; once it is, the setter wins.
      */
     @Deprecated
     public FroalaOptions withTypingTimer(int typingTimer) {

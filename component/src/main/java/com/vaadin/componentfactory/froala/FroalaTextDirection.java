@@ -16,19 +16,19 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * The reading direction of the edited text, Froala's {@code direction} option.
+ * The reading direction of the edited text. Maps to Froala's {@code direction} option, which defaults to {@link #AUTO}.
  */
 public enum FroalaTextDirection {
 
-    /** Left to right. Froala's default. */
+    /** Left to right. */
     LTR("ltr"),
 
     /** Right to left, for Arabic, Hebrew, Persian and Urdu. */
     RTL("rtl"),
 
     /**
-     * Let the browser decide per paragraph from the characters it contains, by writing {@code dir="auto"} into the
-     * markup. Mixed-language documents are what this is for.
+     * Writes {@code dir="auto"} into the markup and lets the browser determine the direction per paragraph from the
+     * characters it contains. Intended for mixed-language documents. This is Froala's default.
      */
     AUTO("auto");
 
@@ -41,7 +41,7 @@ public enum FroalaTextDirection {
     /**
      * Returns the value Froala's {@code direction} option expects.
      *
-     * @return option value
+     * @return the option value, for example {@code "rtl"}
      */
     public String getOptionValue() {
         return optionValue;

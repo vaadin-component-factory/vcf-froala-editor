@@ -505,6 +505,83 @@ Still open from the same round, deliberately not fixed: a detach that is followe
 the old options, one when the new options arrive an update later. The guard makes
 the wasted one harmless, but it is still a full Froala init nobody sees.
 
+**Where the work stands, 2026-08-27 evening.** The three points from the toolbar
+round are committed as `ff5f878`. Everything after it is uncommitted and waiting for
+the maintainer to review it: the javadoc pass over all 152 blocks under
+`component/src/main/java/.../froala/`, plus this file.
+
+The javadoc pass ran as three review subagents, one per group of files, and every
+finding was checked before it was applied — two of them were wrong. What it changed,
+beyond wording:
+
+- `FroalaOptions.withSaveInterval` documented `saveInterval` as **seconds**. Froala's
+  default is `1e4` and it goes straight into `setTimeout`, so it is milliseconds.
+  Following the old javadoc meant firing a save request every 10 ms.
+- `FroalaTextDirection.LTR` claimed to be Froala's default. Froala's default is
+  `direction: "auto"`; the note moved to `AUTO`.
+- All 48 `FroalaPlugin` constants said only which file they live in. Each now says
+  what the plugin does, and the seven that need something outside the browser say so.
+- `FroalaViewer.setContent` had no javadoc at all, although it writes its argument
+  into `innerHTML` unescaped.
+- `FroalaToolbarGroup` referred to `FroalaEditor.COMMANDS[name]` — and `FroalaEditor`
+  is also our own class in the same package. It now says whose it is.
+
+Two review findings were **wrong** and are recorded so nobody re-opens them: the
+three `///` markdown doc comments do render (checked by running `javadoc:javadoc` —
+the JDK that builds decides, not `--release 17`; converted to `/** */` for
+consistency anyway), and `FroalaToolbar`'s command count was right —
+`Object.keys(FroalaEditor.COMMANDS).length` is 183.
+
+**Register, set by the maintainer 2026-08-27:** javadoc is sober reference text,
+written by developers for developers. No prose, no rhetorical constructions, no
+sentence that invites a rebuttal instead of stating a fact. The trigger was *"Two of
+Froala's options take callbacks, and no overload here can carry one"* — *"ja dann
+schreib doch einfach eine, würde ich mir als Leser denken"*. And no reference that
+only exists inside this repo: not `ROADMAP.md`, not a spec ID, not a test name, and
+no "yet" either. After the release those files do not exist for a consumer at all.
+
+**Both open items from the javadoc pass are closed, 2026-08-27 evening:**
+
+- The *dropped silently* claim is **correct**, and was incomplete. Measured in
+  `buildGroup`: `pluginsEnabled` filters a button only when its command declares a
+  `plugin` property, and a filtered button is neither drawn nor counted towards
+  `buttonsVisible`. The earlier contradicting measurement used `textColor`, which
+  declares no plugin and is therefore never filtered — `insertImage` (`plugin:
+  "image"`) does disappear and does stop counting. The three javadocs say both halves
+  now.
+
+  Consequence for `FroalaToolbarGroup.overflowsWithNothingToOpenIt()`: it counts
+  every non-separator button, where Froala counts only the unfiltered ones. A group
+  whose buttons are mostly from disabled plugins can therefore be rejected although
+  Froala would never overflow it. Left as is — closing it would mean carrying
+  Froala's 183 command-to-plugin mapping on the server, and the guard's message
+  already names both remedies.
+- `ClientSideReference.join(…)` **deleted** on the maintainer's call, with the two
+  imports that only served it. The interface itself is still there with one method
+  and one implementer (`ValueChangeMode`), called only through the method and never
+  through the type — dropping it too is a follow-up decision.
+
+**Open, raised by the maintainer 2026-08-27 evening:**
+
+- **A custom-named toolbar group needs something to open.** `FroalaToolbar.ofGroups`
+  currently *rejects* a freely named group that would overflow (CFG-14), because
+  Froala renders no toggle for it. That satisfies the compiler and leaves the
+  developer with nothing: *"meine Erwartungshaltung als Dev ist, dass ich, wenn ich
+  so eine definiere, auch was zum aufklappen sehe. andernfalls bringt uns das feature
+  nichts."* A rejection is a diagnosis, not a feature. Find a way to give a freely
+  named group a working toggle.
+
+  What is already measured and constrains the answer: Froala's exported
+  `commands.moreText` is a zero-arg closure bound to its own name, so a command
+  registered under a free name cannot delegate to it; only the four `more…` names
+  have a toggle that both renders and opens. Directions worth trying, cheapest first
+  — (a) map a freely named group onto one of the four unused `more…` names on the
+  way to JSON, since the name is never shown to anyone and only has to be unique;
+  (b) register a real command per group in the connector that opens the group's own
+  `.fr-more-toolbar` panel by its `data-name`; (c) keep the rejection only for the
+  case neither of those covers. (a) is the one to measure first: it needs no Froala
+  internals, only that at most four groups overflow at once.
+
 **Next up, agreed with the maintainer 2026-08-27 — one at a time, in this order.**
 
 **1. Take the license key out of its own element property.** Decided 2026-08-27: it
@@ -654,13 +731,56 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       **Full-screen is a method, not an option** — and gets **no Java API**, decided
       2026-08-27. The toolbar button is the way to it.
 - [x] Demo view exercising each mode — both modes are switches in `/options`
-- [ ] Expose `pluginsEnabled`. **On by default: the 41 plugins that need nothing
-      but a browser, or only the upload endpoint of phase 3. Off by default: the
-      eight that need a server or a paid service** — `collaborative`, `ai_assist`,
-      `filestack`, `spell_checker`, `import_from_word`, `export_to_word`, `save`.
-      Decided 2026-08-27; a visible button with no service behind it is worse than
-      no button. Which of the eight the customer actually needs is the plugin
-      question in `docs/customer-request.md`, still open.
+- [ ] **Spell checking: expose Froala's `spellcheck` option.** The customer answered
+      question 3 on 2026-08-27: *"For the plugin, the built-in native spell checker is
+      sufficient for us."* Measured the same day, and it costs almost nothing: what
+      the customer is asking for is Froala's `spellcheck` option, `true` by default.
+      **Correction, re-measured 2026-08-27 evening:** `spell_checker` *does* exist,
+      but under `js/third_party/`, not `js/plugins/` — it registers as `spellChecker`
+      and wraps WebSpellChecker's SCAYT, a paid subscription. An earlier note here
+      said it does not exist at all; that was wrong, it was only looked for in
+      `js/plugins/`. The conclusion is unchanged: the customer wants the browser's
+      own checker, so SCAYT stays unwired. Froala writes it onto the editable
+      element as the `spellcheck` attribute at init and again on every `html.set`, so
+      the browser's own checker is already running today. On mobile the same option
+      also drives `autocomplete`, `autocorrect` and `autocapitalize`.
+
+      To do: a `withSpellcheck(boolean)` on `FroalaOptions` so it can be turned off,
+      a demo switch, and one e2e assertion that the attribute follows the option.
+      Check while doing it that nothing we set breaks the browser's correction menu —
+      it is the normal context menu, so Froala's `disableRightClick` would take it
+      away. We do not set that option and should not start.
+
+      Question 3 listed eight plugins that need a service and the reply names only the
+      spell checker. **The maintainer settled it on 2026-08-27: naming one means the
+      others are not needed.** So `collaborative`, `ai_assist`, `filestack`,
+      `import_from_word` and `save` are off by default and stay off unless someone
+      asks. `export_to_word` is the exception and can be on: measured 2026-08-27, it
+      builds the file in the browser and needs no service, so the question-3 table is
+      wrong about it. `spell_checker` is in that table too; it exists under
+      `js/third_party/` and needs a paid SCAYT subscription, so it stays off — the
+      customer asked for the browser's own checker, not that one.
+- [ ] Expose `pluginsEnabled`. **On by default: the plugins that need nothing but a
+      browser, or only the upload endpoint of phase 3. Off by default: the ones that
+      need a server, a second library or a paid service.** Decided 2026-08-27; a
+      visible button with no service behind it is worse than no button. Which of them
+      the customer actually needs is the plugin question in
+      `docs/customer-request.md`, still open.
+
+      **The list was wrong twice and is corrected here**, re-measured against the
+      plugin sources while writing their javadoc: `spell_checker` is not under
+      `js/plugins/` — it ships under `js/third_party/` and needs a paid SCAYT
+      subscription, so it is off for that reason, not for being absent. And
+      `export_to_word`
+      needs nothing: it builds the file in the browser and its only option is
+      `wordExportFileName`. What is left, six of them: `ai_assist` (calls the
+      endpoint in `aiAssistEndpoint`, no provider of its own), `collaborative` (a
+      server to relay the changes), `filestack` (account and API key),
+      `files_manager` and `image_manager` (endpoints that list and delete — Froala's
+      own default load URL points at `i.froala.com`, its demo server), and `save` (a
+      `saveURL`). `import_from_word` is a seventh case of its own: no service, but it
+      converts with mammoth.js, which Froala reads from `window.mammoth` and does not
+      ship.
 
       Note the two name spaces measured under check 3: `pluginsEnabled` takes the
       name a plugin registers itself under (`fontFamily`), the file is called
@@ -823,13 +943,16 @@ assertion.
 - [ ] Rich-text formatting: fonts, colors, styles, lists, tables, quotes, code view
 - [ ] Media & content: images, files, links, emoji, special characters
 - [ ] Productivity: paste-from-Word, markdown, find-and-replace, word/char count,
-      track changes, mentions, templates. Plugin-backed in 5.4.0 and therefore
-      cheap: `word_paste`, `import_from_word`, `export_to_word`, `markdown`,
-      `find_and_replace`, `word_counter`, `char_counter`, `track_changes`,
-      `code_view`, `code_snippet`, `code_beautifier`. **Not** plugin-backed and
-      therefore custom work: **templates** (Froala's `RegisterTemplate` /
-      `ICON_TEMPLATES` / `POPUP_TEMPLATES` are icon and popup markup, not document
-      templates) and **in-document mentions** (see Phase 4d in the estimate).
+      track changes. Plugin-backed in 5.4.0 and therefore cheap: `word_paste`,
+      `import_from_word`, `export_to_word`, `markdown`, `find_and_replace`,
+      `word_counter`, `char_counter`, `track_changes`, `code_view`, `code_snippet`,
+      `code_beautifier`.
+
+      **Mentions and templates are out** — the customer answered questions 1 and 2 on
+      2026-08-27: *"The 1-mentions and 2-template feature isn't needed."* Those were
+      the only two items in this phase that Froala does not back with a plugin, so
+      the whole custom-work block goes with them, Phase 4d in the estimate included.
+      Nothing else in this item changes.
 - [ ] Localization / RTL — wire Vaadin's `I18NProvider` locale into Froala's
       `language` option. Verified against froala-editor 5.4.0 (re-checked 2026-08-21):
       - 39 language files, each a **UMD module** (~26 KB) that self-registers into
