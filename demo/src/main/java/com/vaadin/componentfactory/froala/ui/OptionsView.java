@@ -19,12 +19,10 @@ import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
 import com.vaadin.flow.component.HasValue;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.IntegerField;
@@ -36,9 +34,8 @@ import com.vaadin.flow.router.Route;
 /**
  * Configure a handful of the options people actually set, then rebuild the editor with them.
  * <p>
- * Froala reads its options once, when it is initialized, so a change means building the editor again -- which is why
- * this view has a reload button instead of applying every switch as it is flipped. What the reload does <em>not</em>
- * cost is the content: the value is held on the server and put back into the new editor.
+ * Froala reads its options once, when it is initialized, so every switch flipped here builds the editor again. What
+ * that rebuild does <em>not</em> cost is the content: the value is held on the server and put back into the new editor.
  */
 @Route("options")
 @Menu(title = "Options", order = 3)
@@ -73,17 +70,21 @@ public class OptionsView extends VerticalLayout {
         FormLayout form = new FormLayout(placeholderText, direction, toolbarInline, documentReady, toolbarSticky,
                 toolbarBottom, charCounterCount, charCounterMax, wordCounterCount, wordCounterMax);
 
-        form.getChildren().map(HasValue.class::cast).forEach(field -> field.addValueChangeListener(_unused -> reload()));
+        form.getChildren().map(HasValue.class::cast)
+                .forEach(field -> field.addValueChangeListener(_unused -> reload()));
 
         optionsJson.setReadOnly(true);
 
         editor.setMinHeight("400px");
         setFlexGrow(1, editor);
 
-        showOptions(FroalaOptions.defaults());
+        add(new Paragraph(
+                "Pick options. Only what you set is passed on; everything else stays at " + "Froala's own default."),
+                new Details("Sample Options", form), new Details("JSON", optionsJson), editor);
 
-        add(new Paragraph("Pick options, then reload. Only what you set is passed on; everything else stays at "
-                + "Froala's own default."), new Details("Sample Options", form), new Details("JSON", optionsJson), editor);
+        // After add(), so the editor has a position to be put back at. Without this the form and the JSON box describe
+        // options the editor was never built with -- two of the switches start out on.
+        reload();
     }
 
     /**

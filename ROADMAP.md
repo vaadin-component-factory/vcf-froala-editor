@@ -495,6 +495,11 @@ a discarded editor's `initialized` ran against its half-built successor and thre
 Each built editor now carries a generation and a stale handler stays quiet
 (CFG-21, `FroalaOptionsIT.detachSetOptionsAttach_rebuildsWithoutBreakingTheEditor`).
 
+Both views had the same hole, found 2026-08-27: they only configured the editor when
+the form was touched, so on first load the editor ran on Froala's stock setup while
+the form and the JSON box described something else. Both now apply the form once at
+the end of the constructor.
+
 Still open from the same round, deliberately not fixed: a detach that is followed by
 `setOptions` in the same round trip **builds two editors** — one on re-attach with
 the old options, one when the new options arrive an update later. The guard makes
@@ -538,32 +543,25 @@ reset the working tree, so it has to be written again — the design, in full:
   and `value` is not an option at all.
 
 **2. Then get the gate green.** It was last fully green at `9246328` (39 browserless,
-34 e2e) and has not been run since the constructor-defaults commits. One e2e test is
-known to fail and it is **not** the license key: `FroalaEditorIT.setValue_producesNoDeltaNobodyTyped`, with
-`["349:change:99"] mode=change ==> expected: <0> but was: <1>`. Measured on a clean
-HEAD with the local changes stashed, so it is nobody's edit — and it passed in a
-full-class run earlier the same day, so it is order or timing sensitive. Suspicion,
-not yet proven: the server pushes deliberately messy HTML, Froala normalizes it, and
-a `contentChanged` that VCM-16 says `html.set` never fires does fire, so the
-normalization travels back as a delta describing a change nobody made. Decide which
-of the two is wrong, the spec or the test.
+34 e2e).
 
-**3. Then the javadoc pass**, and only once 2 is green. Review every javadoc under
-`component/src/main/java/com/vaadin/componentfactory/froala/` against `STYLEGUIDE.md`
-and `AGENTS.md` — plain language, and why rather than what. The maintainer's own
-calibration point: `FroalaToolbarGroup.withButtonsVisible`, the paragraph beginning
-*"The count is not a maximum with an escape hatch"* — they could not tell what it was
-trying to say, or whether it was our wording or Froala's. Two review subagents were
-started for this and stopped on purpose; run them one at a time.
+*Resolved 2026-08-27.* The one failing e2e test,
+`FroalaEditorIT.setValue_producesNoDeltaNobodyTyped`, was a race in the test, not a
+defect in the connector — and the reason was a wrong sentence in VCM-16, not a wrong
+line of code. Measured in the raw-Froala harness: `html.set` really does fire no
+`contentChanged`, but typing leaves an undo step scheduled for `max(250, typingTimer)`
+ms (VCM-15), and a step that runs *after* the push finds markup it never recorded and
+fires `contentChanged` for it. The test typed, blurred and pushed within that window,
+so it passed or failed on how long the blur round trip took. It now waits the step out
+first. VCM-16 and VT-5 say what actually holds: a `setValue` inside that window does
+come back as a delta carrying Froala's rewrite, the connector reports it on purpose,
+and suppressing it would leave the server's copy out of step with what the user sees.
 
-**Also open, from the same afternoon:** `7d7910d` and `6b85d33` put
-`setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE)` and
-`setIntervalPeriod(DEFAULT_INTERVAL_PERIOD)` back into the constructor. CFG-13 in
-`docs/specs/phase-2-configuration.md` says the constructor no longer writes those
-defaults as element properties, so one of the two is now wrong. (The commit before
-the fix had them inside the `_value-delta` listener, which reset the mode on every
-delta the client sent — that is what made
-`intervalMode_syncsOnEveryTick_whileTheUserKeepsTyping` fail, and it is fixed.)
+*Also resolved 2026-08-27:* the CFG-13 contradiction. `7d7910d` and `6b85d33` put
+`setValueChangeMode` and `setIntervalPeriod` back into the constructor and that is
+right — only `valueChangeTimeout` has to stay out, because it is Froala's
+`typingTimer` under another name and writing it would overwrite one passed through the
+options. CFG-13 said all three had been removed; it now says what the code does.
 
 Design decided 2026-08-27 with the maintainer, reasons in the specs:
 
@@ -593,8 +591,9 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       toolbar form, the `MD`/`SM`/`XS` breakpoints, HTML sanitization
       (`htmlAllowedTags` and its eight neighbours), paste handling, and the
       per-plugin button lists
-- [x] Constructor no longer writes the three value-change defaults — removed
-      2026-08-27, they restated the client's own defaults (CFG-13)
+- [x] Constructor no longer writes `valueChangeTimeout` — removed 2026-08-27 so a
+      `typingTimer` passed through the options survives. `valueChangeMode` and
+      `intervalPeriod` are still set there; no Froala option shadows them (CFG-13)
 - [ ] A `vaadin` Froala theme, **active by default**, Lumo-mapped through our own
       custom properties (THM-1, THM-5, THM-7). Vaadin's `HasThemeVariant` was
       considered and dropped — Froala cannot switch a theme at runtime (THM-2)
@@ -608,14 +607,24 @@ Design decided 2026-08-27 with the maintainer, reasons in the specs:
       default already uses `versionControl`, `exportImport` and `collab` next to the
       four `more…` names. Any key with a `buttons` array becomes a button group.
 
-      One catch, and it decides how the API has to document this: **the group name
-      is also the command name of the group's overflow button.** When a group holds
-      more buttons than its `buttonsVisible`, Froala builds a collapsed `more`
-      panel for the rest and then looks for `FroalaEditor.COMMANDS[groupName]` to
-      render the button that opens it. With `moreText` it finds one; with
-      `myTextGroup` it finds nothing, and the overflow buttons are in the DOM with
-      no way to reach them. Registering a command under the group's name brings the
-      toggle back — checked both ways.
+      One catch: **the group name is also the command name of the group's overflow
+      button.** When a group holds more buttons than its `buttonsVisible`, Froala
+      builds a collapsed `more` panel for the rest and then looks for
+      `FroalaEditor.COMMANDS[groupName]` to render the button that opens it. With
+      `moreText` it finds one; with `myTextGroup` it finds nothing, and the overflow
+      buttons are in the DOM with no way to reach them.
+
+      **Documenting that was not enough** — the maintainer hit it on 2026-08-27 and
+      saw only the visible icons. `FroalaToolbar.ofGroups` now **rejects** a group
+      that would land in it (CFG-14). Re-measured the same day before deciding:
+      Froala's four `more…` names are the only ones whose toggle both renders and
+      opens the panel; `versionControl` renders a button that does something else,
+      `moreTrackChanges`, `exportImport`, `collab` and `trackChanges` render none.
+      Registering a command under a free name does bring a button back, but not a
+      working one: Froala's exported `commands.moreText` is bound to its own name and
+      toggles nothing else, so a free name could only be made to work by
+      reimplementing the toggle against Froala internals. Rejected — the group name
+      is never shown to anyone, so a free name buys nothing worth that.
 
       Also measured: overflow only exists in the **object** form. Both array forms
       set `showMoreButtons` to false internally and always render every button,

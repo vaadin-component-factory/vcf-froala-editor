@@ -131,8 +131,17 @@ feels like.
 - **VCM-16** Everything that is not typing bypasses that timer and fires
   synchronously: toolbar commands (twice — once before and once after the command),
   paste, cut, tab, undo/redo, Ctrl-combinations and blur. `html.set` fires no
-  `contentChanged` at all, which is why a server-side `setValue` never echoes back as
-  a delta.
+  `contentChanged` at all — measured again in a raw-Froala harness 2026-08-27: it
+  triggers `html.set`, `charCounter.update` and `wordCounter.update`, nothing else.
+  That does **not** make a server-side `setValue` silent, though, and the first
+  version of this item claimed it did. An undo step still pending from VCM-15 runs
+  *after* the push, finds markup it never recorded and fires `contentChanged` for a
+  change the server made. So a `setValue` within `max(250, typingTimer)` ms of the
+  user's last keystroke does come back as a delta, carrying Froala's rewrite of what
+  the server sent. The connector reports it rather than suppressing it: the editor
+  really does hold different markup than the server pushed, and this delta is what
+  brings the two sides back together. Suppressing it would leave the server's copy
+  permanently out of step with what the user sees.
 - **VCM-17** This debounce is the whole latency of `ON_CHANGE`: it syncs
   `valueChangeTimeout` ms after the user pauses, nothing else waits. Nothing stacks on
   top of it any more — that stacking is what removed `TIMEOUT` (VCM-3). `INTERVAL` and

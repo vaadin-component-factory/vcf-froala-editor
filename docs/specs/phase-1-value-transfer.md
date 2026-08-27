@@ -38,6 +38,9 @@ half is meaningful alone. Ported from `parttio/hugerte-for-flow` (Apache-2.0).
   pushes deliberately messy markup, asserts the text arrives, and asserts that Froala's
   rewrite of it does **not** come back as a delta describing a change nobody made.
   `html.set` fires no `contentChanged` of its own (VCM-16), and nothing else may either.
+  The test waits out Froala's pending undo step before it pushes: that step *is*
+  allowed to report the rewrite (VCM-16), and letting it race the push is what made
+  this test fail intermittently until 2026-08-27.
 - **VT-6** A client-originated change updates the **model** value only, never the
   presentation value. Without this, every keystroke would echo the full document
   back to the browser and defeat VT-1.

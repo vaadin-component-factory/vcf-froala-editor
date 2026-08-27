@@ -407,6 +407,12 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#viewer").click();
         assertThat(page.locator("#viewer")).containsText("typed by the user");
 
+        // Then let Froala's pending undo step run out. Typing leaves one scheduled for max(250, typingTimer) ms
+        // (VCM-15), and a step that runs after the push below sees markup it has not recorded and fires
+        // contentChanged for a change the server made -- which is a real delta, just not the one under test here
+        // (VCM-16). Without this wait the test passes or fails on how long the blur round trip took.
+        page.waitForTimeout(FroalaEditor.DEFAULT_VALUE_CHANGE_TIMEOUT + 100);
+
         // Deliberately messy markup, because that is where the risk is: Froala rewrites what it is given, so a value
         // reported back after a server push would differ from what the server sent and arrive as a delta describing a
         // change nobody made. Setting already-normalized HTML would produce an empty delta and prove nothing.
@@ -414,7 +420,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#messy-value").click();
         assertThat(editableArea()).containsText(FroalaTestView.MESSY_TEXT);
 
-        // It stays quiet because html.set fires no contentChanged of its own (VCM-16); this asserts nothing else does.
+        // It stays quiet because html.set fires no contentChanged of its own (VCM-16), and no undo step is left to
+        // find the pushed markup; this asserts nothing else sends one either.
         page.waitForTimeout(300);
         assertEquals(0, dispatchedDeltas(), deltaLog());
     }

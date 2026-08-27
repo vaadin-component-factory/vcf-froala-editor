@@ -20,14 +20,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaToolbarAlign;
 import com.vaadin.componentfactory.froala.FroalaToolbarGroup;
-import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.details.Details;
@@ -89,7 +87,6 @@ public class ToolbarView extends VerticalLayout {
     private final TextArea toolbarJson = new TextArea("What the editor is built with");
     private final FroalaEditor editor = new FroalaEditor("Editor");
 
-
     public ToolbarView() {
         setSizeFull();
         setAlignItems(Alignment.STRETCH);
@@ -129,7 +126,12 @@ public class ToolbarView extends VerticalLayout {
 
         add(new Paragraph("A group's name is also the command name of its overflow button, which is why the four "
                 + "groups below carry Froala's own names: those are the only ones it has a button for."),
-                new Details("Toolbar Options", shape, flatButtons, groupedForm, reload), new Details("JSON", toolbarJson), editor);
+                new Details("Toolbar Options", shape, flatButtons, groupedForm, reload),
+                new Details("JSON", toolbarJson), editor);
+
+        // After add(), so the editor has a position to be put back at. Without this the form says "named groups" while
+        // the editor still runs on Froala's stock toolbar, which is a different toolbar than the one it describes.
+        reload();
     }
 
     private void showFormForShape() {

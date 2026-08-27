@@ -65,6 +65,33 @@ class FroalaToolbarTest {
     }
 
     @Test
+    void freelyNamedGroup_isRejectedWhenItWouldHideButtonsNothingCanShow() {
+        // Froala draws the button that opens the overflow panel from a command registered under the group's name, and
+        // it only has one for its own four. Measured 2026-08-27: any other name leaves the hidden buttons in the DOM
+        // with nothing to reach them, which is worse than saying so at the call site.
+        assertThrows(IllegalArgumentException.class, () -> FroalaToolbar
+                .ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic", "underline", "strikeThrough")));
+
+        // the same four buttons under a name Froala has a button for
+        FroalaToolbar.ofGroups(
+                FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough"));
+
+        // and under any name at all, as soon as the group shows everything it holds
+        FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic", "underline", "strikeThrough")
+                .withButtonsVisible(4));
+
+        // zero is the opposite of "no overflow": it moves the whole group into the panel
+        assertThrows(IllegalArgumentException.class,
+                () -> FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold").withButtonsVisible(0)));
+
+        // separators are drawn as lines, not buttons, and Froala does not count them towards buttonsVisible
+        FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "|", "italic", "-", "underline"));
+
+        // and a group with no buttons has nothing to hide, whatever the count says
+        FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup").withButtonsVisible(-1));
+    }
+
+    @Test
     void everyBreakpoint_usesFroalasOwnOptionName() {
         FroalaToolbar toolbar = FroalaToolbar.of("bold");
 

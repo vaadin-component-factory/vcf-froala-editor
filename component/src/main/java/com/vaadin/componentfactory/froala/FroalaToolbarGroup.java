@@ -18,6 +18,7 @@ package com.vaadin.componentfactory.froala;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import elemental.json.Json;
 import elemental.json.JsonArray;
@@ -42,8 +43,12 @@ import elemental.json.JsonObject;
  * Froala then moves the rest into a collapsed panel and looks up {@code FroalaEditor.COMMANDS[name]} to draw the button
  * that opens it. It ships four commands under such names -- {@link #MORE_TEXT}, {@link #MORE_PARAGRAPH},
  * {@link #MORE_RICH} and {@link #MORE_MISC} -- and finds nothing for any other name: the overflow buttons are then in
- * the DOM with nothing to open them. So unless a group is guaranteed to stay within its {@code buttonsVisible}, it has
- * to carry one of those four names.
+ * the DOM with nothing to open them.
+ *
+ * <p>
+ * A freely named group is therefore fine as long as it shows all of its buttons, and
+ * {@link FroalaToolbar#ofGroups(FroalaToolbarGroup...)} rejects one that would not. Names outside the four are worth
+ * having -- Froala allows any number of groups and the name is never shown to anyone -- but only for groups that fit.
  */
 public final class FroalaToolbarGroup implements Serializable {
 
@@ -70,6 +75,16 @@ public final class FroalaToolbarGroup implements Serializable {
      * command registered under it, so a group carrying it can overflow safely.
      */
     public static final String MORE_MISC = "moreMisc";
+
+    /** Froala's own {@code buttonsVisible}, applied to every group that does not set one. */
+    private static final int DEFAULT_BUTTONS_VISIBLE = 3;
+
+    /** The four names Froala has an overflow button for. Measured against 5.4.0; every other name draws none. */
+    private static final Set<String> NAMES_WITH_AN_OVERFLOW_BUTTON = Set.of(MORE_TEXT, MORE_PARAGRAPH, MORE_RICH,
+            MORE_MISC);
+
+    /** Neither is a command, and neither counts towards buttonsVisible -- Froala draws them as lines. */
+    private static final Set<String> SEPARATORS = Set.of("|", "-");
 
     private final String name;
     private final List<String> buttons;
@@ -119,11 +134,13 @@ public final class FroalaToolbarGroup implements Serializable {
      * {@code buttonsVisible}, {@code 3} when a group does not say.
      *
      * <p>
-     * The count is not a maximum with an escape hatch: {@code 0} or a negative number moves every button of the group
-     * into the panel, it does not switch the panel off. Switching it off is what a count larger than the group is for
-     * -- Froala forces overflow on for every grouped toolbar and ignores an attempt to set {@code showMoreButtons}.
-     * Raising the count above the group's size is therefore also the only way to keep a freely named group out of the
-     * trap described in the class documentation.
+     * There is no way to switch the overflow panel off. Froala turns it on for every grouped toolbar and ignores
+     * {@code showMoreButtons}, so the only way to show all of a group's buttons is a count that reaches all of them --
+     * the group's size or more. A count of {@code 0} or less does the opposite and moves every button into the panel.
+     *
+     * <p>
+     * Separators do not count: {@code "|"} and {@code "-"} are drawn as lines rather than buttons and never move into
+     * the panel. An unknown button name does count, even though Froala drops it.
      *
      * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest
      * @return a new instance
@@ -139,6 +156,21 @@ public final class FroalaToolbarGroup implements Serializable {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Whether Froala would move buttons of this group into a panel with nothing to open it: it draws the opening button
+     * from a command registered under the group's name, and only its own four names have one.
+     */
+    boolean overflowsWithNothingToOpenIt() {
+        if (NAMES_WITH_AN_OVERFLOW_BUTTON.contains(name)) {
+            return false;
+        }
+
+        long drawn = buttons.stream().filter(button -> !SEPARATORS.contains(button)).count();
+
+        // A group with no buttons has nothing to hide, not even at a negative count.
+        return drawn > 0 && drawn > (buttonsVisible == null ? DEFAULT_BUTTONS_VISIBLE : buttonsVisible);
     }
 
     /** Returns the group as Froala receives it: its buttons plus whatever of align and buttonsVisible was set. */

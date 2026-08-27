@@ -85,12 +85,15 @@ every requirement is `unverified` until its test exists.
   (`phase-1-value-change-modes.md`, VCM-7) and stays a setter: the other two are
   setters, other Vaadin fields carry the same names, and the option belongs to the
   delta channel, which is ours.
-- **CFG-13** The constructor no longer writes the three value-change defaults as
-  element properties — removed 2026-08-27. They restated the client's own defaults
-  (`"change"`, `500`, `2000`) and the getters fall back to the same constants, so
-  nothing changed behaviourally. What it buys: a `typingTimer` coming in through
-  CFG-8 is no longer overwritten unconditionally, so exposing it as a deprecated
-  option is possible if we choose to.
+- **CFG-13** The constructor no longer writes `valueChangeTimeout` as an element
+  property — removed 2026-08-27, and only that one. It is Froala's own `typingTimer`
+  under another name, so writing it unconditionally would overwrite a `typingTimer`
+  coming in through CFG-8; leaving it unset keeps that option usable. The other two,
+  `valueChangeMode` and `intervalPeriod`, are ours alone, no Froala option shadows
+  them, and the constructor keeps setting them so the property says what the getter
+  answers. Either way nothing changes behaviourally: the client defaults to
+  `"change"`, `500` and `2000` on its own and the getters fall back to the same
+  constants.
 
 ## Toolbar, plugins and what is loaded
 
@@ -101,11 +104,25 @@ Measured 2026-08-27 against froala-editor 5.4.0; the demo views `/check-toolbar`
   name of the group's overflow button. If a group holds more buttons than its
   `buttonsVisible` and no command is registered under the group's name, the
   overflow buttons are rendered into a collapsed panel that nothing can open. The
-  API therefore takes strings and **says this**, rather than restricting the name to
-  Froala's four `more…` groups — `FroalaToolbarGroup` carries the four as constants
-  and its documentation names the trap. Note that a group overflows at **three**
-  buttons unless it says otherwise, so the trap is the default case, not one a
-  caller opts into. *`FroalaToolbarTest`*
+  API takes strings rather than restricting the name to Froala's four `more…`
+  groups — `FroalaToolbarGroup` carries the four as constants — but documenting the
+  trap turned out not to be enough, so **`FroalaToolbar.ofGroups` rejects a group
+  that would fall into it**: a name outside the four, holding more buttons than it
+  shows. A group overflows at **three** buttons unless it says otherwise, so the trap
+  is the default case rather than one a caller opts into, and the message names both
+  ways out (one of the four names, or `withButtonsVisible` raised to the group's
+  size).
+
+  Measured 2026-08-27 in a raw-Froala harness, and this is what the check encodes:
+  the four `more…` names are the **only** ones whose toggle both renders and opens
+  the panel. `versionControl` renders a button that does something else,
+  `moreTrackChanges`, `exportImport`, `collab` and `trackChanges` render none.
+  Registering a command under a free name brings a button back, but not a working
+  one — Froala's exported `commands.moreText` is bound to its own name and toggles
+  nothing else, so making free names work would mean reimplementing the toggle
+  against Froala internals. Not worth it for a name nobody ever sees.
+  Also measured: `"|"` and `"-"` do **not** count towards `buttonsVisible`, an
+  unknown button name does. *`FroalaToolbarTest`*
 - **CFG-15** A plugin has **two names**: the file (`font_family.min.js`) and the
   name it registers itself under, which is what `pluginsEnabled` takes
   (`fontFamily`). They differ for 20 of the 49, `track_changes` keeps its underscore

@@ -98,7 +98,8 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws IllegalArgumentException if two groups share a name
+     * @throws IllegalArgumentException if two groups share a name, or if a freely named group would send buttons into
+     *             an overflow panel nothing can open
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
@@ -111,7 +112,8 @@ public final class FroalaToolbar implements Serializable {
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
      * @throws IllegalArgumentException if two groups share a name -- Froala keys its groups by name, so the second
-     *             would silently replace the first
+     *             would silently replace the first -- or if a group holds more buttons than it shows under a name
+     *             Froala has no overflow button for
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(Collection<FroalaToolbarGroup> groups) {
@@ -123,6 +125,14 @@ public final class FroalaToolbar implements Serializable {
             if (!names.add(group.getName())) {
                 throw new IllegalArgumentException("Two toolbar groups are named '" + group.getName()
                         + "'. Froala keys its groups by name, so the second one would replace the first.");
+            }
+
+            if (group.overflowsWithNothingToOpenIt()) {
+                throw new IllegalArgumentException("Toolbar group '" + group.getName()
+                        + "' shows fewer buttons than it holds, and Froala draws no button to open the rest: it takes"
+                        + " that button from a command registered under the group's name, and only its own four have"
+                        + " one. Name the group FroalaToolbarGroup.MORE_TEXT, MORE_PARAGRAPH, MORE_RICH or MORE_MISC,"
+                        + " or raise withButtonsVisible to the group's size so nothing has to be opened.");
             }
         }
 
