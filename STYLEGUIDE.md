@@ -1,16 +1,17 @@
 # Style Guide
 
-The documented coding standards for this project. This is the **starting point** —
-extend it with project-specific conventions as they emerge. Tools and reviewers
-(e.g. the Matt Pocock `review` skill, `/code-readability`) treat this file as a
-citable *standards source*, so keep every rule concrete and quotable.
+The documented coding standards for this project. Extend it with project-specific
+conventions as they emerge. `/code-review` reads this file as the repo's standards
+source for its Standards axis, so keep every rule concrete and quotable.
 
 > **Relationship to other files**
-> - This file is the **single source of truth** for code standards. `/code-readability`
->   and the `review` skill scan it — keep the normative rules in this one place.
-> - Machine-enforced standards (formatting via Spotless, Checkstyle, `.editorconfig`,
->   Prettier) are configured by `setup-code-checks`. Don't re-document here what
->   tooling already enforces — point to the config instead.
+> - This file is the **single source of truth** for code standards. Keep the
+>   normative rules in this one place.
+> - Machine-enforced standards live in their own config: Spotless and Checkstyle in
+>   the poms, `checkstyle/checkstyle.xml`, `eclipse/`, `.prettierrc`. Don't
+>   re-document here what tooling already enforces — point at the config instead.
+> - Decisions about *how the system is built*, rather than how code is written, are
+>   ADRs under `docs/adr/`. Cite them here where they constrain the code.
 
 ---
 
@@ -33,6 +34,13 @@ These are mechanical and non-negotiable (machine-checkable):
   *unless* it is the method's only statement, or it sits immediately after the
   opening `{`.
 - **Multiline comments** are always preceded by one blank line.
+
+The three blank-line rules are mechanical but very easy to miss by reading: working
+through a 752-line file by eye typically turns up 3 of 13 real misses. Run
+`tools/scan-blank-lines.py <paths>` instead of eyeballing. It favours recall over
+precision, so it reports false positives and its output is adjudicated, not applied.
+Checkstyle already enforces the brace rule and the fully-qualified-name rule; the
+script covers what it does not.
 
 ## 3. Method shape (judgment)
 
