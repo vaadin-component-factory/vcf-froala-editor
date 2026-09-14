@@ -1,72 +1,51 @@
-# Project Context
+# Froala Editor for Vaadin Flow
 
-The **domain glossary** for this project — the ubiquitous language. It gives names
-to the concepts the code is about, so that class names, method names, test names,
-and conversation all use the same words for the same things.
-
-This is a **starting point**. Replace the example terms below with this project's
-actual domain language and grow it as the model sharpens. Several skills read this
-file (`tdd`, `diagnose`, `improve-codebase-architecture`, `review`) to align their
-vocabulary with yours.
-
-> **How to maintain it**
-> - **Be opinionated.** When several words mean the same thing, pick one and list
->   the rest under `_Avoid_`.
-> - **Keep definitions tight** — one or two sentences. Define what a term *is*,
->   not what it *does*.
-> - **Only domain terms.** General programming concepts (timeouts, DTOs, repos)
->   and framework terms (Vaadin `Grid`, Spring `@Service`) do **not** belong here,
->   even if used heavily. Before adding a term ask: *is this unique to our domain,
->   or a general/technical concept?* Only the former belongs.
-> - **Group under subheadings** when natural clusters emerge; a flat list is fine
->   if all terms belong to one cohesive area.
-
----
+The domain glossary for this project: the ubiquitous language. Class names, method
+names, test names and conversation all use these words for these things.
 
 ## Language
 
-> ⚠️ The entries below are **examples** showing the format. Delete them and add
-> your own domain terms.
+**Editor**:
+The Froala instance bound into Flow as a Vaadin field, with a value, validation and
+the field parts around it.
 
-**Order**:
-A customer's confirmed request for one or more products at agreed prices.
-_Avoid_: Purchase, transaction
+**Viewer**:
+A read-only rendering of editor content. It is a component, not a field: it has no
+value binding and nothing can be typed into it.
+_Avoid_: read-only editor, preview
 
-**Customer**:
-A person or organisation that places orders.
-_Avoid_: Client, buyer, account
+**Delta**:
+A change to a value, sent instead of the whole value. The client describes what it
+changed and the server applies it, so a large document does not cross the wire on
+every keystroke.
+_Avoid_: patch, diff, fragment
 
-**Invoice**:
-A request for payment sent to a customer after fulfilment.
-_Avoid_: Bill, payment request
+**Test view**:
+A view that a browser test owns and is free to change. Distinct from a demo view,
+which exists to show the add-on off and whose author must stay free to change it.
+_Avoid_: fixture view
 
----
+**Browserless**:
+The test tier that exercises the server-side component with no browser and no
+JavaScript, between unit tests and browser tests.
+_Avoid_: integration test, UI unit test
 
-## Multiple contexts
-
-Most repos need only this single root `CONTEXT.md`. If the project grows into
-several bounded contexts, replace this section with a top-level **`CONTEXT-MAP.md`**
-that lists each context, where it lives, and how they relate — and give each
-context its own `CONTEXT.md`. Example map:
-
-```md
-# Context Map
-
-## Contexts
-
-- [Ordering](./src/ordering/CONTEXT.md) — receives and tracks customer orders
-- [Billing](./src/billing/CONTEXT.md) — generates invoices and processes payments
+**Plugin**:
+A Froala plugin: one unit of the editor's own feature set.
+_Avoid_: bare "plugin" for a Maven or Claude Code plugin, which are always written out
 
 ## Relationships
 
-- **Ordering → Billing**: Ordering emits `OrderPlaced` events; Billing consumes
-  them to generate invoices
-- **Ordering ↔ Billing**: shared types for `CustomerId` and `Money`
-```
+- An **Editor** holds a value; the client reports changes to it as **Deltas**
+- A **Viewer** renders what an **Editor** produces, without editing it
+- A **Plugin** adds behaviour to an **Editor**, never to a **Viewer**
+- Browser tests drive **Test views**; **Browserless** tests build the component directly
 
-## Related records
+## Flagged ambiguities
 
-Decisions about *how* the system is built (architectural shape, integration
-patterns, deliberate deviations) are not glossary terms — record them as ADRs
-under `docs/adr/` (`0001-slug.md`, one short paragraph each). Cite them from
-`STYLEGUIDE.md` where they constrain how code is written.
+- "plugin" meant three different things (Froala plugin, Maven plugin, Claude Code
+  plugin) and was answered wrongly three times. Resolved: bare **Plugin** is always
+  Froala's; the other two are always written out in full.
+- "fixture view" and "test view" both named the same thing, the docs preferring the
+  first and the classes the second. Resolved: **Test view**, matching
+  `FroalaTestView` and its siblings.

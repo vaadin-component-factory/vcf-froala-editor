@@ -62,6 +62,9 @@ statement. Tightly related one-liners stay together.
 - The WHAT must be obvious from the code itself — if it isn't, rewrite the code
   rather than explaining it in a comment.
 - No commented-out code without a stated reason.
+- **The code is not your logbook.** A comment records why the code is the way it is,
+  never what it used to be, what was tried first, or what changed in this round. That
+  belongs in the commit message.
 
 ## 6. Structure & visibility
 
@@ -70,7 +73,10 @@ statement. Tightly related one-liners stay together.
   make something testable. Test through the real public interface or restructure.
 - Prefer **deep modules**: a small, stable interface over a substantial
   implementation. A class whose interface is nearly as complex as its body is a
-  smell — see `improve-codebase-architecture`.
+  smell — see `/improve-codebase-architecture`.
+- **Don't invent what already exists.** Before writing a helper or working around a
+  limitation, look for the solution already in this codebase or in a dependency it
+  already has. A new dependency is the last resort, not the first.
 
 ---
 

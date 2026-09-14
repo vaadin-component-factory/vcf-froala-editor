@@ -20,7 +20,50 @@ delta channel and takes a license key; the scaffolding placeholders are gone. Se
 `docs/specs/` for what phase 1 actually delivers.
 
 ## General agent rules
-See AGENTS.md
+
+- Code and document for humans. They have to understand and maintain the
+  application.
+- Don't guess, confirm with docs / sources / research results / MCP. Being
+  uncertain is fine and saying so is fine; stating an assumption as fact is not.
+- If there is no solution or answer, say it. Acknowledging failure is better than
+  trying to hide it.
+- **Answer the question you were asked before you edit anything.** A question about
+  finished work wants an answer, not a rewrite.
+- Never silently revert or tidy away something in the workspace you cannot
+  explain. Ask, or leave it.
+- Use plain and clear language in your answers, don't try to sound creative, keep it simple.
+
+## Working conventions
+
+- **Commits:** one commit per logical phase or feature; run the tests before
+  committing, and don't commit on the user's behalf unless asked. `/implement`
+  closes out with `/code-review` before the commit is offered.
+- **Never push.** Pushing, opening merge requests and anything else that leaves this
+  machine is the maintainer's step, always — not something to offer or do, even when
+  the commits are ready and a remote exists. The agent's GitLab token enforces this
+  rather than relying on good behaviour: Reporter, scoped to this project alone.
+- **Tests & long-running ops:** run new/changed tests first; only run the full
+  suite once those pass. Don't wrap waits in `until … done` sleep loops (they can
+  stall) — poll periodically and check whether a background job has died.
+- **Never self-dispatch after a question:** if you ask the user something, wait
+  for the answer before acting.
+
+## Agent skills
+
+### Issue tracker
+
+GitLab Issues in the project `stefan/froala` on the self-hosted instance
+`gitlab.vaadin.com`, driven through the `glab` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label string equal to its name. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
+`docs/agents/domain.md`.
 
 ## Stack
 
@@ -115,7 +158,7 @@ Froala's scope and not ours to assert.
 
 **No test lives in `demo/`, ever.** Unit and browserless tests belong in `component/`,
 browser tests in `e2e/`. And no test asserts against the demo's views: browser tests run
-against fixture views the tests own, under `e2e/src/test/java/.../it/views/`, browserless
+against test views the tests own, under `e2e/src/test/java/.../it/views/`, browserless
 tests build the component they assert on. The demo exists to show the add-on off and its
 author has to stay free to change it — a test that reads it breaks on a label change.
 
@@ -126,7 +169,7 @@ expensive way — every one of them let a test pass with the bug deliberately re
   at most once and never the ones scheduled while it jumps. Froala's own typing debounce
   scheduling our sync is exactly such a chain, so the jump silently breaks it.
 - **`locator.click()` returns when the click is dispatched, not when the server has
-  answered.** Reading client state right after it is a race. Give the fixture control a
+  answered.** Reading client state right after it is a race. Give the test view's control a
   visible effect to wait for — the buttons that change something invisible disable
   themselves, and the test asserts `isDisabled()` first.
 - **"Nothing has been sent yet" cannot be asserted on the viewer.** A value reaches it
@@ -150,7 +193,7 @@ Getting this wrong wastes the maintainer's time, so it is worth stating.
 | `docs/customer-request.md` | maintainer | The quoted request is verbatim — never edit it. Questions *back to the customer* belong here, below the quote. |
 | `docs/issues/findings.md` | maintainer | Review notes and the active work queue. Gitignored. Read it, never write it; report back in chat. |
 | `ROADMAP.md`, `docs/specs/` | Claude | Planning, decisions with their reasons, and what each phase guarantees. |
-| `CLAUDE.md`, `AGENTS.md`, `STYLEGUIDE.md`, `CONTEXT.md` | shared | Standing rules. Add here only what outlives a phase. |
+| `CLAUDE.md`, `STYLEGUIDE.md`, `CONTEXT.md` | shared | Standing rules. Add here only what outlives a phase. |
 
 ## Conventions
 
