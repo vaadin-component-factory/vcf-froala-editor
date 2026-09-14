@@ -110,10 +110,27 @@ Prefer official Vaadin API over custom workarounds or DOM manipulation — verif
 
 ### Testing standards
 
-> _e.g. the test-type decision rule (unit vs browserless vs e2e), the rule that
-> tests drive real user behaviour (keyboard/mouse APIs) instead of programmatic
-> shortcuts, naming conventions for tests, and the build/verify gate
-> (`mvn clean verify -Pproduction`)._
+Which layer a test belongs in, and what may not be asserted against the demo, is in
+`CLAUDE.md`. What follows are the craft rules for writing them.
+
+**Three traps when driving Vaadin + Froala from Playwright.** Each was learned the
+expensive way: every one of them let a test pass with the bug deliberately put back.
+
+- **`page.clock().runFor()`, never `fastForward()`.** `fastForward` fires each due
+  timer at most once and never the ones scheduled while it jumps. Froala's own typing
+  debounce scheduling our sync is exactly such a chain, so the jump silently breaks it.
+- **`locator.click()` returns when the click is dispatched, not when the server has
+  answered.** Reading client state right after it is a race. Give the test view's
+  control a visible effect to wait for — the buttons that change something invisible
+  disable themselves, and the test asserts `isDisabled()` first.
+- **"Nothing has been sent yet" cannot be asserted on the viewer.** A value reaches it
+  through a round trip in real time, so an empty viewer only means *not yet*. Count the
+  client's own `_value-delta` dispatches instead; they happen synchronously in the timer
+  callback.
+
+**A test that passes with the bug put back is not a test.** Before claiming a test
+guards something, reinstate the defect and watch it fail. If it stays green either way,
+fix it or delete it, and say which.
 
 ### Error handling & logging
 
