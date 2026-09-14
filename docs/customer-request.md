@@ -1,8 +1,8 @@
 # Customer request — NST (verbatim)
 
 Source: customer request forwarded to Vaadin, received before 2026-08-13.
-This is the **original wording**; do not edit it. Interpretations, scope cuts and
-decisions belong in `ROADMAP.md`.
+This is the **original wording**; do not edit it. Interpretations and scope cuts
+belong in the issue tracker, decisions with their reasons in `docs/adr/`.
 
 ---
 
@@ -52,8 +52,8 @@ New in 5.x, nothing removed: `ai_assist`, `code_snippet`, `collaborative` (yjs),
 **The request is ~11 months stale on the version:** 5.0.0 shipped 2026-01-15 and
 5.4.0 is current. "Forward-compatible with the upcoming 5.x" is no longer a
 forward-looking requirement — it was a *target-version decision*, and it has been
-made: **this connector targets 5.4.0** (decided 2026-08-21, see Phase 5 in
-`ROADMAP.md`). NST's sign-off is still open, since their request names 4.6.2.
+made: **this connector targets 5.4.0** (decided 2026-08-21). NST's sign-off is
+still open, since their request names 4.6.2.
 
 **"mentions" is not a standalone Froala plugin — but it is not entirely absent
 either.** Corrected 2026-08-21 after reading `index.d.ts`:

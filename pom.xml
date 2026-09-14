@@ -112,7 +112,7 @@
                          still ships the dead flag. Upstream:
                          https://github.com/diffplug/spotless/issues/3024
                          Re-add both blocks once Spotless drops it: the connector
-                         JS/CSS does want a formatting gate. See ROADMAP.md. -->
+                         JS/CSS does want a formatting gate. See issue #5. -->
                 </configuration>
                 <executions>
                     <execution>

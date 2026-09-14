@@ -2,9 +2,9 @@
 
 A Vaadin Component Factory add-on that wraps the Froala WYSIWYG Editor as a Java
 Flow component, requested for the NST application. The customer named v4.6.2; the
-add-on targets **5.4.0** and NST's sign-off on that is still open (see
-`ROADMAP.md`, phase 5). The goal is to expose Froala's full feature set
-— rich-text formatting, media/content insertion, inline/document/full-screen
+add-on targets **5.4.0** and NST's sign-off on that is still open. The goal is to
+expose Froala's full feature set — rich-text formatting, media/content
+insertion, inline/document/full-screen
 modes, productivity plugins (paste-from-Word, markdown, find-and-replace, counts,
 track changes, mentions, templates), localization/RTL and accessibility, HTML
 sanitization and configurable image/file upload — through a clean Java API, with a
@@ -14,10 +14,11 @@ The customer's original request is quoted verbatim in `docs/customer-request.md`
 together with the measured size of Froala's surface (322 options in 5.4.0, 49
 plugins, 39 locales) — read it before estimating or scoping anything.
 
-Current state: phase 1 done — `FroalaEditor` renders, round-trips HTML through a
-delta channel and takes a license key; the scaffolding placeholders are gone. See
-`ROADMAP.md` for what is built, what is next, and the effort estimate, and
-`docs/specs/` for what phase 1 actually delivers.
+Current state: the first cut is done — `FroalaEditor` renders, round-trips HTML
+through a delta channel and takes a license key. What is built, what is next and
+what the component guarantees all live in the issue tracker; see
+`docs/agents/issue-tracker.md` for how to reach it. Decisions with their reasons
+are in `docs/adr/`.
 
 ## General agent rules
 
@@ -77,7 +78,7 @@ release when bumping instead of taking the newest 3.5.x.
 
 Java 17 and Vaadin 24 are deliberate: they are the platform's floor, so the
 published add-on excludes as few consumers as possible. Do not raise them without
-a reason that is written down in `ROADMAP.md`.
+a reason written down as an ADR; see `docs/adr/0005-java-17-vaadin-24-floor.md`.
 
 ## Module structure
 
@@ -191,9 +192,8 @@ Getting this wrong wastes the maintainer's time, so it is worth stating.
 | File | Owner | Rule |
 |---|---|---|
 | `docs/customer-request.md` | maintainer | The quoted request is verbatim — never edit it. Questions *back to the customer* belong here, below the quote. |
-| `docs/issues/findings.md` | maintainer | Review notes and the active work queue. Gitignored. Read it, never write it; report back in chat. |
-| `ROADMAP.md`, `docs/specs/` | Claude | Planning, decisions with their reasons, and what each phase guarantees. |
-| `CLAUDE.md`, `STYLEGUIDE.md`, `CONTEXT.md` | shared | Standing rules. Add here only what outlives a phase. |
+| `docs/adr/` | Claude | Decisions with their reasons. Sparingly: hard to reverse, surprising, a real trade-off. |
+| `CLAUDE.md`, `STYLEGUIDE.md`, `CONTEXT.md` | shared | Standing rules. Add here only what outlives the piece of work that raised it. |
 
 ## Conventions
 
