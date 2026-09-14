@@ -174,3 +174,27 @@ unwired.
 Ships as `js/plugins/edit_in_popup.min.js` but registers
 `MODULES.editInPopup`, not a plugin. `pluginsEnabled` has no say over it, which
 is why `FroalaPlugin` has 48 constants for 49 files.
+
+## How to redo any of this
+
+Reading the sources needs nothing: they are under
+`demo/node_modules/froala-editor/`, and the registration of every plugin is one
+grep (`PLUGINS\.[a-zA-Z_]+ *=`).
+
+The browser measurements need Froala loaded and nothing else — no demo, no Vaadin,
+no build, so they cost nothing and cannot disturb a running dev server:
+
+1. `python3 -m http.server 8899` from `/`, so the harness can reference
+   `node_modules` by absolute path.
+2. A static HTML page that pulls in
+   `demo/node_modules/froala-editor/css/froala_editor.pkgd.min.css` and
+   `.../js/froala_editor.pkgd.min.js`, and exposes one function that builds an
+   editor over a seeded `<div>` with a dummy `key` and a given options object,
+   resolving on Froala's `initialized` event, plus one that destroys it again.
+3. Drive it with `playwright-core` and `page.evaluate`. The registry
+   (`FroalaEditor.PLUGINS`), the command table (`FroalaEditor.COMMANDS`), the
+   defaults (`FroalaEditor.DEFAULTS`) and an editor's effective options
+   (`editor.opts`) are all readable from the page.
+
+Read a number off the running registry rather than off a file listing — that
+distinction is what this whole file is about.

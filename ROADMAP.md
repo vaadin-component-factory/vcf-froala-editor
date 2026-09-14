@@ -606,6 +606,19 @@ no "yet" either. After the release those files do not exist for a consumer at al
   case neither of those covers. (a) is the one to measure first: it needs no Froala
   internals, only that at most four groups overflow at once.
 
+- **Do the five `js/third_party/` plugins belong in `FroalaPlugin`?** `pluginsEnabled`
+  accepts them by name — `spellChecker`, `embedly`, `fontAwesome`, `imageFilerobot`,
+  `imageTUI` — but none is in any bundle Froala ships, so naming one today has no
+  effect, exactly like `TRACK_CHANGES` and `TRIM_VIDEO` above. The enum covers
+  `js/plugins/` only and its class documentation says so and names the five. Same
+  shape of decision as the two dead constants, so settle both together.
+
+- **Hold, 2026-08-27 evening: do not run a build until the maintainer says so.** The
+  demo dev server is running on port 8080 and they are using it; `mvn clean` would
+  pull `demo/target` out from under it. Reading `demo/node_modules` is fine, and so
+  is the static Froala harness on port 8899. Delete this note once the hold is
+  lifted.
+
 **Next up, agreed with the maintainer 2026-08-27 — one at a time, in this order.**
 
 **1. Take the license key out of its own element property.** Decided 2026-08-27: it
