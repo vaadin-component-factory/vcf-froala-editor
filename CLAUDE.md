@@ -38,10 +38,10 @@ are in `docs/adr/`.
 - **Commits:** one commit per logical phase or feature; run the tests before
   committing, and don't commit on the user's behalf unless asked. `/implement`
   closes out with `/code-review` before the commit is offered.
-- **Never push.** Pushing, opening merge requests and anything else that leaves this
+- **Never push.** Pushing, opening pull requests and anything else that leaves this
   machine is the maintainer's step, always — not something to offer or do, even when
-  the commits are ready and a remote exists. The agent's GitLab token enforces this
-  rather than relying on good behaviour: Reporter, scoped to this project alone.
+  the commits are ready and a remote exists. The agent's GitHub token enforces this
+  rather than relying on good behaviour: issues only, scoped to this repository alone.
 - **Tests & long-running ops:** run new/changed tests first; only run the full
   suite once those pass. Don't wrap waits in `until … done` sleep loops (they can
   stall) — poll periodically and check whether a background job has died.
@@ -52,12 +52,12 @@ are in `docs/adr/`.
 
 ### Issue tracker
 
-GitLab Issues in the project `stefan/froala` on the self-hosted instance
-`gitlab.vaadin.com`, driven through the `glab` CLI. See `docs/agents/issue-tracker.md`.
+GitHub Issues in `vaadin-component-factory/vcf-froala-editor`, driven through the `gh`
+CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
-The five canonical roles, each label string equal to its name. See
+Two category roles and five state roles, each label string equal to its name. See
 `docs/agents/triage-labels.md`.
 
 ### Domain docs

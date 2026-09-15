@@ -1,65 +1,96 @@
-# Issue tracker: GitLab
+# Issue tracker: GitHub
 
-Issues and specs for this repo live as GitLab issues on the self-hosted instance
-`gitlab.vaadin.com`, project `stefan/froala`. Use the [`glab`](https://gitlab.com/gitlab-org/cli)
-CLI for all operations.
+Issues and specs for this repo live as GitHub issues in `vaadin-component-factory/vcf-froala-editor`.
+Use the `gh` CLI for all operations.
 
 ## Conventions
 
-- **Create an issue**: `glab issue create --title "..." --description "..."`. Use a heredoc for multi-line descriptions. Pass `--description -` to open an editor.
-- **Read an issue**: `glab issue view <number> --comments`. Use `-F json` for machine-readable output.
-- **List issues**: `glab issue list -F json` with appropriate `--label` filters.
-- **Comment on an issue**: `glab issue note <number> --message "..."`. GitLab calls comments "notes".
-- **Apply / remove labels**: `glab issue update <number> --label "..."` / `--unlabel "..."`. Multiple labels can be comma-separated or by repeating the flag.
-- **Close**: `glab issue close <number>`. `glab issue close` does not accept a closing comment, so post the explanation first with `glab issue note <number> --message "..."`, then close.
-- **Merge requests**: GitLab calls PRs "merge requests". Use `glab mr create`, `glab mr view`, `glab mr note`, etc., the same shape as `gh pr ...` with `mr` in place of `pr` and `note`/`--message` in place of `comment`/`--body`.
+- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
+- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
+- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
+- **Comment on an issue**: `gh issue comment <number> --body "..."`
+- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
+- **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v`; `glab` does this automatically when run inside a clone.
+Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
-GitLab numbers issues and merge requests separately, so `#42` is unambiguous once you
-know which surface the maintainer means.
+GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
-## Blocking links are not available on this instance
+## The installed `gh` predates fine-grained tokens
 
-This instance runs GitLab 15.11 Community Edition (`enterprise: false`), so GitLab's
-**native blocking links are unavailable**: they are a Premium/Ultimate feature, and the
-`/blocked_by` quick action does nothing here. Blocking is therefore always expressed as a
-`Blocked by: #<n>, #<n>` line at the top of the issue description. A ticket is unblocked
-when every issue it lists is closed.
+`gh` here is **2.23.0 (February 2023)**. It checks permissions through the `X-OAuth-Scopes`
+header, which fine-grained personal access tokens never send, so porcelain commands
+(`gh issue create`, `gh issue edit`) can refuse a perfectly valid token. `gh api` sends only
+the bearer and does no scope check, so **reach for `gh api` whenever a porcelain command
+reports a permission it should have**. The token is not the problem in that case.
 
 ## Agent write access is deliberately narrow
 
-The agent authenticates with a **project access token scoped to `stefan/froala` alone**,
-holding the **Reporter** role. It can create, read, label, comment on and close issues,
-and nothing else: no push, no merge request, no access to any other project. This is not a
-limitation to work around. It is the `CLAUDE.md` rule "Never push" enforced by the server
-rather than by good behaviour. Anything that leaves this machine is the maintainer's step.
+The agent authenticates with a **fine-grained personal access token scoped to this one
+repository**, holding **Issues: read and write** plus **Metadata: read**. It can create,
+read, label, comment on and close issues, and nothing else: no push, no pull request, no
+access to any other repository. This is not a limitation to work around. It is the
+`CLAUDE.md` rule "Never push" enforced by the server rather than by good behaviour. Anything
+that leaves this machine is the maintainer's step.
 
-## Merge requests as a triage surface
+Two consequences worth knowing before you diagnose a failure as your own mistake:
 
-**MRs as a request surface: no.** _(Set to `yes` if this repo treats external merge requests as feature requests; `/triage` reads this flag.)_
+- `gh pr ...` and the `/pulls` API answer **403**. That is the scope working, not a fault.
+- The legacy issue-import API (`POST /repos/.../import/issues`) also answers 403, which is
+  why every issue below number 30 carries the import date rather than its original one.
 
-When set to `yes`, MRs run through the same labels and states as issues, using the `glab mr` equivalents:
+## Issues 1-29 were imported from GitLab
 
-- **Read an MR**: `glab mr view <number> --comments` and `glab mr diff <number>` for the diff.
-- **List external MRs for triage**: `glab mr list -F json`, then keep only MRs whose author is not a project member/owner.
-- **Comment / label / close**: `glab mr note`, `glab mr update --label`/`--unlabel`, `glab mr close`.
+This project tracked work in GitLab (`stefan/froala` on `gitlab.vaadin.com`) until
+2026-09-15, when all 29 issues were copied here. The numbers were preserved exactly, so a
+`#n` written before the move still resolves. Their **creation dates are the import date**;
+each body ends with a line naming the original GitLab number and date, and each imported
+comment opens with the date it was originally written. GitLab is gone; do not try to reach it.
+
+## Pull requests as a triage surface
+
+**PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
+
+When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
+
+- **Read a PR**: `gh pr view <number> --comments` and `gh pr diff <number>` for the diff.
+- **List external PRs for triage**: `gh pr list --state open --json number,title,body,labels,author,authorAssociation,comments` then keep only `authorAssociation` of `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, or `NONE` (drop `OWNER`/`MEMBER`/`COLLABORATOR`).
+- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
+
+Note that the agent's token has no pull-request permission, so turning this flag on also
+means widening the token.
 
 ## When a skill says "publish to the issue tracker"
 
-Create a GitLab issue.
+Create a GitHub issue.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `glab issue view <number> --comments`.
+Run `gh issue view <number> --comments`.
+
+## Blocking links are native here
+
+Verified on this repo: `GET repos/<owner>/<repo>/issues/<n>/dependencies/blocked_by` answers,
+and every issue reports an `issue_dependencies_summary`. Use the native dependency, **not** a
+`Blocked by:` line in the body -- the native edge is visible in the UI and queryable.
+
+    gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by \
+      -F issue_id=<blocker-db-id>
+
+`<blocker-db-id>` is the blocker's numeric **database id** (`gh api repos/<owner>/<repo>/issues/<n> --jq .id`),
+not its `#number` and not its `node_id`. A ticket is unblocked when
+`issue_dependencies_summary.blocked_by` reaches 0.
+
+Sub-issues are available too (`sub_issues_summary` is reported), so a parent/child relation
+can be native as well rather than a `## Parent` line.
 
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `glab issue create --label wayfinder:map`.
-- **Child ticket**: an issue carrying `Part of #<map>` at the top of its description and labels `wayfinder:<type>` (`research`/`prototype`/`grilling`/`task`). Once claimed, the ticket is assigned to the driving dev.
-- **Blocking**: the `Blocked by: #<n>, #<n>` line described above. Native links do not exist on this tier.
-- **Frontier query**: `glab issue list -F json` scoped to the map's children, drop any with an open issue in its `Blocked by` line, or with an assignee; first in map order wins.
-- **Claim**: `glab issue update <n> --assignee @me`, the session's first write.
-- **Resolve**: `glab issue note <n> --message "<answer>"`, then `glab issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
+- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map`.
+- **Child ticket**: an issue linked to the map as a GitHub sub-issue (`gh api` on the sub-issues endpoint). Labels: `wayfinder:<type>` (`research`/`prototype`/`grilling`/`task`). Once claimed, the ticket is assigned to the driving dev.
+- **Blocking**: the native dependency described above.
+- **Frontier query**: list the map's open children (`gh issue list --state open`, scoped to the map's sub-issues), drop any with `issue_dependencies_summary.blocked_by > 0` or an assignee; first in map order wins.
+- **Claim**: `gh issue edit <n> --add-assignee @me`, the session's first write.
+- **Resolve**: `gh issue comment <n> --body "<answer>"`, then `gh issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
