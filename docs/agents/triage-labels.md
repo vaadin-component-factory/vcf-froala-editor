@@ -1,10 +1,14 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the
-actual label strings used in this repo's issue tracker.
+The skills speak in terms of two category roles and five state roles. This file maps those
+roles to the actual label strings used in this repo's issue tracker.
+
+Every triaged issue carries exactly one category label and one state label.
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
+| `bug`                      | `bug`                | Something is broken                      |
+| `enhancement`              | `enhancement`        | New feature or improvement               |
 | `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
 | `needs-info`               | `needs-info`         | Waiting on reporter for more information |
 | `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
