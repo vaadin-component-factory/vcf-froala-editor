@@ -16,13 +16,17 @@ Infer the repo from `git remote -v`; `gh` does this automatically when run insid
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
-## The installed `gh` predates fine-grained tokens
+## If `gh` is old again after a container rebuild
 
-`gh` here is **2.23.0 (February 2023)**. It checks permissions through the `X-OAuth-Scopes`
-header, which fine-grained personal access tokens never send, so porcelain commands
-(`gh issue create`, `gh issue edit`) can refuse a perfectly valid token. `gh api` sends only
-the bearer and does no scope check, so **reach for `gh api` whenever a porcelain command
-reports a permission it should have**. The token is not the problem in that case.
+The base image ships Debian's `gh` **2.23.0 (February 2023)**, which predates fine-grained
+personal access tokens: it checks permissions through the `X-OAuth-Scopes` header, which
+those tokens never send, so `gh issue create` and `gh issue edit` refuse a perfectly valid
+token. The container currently carries **2.100.0**, installed from the project's own `.deb`,
+and porcelain commands work with it.
+
+If a rebuild puts 2.23.0 back, either install the current release again or fall back to
+`gh api`, which sends only the bearer and does no scope check. The token is not the problem
+in either case.
 
 ## Agent write access is deliberately narrow
 
@@ -35,7 +39,8 @@ that leaves this machine is the maintainer's step.
 
 Two consequences worth knowing before you diagnose a failure as your own mistake:
 
-- `gh pr ...` and the `/pulls` API answer **403**. That is the scope working, not a fault.
+- `gh pr ...` and the `/pulls` API answer **403** (`Resource not accessible by personal
+  access token`). That is the scope working, not a fault.
 - The legacy issue-import API (`POST /repos/.../import/issues`) also answers 403, which is
   why every issue below number 30 carries the import date rather than its original one.
 
