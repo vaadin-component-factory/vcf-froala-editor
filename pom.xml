@@ -40,7 +40,7 @@
         <spring-boot.version>3.5.15</spring-boot.version>
         <maven-surefire.version>3.5.6</maven-surefire.version>
 
-        <spotless.plugin.version>3.9.0</spotless.plugin.version>
+        <spotless.plugin.version>3.10.2</spotless.plugin.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <checkstyle.version>13.10.0</checkstyle.version>
         <!-- Adopting on an existing codebase? Set this to e.g. origin/main so
@@ -101,18 +101,32 @@
                             <file>${maven.multiModuleProjectDirectory}/eclipse/license-header.txt</file>
                         </licenseHeader>
                     </java>
-                    <!-- No <typescript>/<css> prettier steps here on purpose.
-                         Spotless starts prettier with `npm start`, passing the npm
-                         flag `scripts-prepend-node-path=true`. npm 7 removed that
-                         flag; npm 11 only warns, but npm 12 (latest since
-                         2026-07-29) aborts with EUNKNOWNCONFIG. The node server
-                         then never writes its port file, and Spotless fails after
-                         a 2-minute timeout with ServerStartException "Starting
-                         server failed". Reproduced 2026-08-20. spotless-lib 4.10.0
-                         still ships the dead flag. Upstream:
-                         https://github.com/diffplug/spotless/issues/3024
-                         Re-add both blocks once Spotless drops it: the connector
-                         JS/CSS does want a formatting gate. See issue #5. -->
+                    <typescript>
+                        <includes>
+                            <include>src/**/*.js</include>
+                            <include>src/**/*.ts</include>
+                            <include>frontend/**/*.js</include>
+                            <include>frontend/**/*.ts</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
+                        </prettier>
+                    </typescript>
+                    <css>
+                        <includes>
+                            <include>src/**/*.css</include>
+                            <include>frontend/**/*.css</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/generated/**</exclude>
+                        </excludes>
+                        <prettier>
+                            <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
+                        </prettier>
+                    </css>
                 </configuration>
                 <executions>
                     <execution>
