@@ -62,6 +62,10 @@ public class FroalaTestView extends VerticalLayout {
     public static final String MESSY_VALUE = "<div>messy <b>markup</div>";
     public static final String MESSY_TEXT = "messy markup";
 
+    /** What the insert buttons put into the editor. Bold, so a test can tell it was inserted as HTML, not as text. */
+    public static final String SNIPPET_VALUE = "<strong>inserted by the server</strong>";
+    public static final String SNIPPET_TEXT = "inserted by the server";
+
     /** Clearly above Froala's own 500 ms default, so a test can tell the two apart. */
     public static final int SLOW_TYPING_TIMEOUT = 1500;
 
@@ -135,8 +139,19 @@ public class FroalaTestView extends VerticalLayout {
         });
         toggleAttached.setId("attach-toggle");
 
+        Button insertSnippet = new Button("Insert snippet", event -> editor.replaceSelectionContent(SNIPPET_VALUE));
+        insertSnippet.setId("insert-snippet");
+
+        // Detach, attach and insert in one round trip: the insert then reaches a client editor Froala is still building
+        Button reattachAndInsert = new Button("Re-attach and insert", event -> {
+            remove(editor);
+            addComponentAtIndex(1, editor);
+            editor.replaceSelectionContent(SNIPPET_VALUE);
+        });
+        reattachAndInsert.setId("reattach-and-insert");
+
         add(focus, focusLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue, otherLicenseKey,
-                toggleAttached, editor, viewer);
+                toggleAttached, insertSnippet, reattachAndInsert, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

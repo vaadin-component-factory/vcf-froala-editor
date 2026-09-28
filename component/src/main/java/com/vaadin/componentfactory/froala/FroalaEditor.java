@@ -369,6 +369,25 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * Inserts an HTML snippet at the caret, replacing the selected content if there is any. Maps onto Froala's
+     * {@code html.insert}.
+     *
+     * <p>
+     * Froala cleans the snippet with its own HTML cleaning before inserting it, so what ends up in the editor can
+     * differ from the given markup. The cleaning always runs: {@code html.insert}'s optional flags, which skip it or
+     * force a block split, are not offered. The value on the server follows through the regular client update, which
+     * means {@link #getValue()} does not include the snippet yet when this method returns. A value change listener does
+     * receive it, as a change from the client.
+     *
+     * @param html the HTML snippet to insert, not null
+     */
+    public void replaceSelectionContent(String html) {
+        Objects.requireNonNull(html, "html must not be null");
+
+        getElement().callJsFunction("replaceSelectionContent", html);
+    }
+
+    /**
      * Sets the license key of this instance. Maps onto Froala's {@code key} option.
      *
      * <p>

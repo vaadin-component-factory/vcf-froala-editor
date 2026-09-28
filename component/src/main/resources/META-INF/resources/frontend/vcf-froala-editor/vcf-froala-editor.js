@@ -46,6 +46,9 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   _intervalPeriod = 2_000;
 
+  // replaceSelectionContent calls that arrived before the editor was initialized, applied from its `initialized` event
+  _pendingInserts = [];
+
   static properties = {
     // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync -- do not redeclare it here.
     // `focused` is an attribute that FocusMixin toggles directly; declaring it as a reflected property would let
@@ -261,6 +264,8 @@ class FroalaEditorElement extends SlotStylesMixin(
             if (this.valueChangeMode === 'interval') {
               this.startValueChangeInterval();
             }
+
+            this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
           }),
           blur: fromCurrentEditor(() => {
             // Flush in every mode, not just ON_BLUR. Focus leaving usually means a click somewhere
@@ -441,16 +446,22 @@ class FroalaEditorElement extends SlotStylesMixin(
   }
 
   /**
-   * Replaces the current selection with the given html snippet. If nothing
-   * is selected, the content will be added at the caret's position
-   * @param html
+   * Inserts an HTML snippet at the caret, replacing the selection if there is one -- Froala's `html.insert`. Froala
+   * cleans the snippet first. Its second argument is named `clean` but means "already clean, skip cleaning", so it is
+   * left out on purpose; so is `doSplit`, which only matters for inline snippets inside a block.
+   *
+   * A call that arrives while Froala is still building, typically in the same round trip as the attach, is held back
+   * until the editor is initialized. The editor's modules do not exist before that.
    */
   replaceSelectionContent(html) {
-    // TODO Phase 2: `this.editor.html.insert(html, clean, doSplit)` is the Froala equivalent -- it inserts at the
-    // selection, replacing it when there is one. Verified in froala-editor 5.4.0 index.d.ts:2256; Froala's
-    // FroalaSelection has no setContent, that was TinyMCE API from the HugeRTE reference. Deferred because the
-    // clean/doSplit flags are configuration decisions that belong with the option API.
-    console.warn('replaceSelectionContent is not implemented yet');
+    if (!this._editorInitialized) {
+      this._pendingInserts.push(html);
+      return;
+    }
+
+    this.editor.html.insert(html);
+
+    // reported at once rather than left to the value change mode: the change came from the server, not from typing
     this.onValueChange();
   }
 

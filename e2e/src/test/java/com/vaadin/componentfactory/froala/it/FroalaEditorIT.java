@@ -530,6 +530,41 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         assertThat(page.locator("#editor .fr-element")).hasAttribute("contenteditable", "false");
     }
 
+    @Test
+    void replaceSelectionContent_insertsAtTheCaret_andReachesTheServer() {
+        editableArea().click();
+        page.keyboard().press("End");
+
+        // Clicking the button moves focus out of the editor. Froala keeps the caret it had and inserts there.
+        page.locator("#insert-snippet").click();
+
+        assertThat(editableArea().locator("strong")).hasText(FroalaTestView.SNIPPET_TEXT);
+        assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT + FroalaTestView.SNIPPET_TEXT);
+        assertThat(page.locator("#viewer")).containsText(FroalaTestView.INITIAL_TEXT + FroalaTestView.SNIPPET_TEXT);
+    }
+
+    @Test
+    void replaceSelectionContent_replacesTheSelection() {
+        editableArea().click();
+        page.keyboard().press("ControlOrMeta+A");
+
+        page.locator("#insert-snippet").click();
+
+        assertThat(editableArea().locator("strong")).hasText(FroalaTestView.SNIPPET_TEXT);
+        assertThat(editableArea()).not().containsText(FroalaTestView.INITIAL_TEXT);
+        assertThat(page.locator("#viewer")).not().containsText(FroalaTestView.INITIAL_TEXT);
+    }
+
+    @Test
+    void replaceSelectionContent_whileTheEditorIsStillBuilding_isNotLost() {
+        page.locator("#editor .fr-element").waitFor();
+
+        page.locator("#reattach-and-insert").click();
+
+        assertThat(editableArea().locator("strong")).hasText(FroalaTestView.SNIPPET_TEXT);
+        assertThat(page.locator("#viewer")).containsText(FroalaTestView.SNIPPET_TEXT);
+    }
+
     private void assertLastChangeSurvivesAnImmediateDetach(String text) {
         editableArea().click();
         editableArea().type(text);
