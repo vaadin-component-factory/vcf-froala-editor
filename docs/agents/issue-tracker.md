@@ -11,6 +11,9 @@ Use the `gh` CLI for all operations.
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Mark what the agent wrote**: every issue body and every comment the agent writes ends
+  with a line of its own, `_Written by Claude Code_`. The token is the maintainer's, so
+  GitHub shows the maintainer as the author. No session link.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
