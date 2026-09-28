@@ -86,14 +86,23 @@ class FroalaEditorElement extends SlotStylesMixin(
           display: flex;
           flex-direction: column;
           row-gap: 0.5rem;
-          overflow: hidden;
+          /* Keeps Froala within the field's height, but not its width: Froala puts its quick-insert button left of
+             its box when there is room (#6). Not hidden, because next to hidden a visible turns into auto and clips.
+             Unlike hidden, clip does not make a scroll container, so min-height has to be 0 for the flex item to
+             shrink below its content. */
+          overflow-x: visible;
+          overflow-y: clip;
+          min-height: 0;
         }
 
         [part='input-field'] {
           flex: 1;
           display: flex;
           flex-direction: column;
-          overflow: hidden;
+          /* see .vcf-froala-editor-container */
+          overflow-x: visible;
+          overflow-y: clip;
+          min-height: 0;
           margin: 2px;
           border-radius: var(
             --vcf-froala-editor-input-field-border-radius,
