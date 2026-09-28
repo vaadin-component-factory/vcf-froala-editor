@@ -75,7 +75,7 @@ editor.setOptions(jsonObject);
 ```
 
 `FroalaOptions` is immutable, so one instance can be shared between editors. Not every
-Froala option has a `with…` method; any option can be passed as JSON. `getOptionsJson()`
+Froala option has a `with…` method, but any option can be passed as JSON. `getOptionsJson()`
 returns the options the editor is configured with, whichever way they were set.
 
 Limits of options:
@@ -89,15 +89,14 @@ Limits of options:
 - The setters win over the options: `setLicenseKey` over `key` while it holds a key, and
   `setValueChangeTimeout` over `typingTimer` once it has been called.
 - `events` and `aiAssistRequest` cannot be set from Java: they take JavaScript functions,
-  and options are sent as JSON. `setOptions` throws on `events`; `aiAssistRequest` is
-  accepted and has no effect. Froala events reach the server only through the
+  and options are sent as JSON. `setOptions` throws on `events`. `aiAssistRequest` is
+  accepted, but has no effect. Froala events reach the server only through the
   listeners `FroalaEditor` offers.
 
 ### Toolbar
 
 `withToolbarButtons` takes a `FroalaToolbar`, either flat or grouped.
 `withToolbarButtonsMd`, `…Sm` and `…Xs` do the same for narrower screens.
-
 
 ```java
 FroalaToolbar flat = FroalaToolbar.of("bold", "italic", "|", "undo", "redo");
@@ -107,10 +106,18 @@ FroalaToolbar grouped = FroalaToolbar.ofGroups(
         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, "undo", "redo").withAlign(FroalaToolbarAlign.RIGHT));
 ```
 
-Froala draws the button that opens a group's overflow panel only for its own four group
-names, available as `MORE_TEXT`, `MORE_PARAGRAPH`, `MORE_RICH` and `MORE_MISC`. A group with
-any other name that holds more buttons than it shows would leave those buttons unreachable,
-so `ofGroups` throws. Raise `withButtonsVisible` or use one of the four names.
+Froala draws the button that opens a group's overflow panel only for its own group names,
+the `MORE_…` constants in `FroalaToolbarGroup`. A group with a name of your own therefore
+has to show all its buttons. If it doesn't, `ofGroups` throws. Set `withButtonsVisible` to
+the number of buttons, or use one of the `MORE_…` names:
+
+```java
+// throws: four buttons, three shown by default, and no button to open the rest
+FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen"));
+
+// works: all four are shown
+FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen").withButtonsVisible(4));
+```
 
 ### Working with the selection
 
@@ -146,7 +153,7 @@ as untrusted input, and sanitize it before storing or displaying it.
 
 ## Known issues
 
-### The quick-insert button can be covered
+### The quick-insert button is hidden by the AppLayout drawer or cut off in a Dialog
 
 Froala's quick-insert button (the `+` on an empty line) goes to the left of the editor box
 whenever there is at least its own width of room between the editor and the **page** edge.
