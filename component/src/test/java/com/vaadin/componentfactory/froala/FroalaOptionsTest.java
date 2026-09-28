@@ -64,6 +64,20 @@ class FroalaOptionsTest {
         assertEquals("{\"emoticonsUseImage\":false}", FroalaOptions.defaults().withEmoticonsUseImage(false).toString());
         assertEquals("{\"saveInterval\":0}", FroalaOptions.defaults().withSaveInterval(0).toString());
         assertEquals("{\"spellcheck\":false}", FroalaOptions.defaults().withSpellcheck(false).toString());
+        // THM-6
+        assertEquals("{\"theme\":\"dark\"}", FroalaOptions.defaults().withTheme(FroalaTheme.DARK).toString());
+        assertEquals("{\"theme\":\"brand\"}", FroalaOptions.defaults().withCustomTheme("brand").toString());
+    }
+
+    @Test
+    void themeNone_isAnExplicitNull() {
+        // THM-5. The add-on's own default only applies to a missing key, so "no theme" has to be sent as null.
+        assertEquals("{\"theme\":null}", FroalaOptions.defaults().withTheme(FroalaTheme.NONE).toString());
+    }
+
+    @Test
+    void themeNull_removesTheOption() {
+        assertEquals("{}", FroalaOptions.defaults().withTheme(FroalaTheme.DARK).withTheme(null).toString());
     }
 
     @Test

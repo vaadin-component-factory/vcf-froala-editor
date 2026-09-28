@@ -28,20 +28,27 @@ import org.apache.commons.text.WordUtils;
 import org.vaadin.addons.componentfactory.toolbarlayout.ToolbarLayout;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
+import com.vaadin.componentfactory.froala.FroalaEditorVariant;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
+import com.vaadin.componentfactory.froala.FroalaTheme;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
 @Route("")
 @Menu(title = "Basics", order = 0)
+// Froala's own themes, which the add-on does not load
+@CssImport("froala-editor/css/themes/dark.min.css")
+@CssImport("froala-editor/css/themes/gray.min.css")
+@CssImport("froala-editor/css/themes/royal.min.css")
 public class BasicView extends FroalaViewBase {
 
     public static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
@@ -82,6 +89,16 @@ public class BasicView extends FroalaViewBase {
                 .addClickListener(event -> editor.setReadOnly(event.getSource().isChecked()));
         checkable(menu, "Visible", editor.isVisible())
                 .addClickListener(event -> editor.setVisible(event.getSource().isChecked()));
+        SubMenu variantMenu = menu.addItem("Theme Variant").getSubMenu();
+        for (FroalaEditorVariant variant : FroalaEditorVariant.values()) {
+            checkable(variantMenu, variant.name(), false).addClickListener(event -> {
+                if (event.getSource().isChecked()) {
+                    editor.addThemeVariants(variant);
+                } else {
+                    editor.removeThemeVariants(variant);
+                }
+            });
+        }
         menu.add(new Hr());
         menu.addItem("Focus", _unused -> editor.focus());
     }
@@ -108,12 +125,13 @@ public class BasicView extends FroalaViewBase {
     }
 
     /**
-     * Every item starts at Froala's own default, so the editor is built without options until one is clicked. A click
-     * then sets all of them at once; {@code setOptions} rebuilds the editor, Froala cannot change options on a running
-     * instance.
+     * Every item starts at its default, which is Froala's own or, for the theme, the add-on's. So the editor is built
+     * without options until one is clicked. A click then sets all of them at once. {@code setOptions} rebuilds the
+     * editor, because Froala cannot change options on a running instance.
      */
     private void addFroalaOptionsMenu(SubMenu menu, FroalaEditor editor) {
         SubMenu directionMenu = menu.addItem("Text direction").getSubMenu();
+        SubMenu themeMenu = menu.addItem("Theme").getSubMenu();
 
         SubMenu toolbarMenu = menu.addItem("Toolbar").getSubMenu();
         MenuItem sticky = checkable(toolbarMenu, "Sticky", true);
@@ -125,8 +143,9 @@ public class BasicView extends FroalaViewBase {
         MenuItem wordCounter = checkable(menu, "Word counter", true);
 
         AtomicReference<FroalaTextDirection> direction = new AtomicReference<>();
+        AtomicReference<FroalaTheme> theme = new AtomicReference<>();
         Runnable apply = () -> editor.setOptions(FroalaOptions.defaults().withDirection(direction.get())
-                .withToolbarSticky(sticky.isChecked()).withToolbarInline(inline.isChecked())
+                .withTheme(theme.get()).withToolbarSticky(sticky.isChecked()).withToolbarInline(inline.isChecked())
                 .withToolbarBottom(bottom.isChecked()).withDocumentReady(documentReady.isChecked())
                 .withCharCounterCount(charCounter.isChecked()).withWordCounterCount(wordCounter.isChecked()));
 
@@ -139,6 +158,14 @@ public class BasicView extends FroalaViewBase {
                     direction.set(value);
                     apply.run();
                 });
+
+        List<FroalaTheme> themes = new ArrayList<>();
+        themes.add(null);
+        themes.addAll(List.of(FroalaTheme.values()));
+        choice(themeMenu, themes, null, value -> value == null ? "The add-on's default" : value.name(), value -> {
+            theme.set(value);
+            apply.run();
+        });
     }
 
     private static MenuItem checkable(SubMenu menu, String text, boolean checked) {

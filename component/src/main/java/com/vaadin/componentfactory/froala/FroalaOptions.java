@@ -160,6 +160,32 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
+     * Sets the look of the editor. Froala's {@code theme}. Without it the add-on uses {@link FroalaTheme#VAADIN}.
+     *
+     * @param theme the theme, or null for the add-on's default
+     * @return a new instance
+     */
+    public FroalaOptions withTheme(FroalaTheme theme) {
+        if (theme == FroalaTheme.NONE) {
+            // an explicit null, so the add-on's default does not apply either
+            return with("theme", Json.createNull());
+        }
+        return with("theme", theme == null ? null : theme.getOptionValue());
+    }
+
+    /**
+     * Sets a theme of your own. Froala puts the class {@code <theme>-theme} on the editor and on its popups, and the
+     * stylesheet for it is yours to load.
+     *
+     * @param theme the theme name, for example {@code "brand"} for the class {@code brand-theme}, or null for the
+     *            add-on's default. An empty name leaves the editor without a theme, like {@link FroalaTheme#NONE}.
+     * @return a new instance
+     */
+    public FroalaOptions withCustomTheme(String theme) {
+        return with("theme", theme);
+    }
+
+    /**
      * Switches the browser's spell checker on or off for the editing area. Froala's {@code spellcheck}, on by default.
      * On mobile devices it also switches autocorrect and autocapitalization.
      *

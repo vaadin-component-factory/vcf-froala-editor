@@ -36,6 +36,7 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.component.shared.HasThemeVariant;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
@@ -58,8 +59,11 @@ import com.vaadin.flow.shared.Registration;
 @NpmPackage(value = "diff-match-patch", version = "1.0.5")
 @JsModule("./vcf-froala-editor/vcf-froala-editor.js")
 @CssImport("./vcf-froala-editor/vcf-froala-editor.css")
-public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String> implements HasValidationProperties,
-        HasValidator<String>, InputNotifier, HasSize, HasStyle, Focusable<FroalaEditor>, HasLabel, HasHelper {
+@CssImport("./vcf-froala-editor/vcf-froala-theme-vaadin.css")
+@CssImport("./vcf-froala-editor/vcf-froala-theme-vaadin-rules.css")
+public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, String>
+        implements HasValidationProperties, HasValidator<String>, InputNotifier, HasSize, HasStyle,
+        Focusable<FroalaEditor>, HasLabel, HasHelper, HasThemeVariant<FroalaEditorVariant> {
 
     /** The value change mode of a new editor. */
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;

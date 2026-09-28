@@ -121,6 +121,100 @@ FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print"
 FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen").withButtonsVisible(4));
 ```
 
+### Theme
+
+The editor follows the Vaadin theme, including Lumo's dark variant. This is Froala's `theme`
+option set to `vaadin`, and it is on by default. Its colours, font, corners, shadows and cursor
+come from custom properties of the add-on, which are set from Lumo. Override them to change the
+editor without touching Lumo:
+
+```css
+html {
+  --vcf-froala-primary-color: #7b1fa2;
+  --vcf-froala-field-border-radius: 0;
+}
+```
+
+| Property | Set from |
+|---|---|
+| `--vcf-froala-base-color` | `--lumo-base-color` |
+| `--vcf-froala-contrast-color` | `--lumo-contrast` |
+| `--vcf-froala-primary-color` | `--lumo-primary-color` |
+| `--vcf-froala-primary-contrast-color` | `--lumo-primary-contrast-color` |
+| `--vcf-froala-error-color` | `--lumo-error-color` |
+| `--vcf-froala-success-color` | `--lumo-success-color` |
+| `--vcf-froala-warning-color` | `--lumo-warning-color` |
+| `--vcf-froala-border-color` | `--lumo-contrast-20pct` |
+| `--vcf-froala-text-color` | `--lumo-body-text-color` |
+| `--vcf-froala-secondary-text-color` | `--lumo-secondary-text-color` |
+| `--vcf-froala-tertiary-text-color` | `--lumo-tertiary-text-color` |
+| `--vcf-froala-disabled-text-color` | `--lumo-disabled-text-color` |
+| `--vcf-froala-value-color` | `--vaadin-input-field-value-color`, else `--lumo-body-text-color` |
+| `--vcf-froala-disabled-value-color` | `--vaadin-input-field-disabled-value-color`, else `--lumo-disabled-text-color` |
+| `--vcf-froala-placeholder-color` | `--vaadin-input-field-placeholder-color`, else `--lumo-secondary-text-color` |
+| `--vcf-froala-font-family` | `--lumo-font-family` |
+| `--vcf-froala-content-font-size` | `--vaadin-input-field-value-font-size`, else `--lumo-font-size-m` |
+| `--vcf-froala-content-font-weight` | `--vaadin-input-field-value-font-weight`, else `400` |
+| `--vcf-froala-content-line-height` | `--lumo-line-height-m` |
+| `--vcf-froala-font-size-xxs` … `-m` | `--lumo-font-size-xxs` … `-m` |
+| `--vcf-froala-field-border-radius` | `--vaadin-input-field-border-radius`, else `--lumo-border-radius-m` |
+| `--vcf-froala-border-radius-s` … `-l` | `--lumo-border-radius-s` … `-l` |
+| `--vcf-froala-box-shadow-xs` … `-l` | `--lumo-box-shadow-xs` … `-l` |
+| `--vcf-froala-focus-ring-color` | `--vaadin-focus-ring-color`, else `--lumo-primary-color-50pct` |
+| `--vcf-froala-focus-ring-width` | `--vaadin-focus-ring-width`, else `2px` |
+| `--vcf-froala-clickable-cursor` | `--lumo-clickable-cursor` |
+| `--vcf-froala-field-background` | `--vaadin-input-field-background`, else `--lumo-contrast-10pct` |
+| `--vcf-froala-hover-highlight` | `--vaadin-input-field-hover-highlight`, else `--lumo-contrast-50pct` |
+| `--vcf-froala-hover-highlight-opacity` | `--vaadin-input-field-hover-highlight-opacity`, else `0.1` |
+| `--vcf-froala-invalid-border-color` | `--lumo-error-color` |
+| `--vcf-froala-invalid-background` | `--vaadin-input-field-invalid-background`, else `--lumo-error-color-10pct` |
+| `--vcf-froala-invalid-hover-highlight` | `--vaadin-input-field-invalid-hover-highlight`, else `--lumo-error-color-50pct` |
+| `--vcf-froala-readonly-border` | `--vaadin-input-field-readonly-border`, else `1px dashed var(--lumo-contrast-30pct)` |
+| `--vcf-froala-disabled-background` | `--vaadin-input-field-disabled-background`, else `--lumo-contrast-5pct` |
+
+The greys and tints in the editor are mixed from the colours, its grey borders from the border
+colour, and its grey text goes to the closest text colour. Overriding `--vcf-froala-contrast-color`
+therefore changes every grey in the editor. Only the hues Lumo has no colour for keep their own
+tone. The purple of a format suggestion in track changes, for example, stays purple when you
+override `--vcf-froala-primary-color`.
+
+The field radius is the corner of the editor's box. The other radii are those of its buttons,
+inputs, dropdowns, popups, tooltips and dialogs. The editable area is set like the value of a
+Vaadin text field. Vaadin's focus ring around the box takes the focus ring properties above.
+
+The editor is filled like a Vaadin text field and has no border. The theme variant `OUTLINED`
+gives it Froala's look instead, the base colour with a border around the box. Like a Vaadin text
+field, the editing area is highlighted while the mouse is over the editor. `NO_HOVER_HIGHLIGHT`
+switches that off. The variants are only CSS, so they can be combined and switched on a running
+editor:
+
+```java
+editor.addThemeVariants(FroalaEditorVariant.OUTLINED, FroalaEditorVariant.NO_HOVER_HIGHLIGHT);
+```
+
+The field states look as they do on a Vaadin text field. An invalid editor gets the red tint, a
+read-only one a dashed border, and a disabled one a grey tint with greyed text. With
+`OUTLINED` the border of an invalid editor also turns to the error colour, and a read-only
+editor drops its border and base colour for the dashed border, like the filled one. The
+heights, spacing and line heights of Froala's toolbar and popups stay Froala's, because Froala
+places parts of them at fixed offsets. Its dropdown arrow, for example, sits 18px from the top of a
+40px button.
+
+To use another theme, set it in the options. Froala's own `DARK`, `GRAY` and `ROYAL` need their
+stylesheet, which the add-on does not load. Load it yourself, for example with
+`@CssImport("froala-editor/css/themes/dark.min.css")` on your view.
+
+```java
+// Froala's own look, no theme
+FroalaOptions.defaults().withTheme(FroalaTheme.NONE);
+
+// Froala's dark theme
+FroalaOptions.defaults().withTheme(FroalaTheme.DARK);
+
+// a theme of your own, styled through the class brand-theme
+FroalaOptions.defaults().withCustomTheme("brand");
+```
+
 ### Working with the selection
 
 `replaceSelectionContent` inserts HTML at the caret, replacing the selection if there is

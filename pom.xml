@@ -133,6 +133,8 @@
                         </includes>
                         <excludes>
                             <exclude>**/generated/**</exclude>
+                            <!-- written by component/src/theme-generator, and the formatter would rewrite it so it no longer matches the output -->
+                            <exclude>**/vcf-froala-theme-vaadin-rules.css</exclude>
                         </excludes>
                         <prettier>
                             <prettierVersion>${prettier.version}</prettierVersion>

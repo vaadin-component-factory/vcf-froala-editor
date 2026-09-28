@@ -86,6 +86,10 @@ release when bumping instead of taking the newest 3.5.x.
 Java 17 and Vaadin 24 are the deliberate floor (ADR-0005). Do not raise them
 without writing the reason down as an ADR first.
 
+A Froala update reruns the theme generator, because the vaadin theme's rules are generated from
+Froala's stylesheet (ADR-0007):
+`node component/src/theme-generator/generate-vaadin-theme.js demo/node_modules/froala-editor`.
+
 ## Module structure
 
 - **`component/`** — the add-on itself, published to the Vaadin Directory. Standalone:

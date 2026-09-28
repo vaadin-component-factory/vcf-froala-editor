@@ -10,9 +10,6 @@ import { DisabledMixin } from '@vaadin/a11y-base/src/disabled-mixin.js';
 import { ThemableMixin } from '@vaadin/vaadin-themable-mixin/vaadin-themable-mixin.js';
 import { inputFieldShared } from '@vaadin/vaadin-lumo-styles/mixins/input-field-shared.js';
 import { SlotStylesMixin } from '@vaadin/component-base/src/slot-styles-mixin.js';
-// TODO Lumo integration and dark mode, see issue #27. Froala's own chrome ignores Lumo's tokens, so it stays light in
-// a dark app. This mixin would be the Vaadin side of detecting the active theme.
-// import {ThemeDetectionMixin} from "@vaadin/vaadin-themable-mixin/vaadin-theme-detection-mixin.js";
 import { diff_match_patch } from 'diff-match-patch';
 
 class FroalaEditorElement extends SlotStylesMixin(
@@ -77,6 +74,11 @@ class FroalaEditorElement extends SlotStylesMixin(
           display: flex;
           flex-direction: column;
           box-sizing: border-box;
+
+          /* Vaadin's focus ring and disabled value colour, taken from the theme's properties */
+          --vaadin-focus-ring-color: var(--vcf-froala-focus-ring-color);
+          --vaadin-focus-ring-width: var(--vcf-froala-focus-ring-width);
+          --vaadin-input-field-disabled-value-color: var(--vcf-froala-disabled-value-color);
         }
 
         .vcf-froala-editor-container {
@@ -103,11 +105,10 @@ class FroalaEditorElement extends SlotStylesMixin(
           overflow-x: visible;
           overflow-y: clip;
           min-height: 0;
-          margin: 2px;
-          border-radius: var(
-            --vcf-froala-editor-input-field-border-radius,
-            10px
-          ); /* taken from froala toolbar border radius, update if necessary*/
+          /* room for the focus ring, which the container would clip otherwise. Lumo draws the ring with this width. */
+          margin: var(--_focus-ring-width, 2px);
+          /* the corners of Froala's box, so the focus ring follows them */
+          border-radius: var(--_vcf-froala-box-radius, 10px);
         }
       `,
     ];
@@ -225,10 +226,10 @@ class FroalaEditorElement extends SlotStylesMixin(
       // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
       // overwritten with an undefined we do not have.
       //
-      // Underneath the server's options sits one default of ours. The save plugin is off unless they ask for it. The
-      // value reaches the server through the value change listener, and without a saveURL the plugin only runs a
-      // failing save after every edit.
-      const options = { saveInterval: 0, ...this.options };
+      // Underneath the server's options sit two defaults of ours. The vaadin theme is on unless they pick another.
+      // The save plugin is off unless they ask for it. The value reaches the server through the value change
+      // listener, and without a saveURL the plugin only runs a failing save after every edit.
+      const options = { saveInterval: 0, theme: 'vaadin', ...this.options };
       this._appliedOptions = JSON.stringify(this.options ?? null);
 
       if (this.licenseKey) {
