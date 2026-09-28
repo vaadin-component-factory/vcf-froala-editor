@@ -90,14 +90,13 @@ without writing the reason down as an ADR first.
   standalone build it points at `component/` itself and breaks the build.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and shows
   it off. Holds everything Spring-shaped (`Application`, `@Service` beans, the future
-  `@ConfigurationProperties` license-key binding) and **no tests at all**. Its
-  `spring-boot-maven-plugin` uses `<classifier>exec</classifier>` so the main jar stays
-  a plain library jar the `e2e` module can depend on — goes away with #32.
+  `@ConfigurationProperties` license-key binding) and **no tests at all**.
 - **`e2e/`** — Playwright tests in a real browser, run by failsafe in the `production`
   profile. **Completely independent of `demo/`** (maintainer, 2026-09-28): no dependency
-  on it, and its own app, views, layout, properties, frontend bundle and test data.
-  It depends on `component/` only. Today it still boots the demo and uses its bundle;
-  #32 removes that.
+  on it, and its own app (`E2eApplication`), views, frontend bundle and test data. It
+  depends on `component/` only. The app and views sit in `e2e/src/main/java` although
+  they are test code: `vaadin-maven-plugin` builds the bundle from the compile/runtime
+  classpath and never sees `target/test-classes`.
 
 The reactor root imports `spring-boot-dependencies` as a **BOM, not a parent**
 (ADR-0002), and therefore pins plugin versions and compiler settings itself.
@@ -146,7 +145,7 @@ Froala's scope and not ours to assert.
 
 **No test lives in `demo/`, ever.** Unit and browserless tests belong in `component/`,
 browser tests in `e2e/`. And no test asserts against the demo's views: browser tests run
-against test views the tests own, under `e2e/src/test/java/.../it/views/`, browserless
+against test views the tests own, under `e2e/src/main/java/.../it/views/`, browserless
 tests build the component they assert on. The demo exists to show the add-on off and its
 author has to stay free to change it — a test that reads it breaks on a label change.
 
@@ -156,8 +155,8 @@ the bug deliberately put back. They are written out under *Testing standards* in
 
 Mirror existing tests when adding new ones. When a module's Java or frontend changes,
 rebuild that module before running the demo or e2e tests so they don't run against a
-stale jar. The demo's `production` profile already sets `forceProductionBuild`, so the
-e2e run exercises the true optimized bundle rather than a precompiled one.
+stale jar. The e2e `production` profile sets `forceProductionBuild`, so the e2e run
+exercises the true optimized bundle rather than a precompiled one.
 
 ## Who owns which file
 
@@ -178,8 +177,8 @@ Getting this wrong wastes the maintainer's time, so it is worth stating.
   release first.
 - Code style: read and follow `STYLEGUIDE.md`. Spotless + Checkstyle run in the
   build; `mvn spotless:apply` fixes formatting. Spotless's `<pom><sortPom>` block is
-  deliberately left out of both poms: they are hand-authored with block comments
-  explaining the BOM-not-parent setup and the `exec` classifier, and sortPom would
+  deliberately left out of all poms: they are hand-authored with block comments
+  explaining the BOM-not-parent setup and the module layout, and sortPom would
   reorder elements away from what those comments document.
 - Domain language: use the terms in `CONTEXT.md`.
 

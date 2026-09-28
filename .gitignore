@@ -23,3 +23,8 @@
 /demo/tsconfig.json
 /demo/types.d.ts
 /demo/vite.config.ts
+/e2e/package.json
+/e2e/package-lock.json
+/e2e/tsconfig.json
+/e2e/types.d.ts
+/e2e/vite.config.ts

@@ -32,7 +32,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
  * says nothing about this path — Froala's modules cannot be touched before its own {@code initialized} event, so the
  * pending state has to be re-applied from that handler.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaDisabledAtInitIT extends SpringPlaywrightIT {
 
     @Override

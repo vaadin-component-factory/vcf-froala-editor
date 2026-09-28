@@ -58,12 +58,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- Keep the plain jar as the main artifact so the e2e module can
-                     depend on it and Spring can find Application on the classpath.
-                     The executable jar is attached with the `exec` classifier. -->
-                <configuration>
-                    <classifier>exec</classifier>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.vaadin</groupId>
@@ -100,10 +94,8 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <!-- e2e tests (in the e2e module) boot this demo and drive its bundle.
-                                 Force the real optimized application build instead of the platform
-                                 pre-compiled bundle, so route components load on demand exactly as in
-                                 production and the e2e run exercises the true production artifact. -->
+                            <!-- The real optimized build rather than the platform's pre-compiled
+                                 bundle, so route components load on demand as in production. -->
                             <forceProductionBuild>true</forceProductionBuild>
                         </configuration>
                     </plugin>

@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * End-to-end test for the options channel. The only layer that can answer whether an option reaches Froala at all:
  * Karibu proves the JSON arrives on the element, nothing more, because it runs no JavaScript.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaOptionsIT extends SpringPlaywrightIT {
 
     @Override

@@ -31,11 +31,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * integration-test/verify phase of the `production` profile, against the optimized frontend bundle.
  *
  * <p>
- * This is the only layer that proves the delta channel works, because Karibu runs no JavaScript. The demo view echoes
+ * This is the only layer that proves the delta channel works, because Karibu runs no JavaScript. The test view echoes
  * every value change into a {@code vcf-froala-viewer}, so the viewer's text is the evidence that the typed HTML made
  * the round trip through diff-match-patch and back into the server-side value.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Override

@@ -76,9 +76,8 @@ public class FroalaOptionsTestView extends VerticalLayout {
         });
         otherOptions.setId("other-options");
 
-        // The demo's own "reload editor" sequence: detach, set, attach again, all in one round trip. It leaves the
-        // client destroying an editor that is still bootstrapping, which is where a handler of the discarded instance
-        // used to run against its successor.
+        // Detach, set options, attach again, all in one round trip. It leaves the client destroying an editor that is
+        // still bootstrapping, which is where a handler of the discarded instance used to run against its successor.
         Button reattachWithOptions = new Button("Re-attach with other options");
         reattachWithOptions.addClickListener(event -> {
             int position = indexOf(editor);
