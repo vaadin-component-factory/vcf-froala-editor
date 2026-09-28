@@ -27,13 +27,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 /**
- * Playwright base class for e2e tests: one browser per test class, a fresh context and page per test, navigated to
- * {@link #getView()} on the random Spring Boot test port. Subclasses add
+ * Playwright base class for e2e tests. It opens one browser per test class and a fresh context and page per test,
+ * navigated to {@link #getView()} on the random Spring Boot test port. Subclasses add
  * {@code @SpringBootTest(classes = E2eApplication.class, webEnvironment = RANDOM_PORT)}.
  *
  * <p>
- * Plain Playwright rather than DramaFinder — DramaFinder 1.x targets Vaadin 25 / JUnit 6 / Java 21, which does not fit
- * this Vaadin 24 stack.
+ * Plain Playwright, see ADR-0005.
  */
 public abstract class SpringPlaywrightIT {
 

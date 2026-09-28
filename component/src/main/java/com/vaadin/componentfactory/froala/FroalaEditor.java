@@ -46,8 +46,7 @@ import com.vaadin.flow.shared.Registration;
  *
  * <p>
  * Configure the editor with {@link #setOptions(FroalaOptions)}, its toolbar with {@link FroalaToolbar}, and its license
- * key with {@link #setLicenseKey(String)}. Without a key Froala shows a watermark. To render the value outside an
- * editor, use {@link FroalaViewer}.
+ * key with {@link #setLicenseKey(String)}. To render the value outside an editor, use {@link FroalaViewer}.
  *
  * <p>
  * The value is HTML. This component does not parse, escape or sanitize it on the server. Froala cleans the content it
@@ -65,7 +64,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /** The value change mode of a new editor. */
     public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
 
-    /** The lowest accepted value change timeout. Froala floors its {@code typingTimer} at 250 ms. */
+    /** The lowest accepted value change timeout. */
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
 
     /** The default value change timeout in milliseconds. Same as Froala's {@code typingTimer} default. */
@@ -81,8 +80,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Whether the browser has been told about this component's element. Deliberately not {@link #isAttached()}, which
-     * answers {@code true} inside a detach listener as well: Flow fires those from {@code StateNode.setParent} before
-     * it clears the node's parent, so the node is still reachable from the tree at that point.
+     * answers {@code true} inside a detach listener as well. Flow fires those from {@code StateNode.setParent} before
+     * it clears the node's parent.
      */
     private boolean liveOnClient;
 
@@ -119,8 +118,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * @param label the label shown above the editor, or null for none
      * @param initialValue the HTML the editor starts with
-     * @param valueChangeListener notified of every later change; not notified of the initial value, which is set before
-     *            the listener is added
+     * @param valueChangeListener notified of every later change, but not of the initial value, which is set before the
+     *            listener is added
      */
     public FroalaEditor(String label, String initialValue,
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
@@ -180,9 +179,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Creates a new instance.
      */
     public FroalaEditor() {
-        // The three arg constructor registers Flow's own listener for a "value-changed" DOM event. Nothing dispatches
-        // that today and nothing should: the client reports changes as deltas over `_value-delta`. Making `value` a
-        // notifying Lit property on the client would quietly open a second update path next to it.
+        // The three arg constructor registers Flow's listener for a "value-changed" DOM event, which the client never
+        // dispatches. Changes arrive as deltas over `_value-delta`, and a notifying `value` property on the client
+        // would open a second update path next to it.
         super(VALUE_PROPERTY, "", true);
         setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
@@ -196,12 +195,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                 newValue = applyDelta(getValue(), delta);
             } catch (DeltaMismatchException e) {
                 // Both sides have drifted apart, so this delta and every following one is unusable. The client holds
-                // the user's text and has to resend it -- pushing our stale value would throw that text away.
+                // the user's text and has to resend it. Pushing our stale value would throw that text away.
                 element.callJsFunction("resyncValue");
                 return;
             }
 
-            // Only the model value, never the presentation value: writing the property would put the whole document
+            // Only the model value, never the presentation value. Writing the property would put the whole document
             // back on the wire for every keystroke. Updating the model also lets the value change event carry
             // fromClient = true.
             setModelValue(newValue, true);
@@ -221,16 +220,14 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         });
 
         // Set in before-client-response, not directly on attach, so that other attach listeners still see a component
-        // that the browser does not know yet -- the same reason hugerte-for-flow gives for its own flag. For the value
-        // push below the timing makes no difference (that guard cannot be satisfied during an attach), but anything
-        // added later that has to be configured before the client learns of the editor will need it this way.
+        // that the browser does not know yet.
         addAttachListener(event -> event.getUI().beforeClientResponse(this, context -> liveOnClient = true));
 
         addDetachListener(event -> {
             liveOnClient = false;
 
             // The property lags behind the editor by design, see above. Bringing it in step once here is enough,
-            // because Flow replays a node's properties when it is attached again -- that is what seeds the rebuilt
+            // because Flow replays a node's properties when it is attached again. That replay seeds the rebuilt
             // editor.
             setPresentationValue(getValue());
         });
@@ -238,14 +235,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     @Override
     protected void setPresentationValue(String newPresentationValue) {
-        // A client edit updates the model only, so the property still holds whatever the server set last. Setting
-        // exactly that value again is the case Flow drops as unchanged -- and the browser, whose own copy of the state
-        // tree is stale for the same reason, would ignore the update even if it were sent. Only then is an explicit
-        // push needed; every other value travels through the property as usual.
-        //
-        // Only while the browser has an element to push to. The detach listener calls this too, with the value the
-        // property already holds -- exactly the shape below. Flow does not drop such a call, it defers it to the next
-        // attach, where it would overwrite whatever the server set while the component was away.
+        // A client edit updates only the model, so re-setting the value the property still holds is dropped by Flow as
+        // unchanged, and the browser would ignore it too. Push that case explicitly, but only while live. From the
+        // detach listener Flow would defer the call and overwrite a later server value on re-attach.
         boolean clientNeedsExplicitPush = liveOnClient
                 && Objects.equals(newPresentationValue, getElement().getProperty(VALUE_PROPERTY));
 
@@ -260,14 +252,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Applies a delta to the value it was computed against and returns the result.
      *
      * <p>
-     * A delta is a diff-match-patch patch text. The client sends every change the user makes in this form, so that a
-     * keystroke does not transfer the whole document. The editor applies incoming deltas itself; this method is public
-     * so the same conversion can be used outside it.
+     * A delta is a diff-match-patch patch text, the format the editor's client uses to send changes. The editor applies
+     * incoming deltas and handles a mismatch itself, by asking the client to resend its value, so using the editor
+     * never requires calling this method.
      *
      * @param oldValue the value the delta was computed against
-     * @param delta a diff-match-patch patch text
+     * @param delta the patch text
      * @return the value with the delta applied
-     * @throws DeltaMismatchException if the delta does not apply to the given old value
+     * @throws DeltaMismatchException if the delta does not apply to the given old value, or if diff-match-patch returns
+     *             a result of an unexpected shape
      */
     public static String applyDelta(String oldValue, String delta) {
         List<DiffMatchPatch.Patch> patches = DIFF_MATCH_PATCH.patchFromText(delta);
@@ -285,7 +278,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         }
 
         // One flag per patch. A false flag means that patch found no place to apply, so the string comes back only
-        // partially patched or entirely unchanged -- without this check the edit is lost with nothing to notice it.
+        // partially patched or entirely unchanged. Without this check the edit is lost with nothing to notice it.
         for (int i = 0; i < applied.length; i++) {
             if (!applied[i]) {
                 throw new DeltaMismatchException(
@@ -301,7 +294,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * Froala reads its options once, when the editor is built, and has no API to change one on a running editor.
-     * Calling this on an attached instance therefore destroys the editor and builds a new one. The value is kept;
+     * Calling this on an attached instance therefore destroys the editor and builds a new one. The value is kept, but
      * caret, selection, scroll position and undo history are lost. Several calls within one server round trip cause one
      * rebuild.
      *
@@ -334,9 +327,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             return;
         }
 
-        // Froala's `events` option is a map of callbacks, and JSON has no functions -- whatever arrived here under that
-        // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped: the
-        // options were written to do something, and silently doing nothing is the worse answer.
+        // Froala's `events` option is a map of callbacks, and JSON has no functions. Whatever arrived here under that
+        // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped,
+        // because the options were written to do something and silently doing nothing is worse.
         if (options.hasKey("events")) {
             throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
                     + " it cannot be set from the server. Froala events reach the server only through the listeners"
@@ -364,7 +357,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         try {
             parsed = Json.parse(options);
         } catch (JsonException | ClassCastException e) {
-            // ClassCastException is elemental's answer to valid JSON that is not an object -- Json.parse is typed as
+            // ClassCastException is elemental's answer to valid JSON that is not an object. Json.parse is typed as
             // returning one and only fails on the way out.
             throw new IllegalArgumentException("Froala options must be a JSON object: " + e.getMessage(), e);
         }
@@ -388,8 +381,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * Froala cleans the snippet with its own HTML cleaning before inserting it, so what ends up in the editor can
-     * differ from the given markup. The cleaning always runs: {@code html.insert}'s optional flags, which skip it or
-     * force a block split, are not offered. The value on the server follows through the regular client update, which
+     * differ from the given markup. The cleaning always runs, because {@code html.insert}'s optional flags that skip it
+     * or force a block split are not offered. The value on the server follows through the regular client update, which
      * means {@link #getValue()} does not include the snippet yet when this method returns. A value change listener does
      * receive it, as a change from the client.
      *
@@ -405,9 +398,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Adds a listener that learns when something gets selected in the editor and when the selection is gone again --
      * collapsed to a caret, or moved outside the editor. Useful to enable an action that works on the selection, such
      * as one calling {@link #replaceSelectionContent(String)}, only while there is one.
+     *
      * <p>
      * Clicking a button outside the editor leaves the selection in place, so an action in the view still finds it.
-     * 
+     *
      * @param listener the listener, not null
      * @return a handle to remove the listener
      */
@@ -419,12 +413,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Sets the license key of this instance. Maps onto Froala's {@code key} option.
      *
      * <p>
-     * Froala is commercial software and every user needs their own key, so this add-on ships none. Without a key the
-     * editor works, but shows Froala's unlicensed watermark.
+     * The add-on ships no key. Without one, Froala shows its unlicensed watermark.
      *
      * <p>
-     * The key is only read when the client side editor initializes, so calling this on an already attached instance has
-     * no effect until it is detached and attached again.
+     * The key is read when the editor is built, on attach and on every rebuild caused by
+     * {@link #setOptions(FroalaOptions)}. Calling this on an attached instance has no effect until then.
      *
      * @param licenseKey license key or null to unset
      */
@@ -475,8 +468,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * is why {@link ValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
      *
      * <p>
-     * The default is 500, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala floors the option at that minimum and
-     * ignores smaller values silently, so this setter throws instead.
+     * The default is 500, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala reports changes after at least that
+     * long whatever the option says, so a smaller value would silently have no effect. This setter throws instead.
      *
      * <p>
      * Froala uses the option for more than the value sync. It is also the delay before the inline toolbar is shown
@@ -491,8 +484,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public void setValueChangeTimeout(int timeoutInMilliseconds) {
         if (timeoutInMilliseconds < MIN_VALUE_CHANGE_TIMEOUT) {
-            throw new IllegalArgumentException("valueChangeTimeout must be at least " + MIN_VALUE_CHANGE_TIMEOUT
-                    + " ms, the lower bound Froala " + "enforces");
+            throw new IllegalArgumentException(
+                    "valueChangeTimeout must be at least " + MIN_VALUE_CHANGE_TIMEOUT + " ms, the minimum Froala uses");
         }
 
         getElement().setProperty("valueChangeTimeout", timeoutInMilliseconds);
@@ -518,7 +511,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * the first one. Has no effect in any other mode.
      *
      * <p>
-     * The default is 2000. The value must be greater than zero; the client rejects zero and negative values as well.
+     * The default is 2000. The value must be greater than zero.
      *
      * @param periodInMilliseconds time between two value syncs, greater than zero
      * @throws IllegalArgumentException if the given period is zero or negative

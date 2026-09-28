@@ -137,9 +137,10 @@ fix it or delete it, and say which.
 Applies to everything a person reads: the README, Javadoc, comments, commit messages and
 issues.
 
-- **No semicolons or colons joining two sentences.** Write two sentences, or join them
-  with a word such as "because", "so" or "but". A colon is fine before an example, a
-  list or a table. Chained clauses are hard to read and mark a text as machine-written.
+- **No semicolons, colons or dashes joining two sentences**, and no comma splices either.
+  Write two sentences, or join them with a word such as "because", "so" or "but". A colon
+  is fine before an example, a list or a table. Chained clauses are hard to read and mark
+  a text as machine-written.
 - **The README is written for developers who know Vaadin and Froala.** It documents what
   the add-on adds or changes, not how Vaadin or Froala work. Where it states a rule or a
   failure case, a short example follows.

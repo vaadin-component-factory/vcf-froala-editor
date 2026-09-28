@@ -1,4 +1,4 @@
-/* adjust inner height automatically to field height to have not a gap between froala and helper text*/
+/* Stretch Froala to the field's height so no gap is left above the helper text. */
 /* https://github.com/froala/wysiwyg-editor/issues/2249 */
 .fr-box {
   height: 100%;
@@ -7,14 +7,8 @@
   .fr-wrapper {
     flex: 1;
     overflow: auto;
-
-    .fr-element {
-      /*min-height: 100%;*/
-    }
   }
 }
-
-/* end inner height adjustment */
 
 vcf-froala-viewer {
   display: block;

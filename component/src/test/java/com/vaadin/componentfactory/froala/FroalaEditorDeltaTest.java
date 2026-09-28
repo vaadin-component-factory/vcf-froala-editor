@@ -22,11 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Unit test for the server half of the delta channel. Plain JUnit — no Vaadin, no browser, since
+ * Unit test for the server half of the delta channel. Plain JUnit without Vaadin or a browser, because
  * {@link FroalaEditor#applyDelta(String, String)} is a pure function.
  *
  * <p>
- * The mismatch case is the one that matters: diff-match-patch reports a failed patch through a flag array rather than
+ * The mismatch case is the one that matters. diff-match-patch reports a failed patch through a flag array rather than
  * an exception and hands back the unpatched string, so without the check the value silently loses the edit.
  */
 class FroalaEditorDeltaTest {

@@ -30,12 +30,11 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
  * Fixture view for {@code FroalaEditorIT}, owned by the tests.
  *
  * <p>
- * Deliberately separate from the demo's {@code BasicView}: the demo exists to show the add-on off and its author must
- * stay free to change labels, values and layout without breaking tests. Everything an assertion depends on is a
- * constant here, and every control exists because a test needs to reach server-side API that a browser cannot call.
+ * Everything an assertion depends on is a constant here, and every control exists because a test needs to reach
+ * server-side API that a browser cannot call.
  *
  * <p>
- * The viewer is the assertion channel — only the server-side value change listener ever writes to it, so text appearing
+ * The viewer is the assertion channel. Only the server-side value change listener ever writes to it, so text appearing
  * there is proof that a client edit made the full round trip.
  */
 @Route(FroalaTestView.ROUTE)
@@ -50,8 +49,8 @@ public class FroalaTestView extends VerticalLayout {
     public static final String INITIAL_TEXT = "seeded by the server";
 
     /**
-     * Not a real license key and never will be -- this project runs Froala unlicensed. It only has to be a string the
-     * test can find again in Froala's own options, which proves our end of the wiring.
+     * Not a real license key and never will be, because this project runs Froala unlicensed. It only has to be a string
+     * the test can find again in Froala's own options, which proves our end of the wiring.
      */
     public static final String LICENSE_KEY = "it-dummy-license-key";
 
@@ -87,7 +86,7 @@ public class FroalaTestView extends VerticalLayout {
         Button focus = new Button("Focus", event -> editor.focus());
         focus.setId("focus-button");
 
-        // Froala's own focus and blur are re-dispatched from the host element; this is where they arrive server side
+        // Froala's own focus and blur are re-dispatched from the host element. This is where they arrive server side.
         Span focusLog = new Span();
         focusLog.setId("focus-log");
         editor.addFocusListener(event -> focusLog.setText(focusLog.getText() + " focus"));
@@ -120,8 +119,8 @@ public class FroalaTestView extends VerticalLayout {
         enabled.setValue(editor.isEnabled());
         enabled.setId("enabled-toggle");
 
-        // disables itself, so a test can tell that the round trip has landed before it reads the client -- a click
-        // returns as soon as it is dispatched, not when the server has answered
+        // The button disables itself, so a test can tell that the round trip has landed before it reads the client.
+        // A click returns as soon as it is dispatched, not when the server has answered.
         Button slowTyping = new Button("Slow typing timer");
         slowTyping.addClickListener(event -> {
             editor.setValueChangeTimeout(SLOW_TYPING_TIMEOUT);
@@ -147,7 +146,7 @@ public class FroalaTestView extends VerticalLayout {
         Button insertSnippet = new Button("Insert snippet", event -> editor.replaceSelectionContent(SNIPPET_VALUE));
         insertSnippet.setId("insert-snippet");
 
-        // Detach, attach and insert in one round trip: the insert then reaches a client editor Froala is still building
+        // Detach, attach and insert in one round trip, so the insert reaches a client editor Froala is still building
         Button reattachAndInsert = new Button("Re-attach and insert", event -> {
             remove(editor);
             addComponentAtIndex(1, editor);

@@ -29,9 +29,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
  * Fixture view for {@code FroalaOptionsIT}, owned by the tests.
  *
  * <p>
- * The toolbar is the assertion channel: options are only observable once Froala has read them, and a configured toolbar
+ * The toolbar is the assertion channel. Options are only observable once Froala has read them, and a configured toolbar
  * is the cheapest thing to read back out of the DOM. Each button disables itself, so a test can wait for the round trip
- * to have landed before it looks at the client — a click returns when it is dispatched, not when the server has
+ * to have landed before it looks at the client. A click returns when it is dispatched, not when the server has
  * answered.
  */
 @Route(FroalaOptionsTestView.ROUTE)
@@ -77,7 +77,7 @@ public class FroalaOptionsTestView extends VerticalLayout {
         otherOptions.setId("other-options");
 
         // Detach, set options, attach again, all in one round trip. It leaves the client destroying an editor that is
-        // still bootstrapping, which is where a handler of the discarded instance used to run against its successor.
+        // still bootstrapping, and handlers of the discarded instance must not run against its successor.
         Button reattachWithOptions = new Button("Re-attach with other options");
         reattachWithOptions.addClickListener(event -> {
             int position = indexOf(editor);

@@ -27,8 +27,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * End-to-end test driving the real Froala editor in a browser. Named *IT so failsafe runs it in the
- * integration-test/verify phase of the `production` profile, against the optimized frontend bundle.
+ * End-to-end test driving the real Froala editor in a browser.
  *
  * <p>
  * This is the only layer that proves the delta channel works, because Karibu runs no JavaScript. The test view echoes
@@ -53,24 +52,24 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         editableArea().click();
         editableArea().type("Hello from Playwright");
 
-        // ON_CHANGE is the default mode, so Froala's contentChanged event drives the sync; the viewer only ever gets
-        // text that has been through the server
+        // ON_CHANGE is the default mode, so Froala's contentChanged event drives the sync. The viewer only ever gets
+        // text that has been through the server.
         assertThat(page.locator("vcf-froala-viewer")).containsText("Hello from Playwright");
     }
 
     @Test
     void initialValue_isInTheEditorOnLoad() {
         // The view sets this value server side before the first attach, so it can only have arrived through the
-        // innerHTML seeding in _initEditor -- Froala has no init option for its content.
+        // innerHTML seeding in _initEditor. Froala has no init option for its content.
         assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT);
     }
 
     @Test
     void typing_neverPushesTheFullValueBackToTheClient() {
-        // The point of the whole delta design: a document can be large, so a keystroke must not put it back on the
-        // wire. The server pushes a full value by writing the element's `value`
-        // property, so counting those writes measures exactly that. A regression to setPresentationValue on every
-        // change would pass every other test in this suite.
+        // The point of the whole delta design is that a large document is not put back on the wire per keystroke. The
+        // server pushes a full value by writing the element's `value` property, so counting those writes measures
+        // exactly that. A regression to setPresentationValue on every change would pass every other test in this
+        // suite.
         page.locator("#editor .fr-element").waitFor();
         page.evaluate("""
                 () => {
@@ -98,9 +97,9 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void licenseKey_arrivesInFroalasOwnOptions() {
-        // Whether the key is valid is Froala's business -- this project runs unlicensed on purpose. What is ours is
-        // that the key the server set is the key Froala was constructed with, which is only observable here: it is read
-        // once, at init, and Karibu cannot see past the element property.
+        // Whether the key is valid is Froala's business, and this project runs unlicensed on purpose. What is ours is
+        // that the key the server set is the key Froala was constructed with. That is only observable here, because it
+        // is read once, at init, and Karibu cannot see past the element property.
         page.locator("#editor .fr-element").waitFor();
 
         assertEquals(FroalaTestView.LICENSE_KEY,
@@ -114,8 +113,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#viewer").click();
         assertThat(page.locator("#viewer")).containsText("typed on top");
 
-        // The button sets exactly the value the server pushed at load. The client still believes it holds that value
-        // -- client edits travel as deltas and never touch the property -- so a plain property update would be
+        // The button sets exactly the value the server pushed at load. The client still believes it holds that value,
+        // because client edits travel as deltas and never touch the property. So a plain property update would be
         // dropped on the way out and the typed text would stay on screen.
         page.locator("#reset-value").click();
 
@@ -135,9 +134,9 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         editableArea().click();
         editableArea().type("typed just before detaching");
 
-        // No pause and no click elsewhere first: straight to the toggle. Focus leaving the editor makes Froala fire
-        // blur, and that is the last moment anything can be sent -- the detach clears every pending timer on the
-        // client, so a change still sitting in one is gone.
+        // The test goes straight to the toggle, without a pause or a click elsewhere. Focus leaving the editor makes
+        // Froala fire blur, and that is the last moment anything can be sent. The detach clears every pending timer
+        // on the client, so a change still sitting in one is gone.
         page.locator("#attach-toggle").click();
         assertThat(page.locator("#editor")).hasCount(0);
         page.locator("#attach-toggle").click();
@@ -147,20 +146,18 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void valueChangeTimeout_setsFroalasTypingTimer_andGovernsWhenAChangeIsReported() {
-        // valueChangeTimeout is not a timer of ours: it is Froala's typingTimer, the debounce that decides when
-        // contentChanged fires at all. Both halves are ours to prove -- that the value reaches Froala's options, and
-        // that setting it actually moves the sync.
+        // valueChangeTimeout is not a timer of ours. It is Froala's typingTimer, the debounce that decides when
+        // contentChanged fires at all. Both halves are ours to prove. The value has to reach Froala's options, and
+        // setting it has to actually move the sync.
         //
-        // Playwright's fake clock, and it has to be runFor, not fastForward: fastForward fires each due timer at most
-        // once and never the ones scheduled while it jumps, which is exactly this chain -- Froala's debounce is what
-        // triggers our sync.
+        // runFor, not fastForward. fastForward skips timers that are scheduled during the jump, and Froala's debounce
+        // schedules the one that triggers our sync (STYLEGUIDE, Testing standards).
         withFakeClock();
 
         // the constructor's default, applied through the init options
         assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_TIMEOUT, typingTimer());
 
-        // and a later change reaches a running editor, because Froala reads the option on every keystroke. The
-        // button disables itself, which is how the test knows the round trip landed -- clicking only dispatches.
+        // and a later change reaches a running editor, because Froala reads the option on every keystroke
         page.locator("#slow-typing").click();
         assertThat(page.locator("#slow-typing")).isDisabled();
         assertEquals(FroalaTestView.SLOW_TYPING_TIMEOUT, typingTimer());
@@ -177,7 +174,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         recordDeltaDispatches();
         editableArea().type("slowly");
 
-        // past Froala's own 500 ms default: with the option ignored, this is where the change would have been reported
+        // past Froala's own 500 ms default, where the change would have been reported with the option ignored
         page.clock().runFor(800);
         assertEquals(0, dispatchedDeltas(), deltaLog());
 
@@ -195,15 +192,15 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         recordDeltaDispatches();
         editableArea().type("first tick");
 
-        // short, because the interval was armed when the mode was selected -- a little before this test's clock zero
+        // short, because the interval was armed when the mode was selected, a little before this test's clock zero
         page.clock().runFor(600);
         assertEquals(0, dispatchedDeltas(), deltaLog());
 
         page.clock().runFor(1600);
         assertThat(page.locator("#viewer")).containsText("first tick");
 
-        // The second tick is what separates INTERVAL from TIMEOUT: the editor never lost focus and the user never
-        // paused, yet the next span of text has to arrive on its own as well -- and not before its tick.
+        // The second tick is what separates INTERVAL from ON_CHANGE. The editor never lost focus and the user never
+        // paused, yet the next span of text has to arrive on its own as well, and not before its tick.
         editableArea().type(" and second");
         page.clock().runFor(1000);
         assertEquals(1, dispatchedDeltas(), deltaLog());
@@ -219,7 +216,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     /**
-     * Smoke check only: this exercises Vaadin's own FieldMixin slots, not the Froala integration — it would pass
+     * Smoke check only. This exercises Vaadin's own FieldMixin slots, not the Froala integration, and would pass
      * unchanged if the whole editor were removed. Kept because it is nearly free, but it is not Froala coverage.
      */
     @Test
@@ -231,8 +228,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     @Test
     void froalasFocusAndBlur_reachFlowSideListeners() {
         // Froala's events fire on its own editing area, which Flow knows nothing about. The connector re-dispatches
-        // them from the host element, and this is the only place that can prove they arrive: the log is written by
-        // server-side listeners.
+        // them from the host element, and this is the only place that can prove they arrive, because the log is written
+        // by server-side listeners.
         editableArea().click();
         assertThat(page.locator("#focus-log")).containsText("focus");
 
@@ -245,7 +242,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#editor .fr-element").waitFor();
         assertEquals(FroalaTestView.LICENSE_KEY, licenseKeyInFroala());
 
-        // Pins the documented limitation of API-11 rather than a behaviour we would want: Froala reads opts.key at
+        // Pins the documented limitation of API-11 rather than a behaviour we would want. Froala reads opts.key at
         // init and never again, so a key set on a running editor sits on the element until the next build.
         page.locator("#other-license-key").click();
         assertThat(page.locator("#other-license-key")).isDisabled();
@@ -269,8 +266,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     @Test
     void fastTyping_thenBlur_losesNothing() {
         // The connector throttles value syncs to one per 50 ms. Typing quickly produces several Froala contentChanged
-        // events inside one window, and the blur flush that follows can land inside it too. Dropping instead of
-        // deferring used to lose whatever the last suppressed sync carried -- this is that regression.
+        // events inside one window, and the blur flush that follows can land inside it too. The last deferred sync
+        // must still arrive.
         editableArea().click();
         editableArea().type("abcdefghijklmnopqrstuvwxyz");
         page.locator("#viewer").click();
@@ -280,7 +277,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void syncInsideTheThrottleWindow_isDeferredNotDropped() {
-        // Deliberately synthesized rather than typed: the 50 ms window cannot be hit reliably from the outside. The
+        // Deliberately synthesized rather than typed, because the 50 ms window cannot be hit reliably from outside. The
         // call goes through the connector's real onValueChange, only the trigger is artificial. Without the deferral
         // the second value never reaches the server, because no further change follows to carry it.
         page.locator("#editor .fr-element").waitFor();
@@ -361,12 +358,13 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         assertThat(page.locator("#viewer")).containsText("base");
 
         // Synthesized down to the resync call, because the state only exists for 50 ms and a server round trip is
-        // slower than that: drift the client so its next delta would be rejected, edit twice so the second sync is
+        // slower than that. Drift the client so its next delta would be rejected, edit twice so the second sync is
         // still sitting in the throttle, and then make the call the server would make. The resync has to carry that
-        // second edit -- it is the only thing left that can deliver it, because it also clears the throttle.
+        // second edit. It is the only thing left that can deliver it, because it also clears the throttle.
         //
-        // Asserted on the events, not on the viewer: the viewer would be rescued by the pending throttle firing a
-        // moment later and would prove nothing. The server's own half of this is driftedClient_recoversThroughResync.
+        // Asserted on the events, not on the viewer, because the viewer would be rescued by the pending throttle
+        // firing a moment later and would prove nothing. The server's own half of this is
+        // driftedClient_recoversThroughResync.
         page.evaluate("""
                 () => {
                     const el = document.querySelector('#editor');
@@ -407,13 +405,11 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         page.locator("#viewer").click();
         assertThat(page.locator("#viewer")).containsText("typed by the user");
 
-        // Then let Froala's pending undo step run out. Typing leaves one scheduled for max(250, typingTimer) ms
-        // (VCM-15), and a step that runs after the push below sees markup it has not recorded and fires
-        // contentChanged for a change the server made -- which is a real delta, just not the one under test here
-        // (VCM-16). Without this wait the test passes or fails on how long the blur round trip took.
+        // Then wait out Froala's pending undo step (VCM-15). Otherwise it can fire contentChanged for the server's push
+        // (VCM-16) and make the test timing-dependent.
         page.waitForTimeout(FroalaEditor.DEFAULT_VALUE_CHANGE_TIMEOUT + 100);
 
-        // Deliberately messy markup, because that is where the risk is: Froala rewrites what it is given, so a value
+        // Deliberately messy markup, because that is where the risk is. Froala rewrites what it is given, so a value
         // reported back after a server push would differ from what the server sent and arrive as a delta describing a
         // change nobody made. Setting already-normalized HTML would produce an empty delta and prove nothing.
         recordDeltaDispatches();
@@ -421,7 +417,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         assertThat(editableArea()).containsText(FroalaTestView.MESSY_TEXT);
 
         // It stays quiet because html.set fires no contentChanged of its own (VCM-16), and no undo step is left to
-        // find the pushed markup; this asserts nothing else sends one either.
+        // find the pushed markup. This asserts nothing else sends one either.
         page.waitForTimeout(300);
         assertEquals(0, dispatchedDeltas(), deltaLog());
     }
@@ -434,7 +430,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         editableArea().click();
         editableArea().type("typed before the detach");
 
-        // Keep a reference and a counter: after the detach the element is out of the DOM, but a leaked interval would
+        // Keep a reference and a counter. After the detach the element is out of the DOM, but a leaked interval would
         // still be firing against this object.
         page.evaluate("""
                 () => {
@@ -450,7 +446,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
         // The count starts here, because the click blurs the editor and that flushes one delta on the way out
         // (VCM-9). A tick on a detached element would find no editor and compute an empty delta, which dispatches
-        // nothing -- so the leak would be invisible. This gives it something to report: anything from here is a leak.
+        // nothing, so the leak would be invisible. This gives it something to report. Anything from here is a leak.
         page.evaluate("""
                 () => {
                     window.__ticks = 0;
@@ -466,12 +462,12 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     void initEditorOnAHostThatIsAlreadyDetached_buildsNothing() {
         page.locator("#editor .fr-element").waitFor();
 
-        // The state the isConnected guard exists for: a host that has already had its one and only
+        // The state the isConnected guard exists for is a host that has already had its one and only
         // disconnectedCallback. Anything built there would never be destroyed and would stay in Froala's global
         // registry, which the live editors reach into from their window handlers (LC-6).
         //
         // Attached and removed inside one task first, so this is that host and not merely a loose element. Lit does
-        // complete an update on it -- hasUpdated turns true -- but no editor comes out of that path even with the
+        // complete an update on it, and hasUpdated turns true. But no editor comes out of that path even with the
         // guard removed, so what is asserted here is the guard itself, reached the way the connector reaches it.
         page.evaluate("""
                 async () => {
@@ -577,8 +573,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                 """);
 
         // Three selection changes, but only the first turns "no selection" into "some". Each press waits for its own
-        // selectionchange: Chrome merges the ones that come in quick succession, and three presses sent at once would
-        // look like a single change -- the test would then pass without the connector filtering anything.
+        // selectionchange. Chrome merges the ones that come in quick succession, and three presses sent at once would
+        // look like a single change. The test would then pass without the connector filtering anything.
         for (int i = 1; i <= 3; i++) {
             page.keyboard().press("Shift+ArrowLeft");
             page.waitForFunction("n => window.__selectionChanges >= n", i);
@@ -625,14 +621,10 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     /**
-     * Installs Playwright's fake clock and reloads, because the clock only applies to a document opened after it. Every
-     * {@code setTimeout} and {@code setInterval} on the page then advances only when a test says so.
-     */
-    /**
      * Counts the deltas the connector puts on the wire. Under a fake clock this is the only honest way to assert that
-     * nothing was sent *yet*: a delta reaches the viewer through a server round trip in real time, so looking at the
-     * viewer right after a time jump proves nothing -- it is merely early. The dispatch itself happens synchronously
-     * inside the timer callback, so the count is exact the moment {@code fastForward} returns.
+     * nothing was sent *yet*. A delta reaches the viewer through a server round trip in real time, so looking at the
+     * viewer right after a time jump proves nothing, because it is merely early. The dispatch itself happens
+     * synchronously inside the timer callback, so the count is exact the moment {@code runFor} returns.
      */
     private void recordDeltaDispatches() {
         page.evaluate(
@@ -665,6 +657,10 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                 "() => JSON.stringify(window.__log) + ' mode=' + document.querySelector('#editor').valueChangeMode"));
     }
 
+    /**
+     * Installs Playwright's fake clock and reloads, because the clock only applies to a document opened after it. Every
+     * {@code setTimeout} and {@code setInterval} on the page then advances only when a test says so.
+     */
     private void withFakeClock() {
         page.clock().install();
         page.reload();

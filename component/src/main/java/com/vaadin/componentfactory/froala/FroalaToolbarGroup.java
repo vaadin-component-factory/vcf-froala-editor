@@ -26,7 +26,7 @@ import elemental.json.JsonObject;
 
 /**
  * One named group of toolbar buttons in Froala's grouped toolbar, with the alignment and the overflow count that belong
- * to the group rather than to a button. Immutable: every {@code with…} method returns a new instance.
+ * to the group rather than to a button. Immutable. Every {@code with…} method returns a new instance.
  *
  * <pre>
  * FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline").withButtonsVisible(2);
@@ -39,10 +39,10 @@ import elemental.json.JsonObject;
  * <p>
  * The group's name is also the command name of its overflow button. A group overflows as soon as it holds more buttons
  * than its {@code buttonsVisible}, which is three unless {@link #withButtonsVisible(int)} sets another value, so a
- * four-button group overflows by default. Froala moves the remaining buttons into a collapsed panel and looks up its
- * own client side {@code FroalaEditor.COMMANDS[name]} to draw the button that opens that panel. It registers such a
- * command for four names only: {@link #MORE_TEXT}, {@link #MORE_PARAGRAPH}, {@link #MORE_RICH} and {@link #MORE_MISC}.
- * Under any other name the panel is rendered without a button to open it, and its buttons cannot be reached.
+ * four-button group overflows by default. Froala moves the remaining buttons into a collapsed panel, but draws the
+ * button that opens it only for four names, {@link #MORE_TEXT}, {@link #MORE_PARAGRAPH}, {@link #MORE_RICH} and
+ * {@link #MORE_MISC}. Under any other name the panel is rendered without a button to open it, and its buttons cannot be
+ * reached.
  *
  * <p>
  * Any other name is therefore only valid for a group that shows all of its buttons.
@@ -50,34 +50,22 @@ import elemental.json.JsonObject;
  */
 public final class FroalaToolbarGroup implements Serializable {
 
-    /**
-     * The name Froala's default toolbar gives its text formatting group. One of the four names with a registered
-     * overflow command, so a group using it may overflow.
-     */
+    /** The name Froala's default toolbar gives its text formatting group. */
     public static final String MORE_TEXT = "moreText";
 
-    /**
-     * The name Froala's default toolbar gives its paragraph formatting group. One of the four names with a registered
-     * overflow command, so a group using it may overflow.
-     */
+    /** The name Froala's default toolbar gives its paragraph formatting group. */
     public static final String MORE_PARAGRAPH = "moreParagraph";
 
-    /**
-     * The name Froala's default toolbar gives its inserted content group. One of the four names with a registered
-     * overflow command, so a group using it may overflow.
-     */
+    /** The name Froala's default toolbar gives its inserted content group. */
     public static final String MORE_RICH = "moreRich";
 
-    /**
-     * The name Froala's default toolbar gives its remaining buttons. One of the four names with a registered overflow
-     * command, so a group using it may overflow.
-     */
+    /** The name Froala's default toolbar gives its remaining buttons. */
     public static final String MORE_MISC = "moreMisc";
 
     /** Froala's default for {@code buttonsVisible}, applied to every group that does not set one. */
     private static final int DEFAULT_BUTTONS_VISIBLE = 3;
 
-    /** The four names Froala registers an overflow command for. Measured against 5.4.0. */
+    /** The four names Froala registers an overflow command for. */
     private static final Set<String> NAMES_WITH_AN_OVERFLOW_BUTTON = Set.of(MORE_TEXT, MORE_PARAGRAPH, MORE_RICH,
             MORE_MISC);
 
@@ -98,10 +86,10 @@ public final class FroalaToolbarGroup implements Serializable {
 
     /**
      * Creates a group of the given buttons. A button name is a registered command name. {@code "|"} draws a vertical
-     * separator and {@code "-"} a horizontal one; neither is moved into the overflow panel. A name Froala does not know
+     * separator and {@code "-"} a horizontal one. Neither is moved into the overflow panel. A name Froala does not know
      * is dropped silently, but still counts towards {@link #withButtonsVisible(int)}.
      *
-     * @param name the group's name, which is also its overflow button's command name; see the class documentation
+     * @param name the group's name, which is also its overflow button's command name. See the class documentation.
      * @param buttons command names in the order they should appear, none of them null
      * @return a new instance
      * @throws NullPointerException if the name or any button name is null
@@ -137,8 +125,8 @@ public final class FroalaToolbarGroup implements Serializable {
      * buttons in the group. A count of {@code 0} or less moves every button into the panel.
      *
      * <p>
-     * Separators are not counted: {@code "|"} and {@code "-"} are drawn as lines and are never moved into the panel. An
-     * unknown button name is counted, although Froala does not draw it.
+     * Separators are not counted, because {@code "|"} and {@code "-"} are drawn as lines and never move into the panel.
+     * An unknown button name is counted, although Froala does not draw it.
      *
      * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest
      * @return a new instance

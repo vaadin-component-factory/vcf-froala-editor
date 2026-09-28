@@ -25,9 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Plain JUnit, no Vaadin: {@link FroalaOptions} is a value object and its whole job is producing the JSON Froala is
+ * Plain JUnit, no Vaadin. {@link FroalaOptions} is a value object and its whole job is producing the JSON Froala is
  * initialized with, so the JSON is what is asserted. Whether Froala then honours an option is Froala's business, not
- * this add-on's — see the project's testing rules.
+ * this add-on's. See the project's testing rules.
  */
 class FroalaOptionsTest {
 
@@ -40,7 +40,7 @@ class FroalaOptionsTest {
 
     @Test
     void everyOption_usesFroalasOwnName() {
-        // The one thing the map-backed shape cannot have checked by the compiler: the key literal next to each typed
+        // The one thing the compiler cannot check in the map-backed shape is the key literal next to each typed
         // method. A typo here is an option Froala ignores without a word.
         assertEquals("{\"placeholderText\":\"Write something\"}",
                 FroalaOptions.defaults().withPlaceholderText("Write something").toString());
@@ -68,14 +68,14 @@ class FroalaOptionsTest {
     @Test
     @SuppressWarnings("deprecation")
     void typingTimer_isStillWritten() {
-        // Deprecated on arrival in favour of the setter, which is a hint and not a removal: anyone who prefers the
-        // option must still be able to use it.
+        // Deprecated in favour of the setter, which is a hint and not a removal. Anyone who prefers the option must
+        // still be able to use it.
         assertEquals("{\"typingTimer\":800}", FroalaOptions.defaults().withTypingTimer(800).toString());
     }
 
     @Test
     void pluginsEnabled_usesTheRegistryNameNotTheFileName() {
-        // The trap this enum exists for: the file is font_family.min.js, but pluginsEnabled only understands
+        // This is the trap the enum exists for. The file is font_family.min.js, but pluginsEnabled only understands
         // fontFamily. Passing the file name switches the plugin off instead of on, silently.
         assertEquals("{\"pluginsEnabled\":[\"fontFamily\",\"findReplace\",\"track_changes\"]}", FroalaOptions.defaults()
                 .withPluginsEnabled(FroalaPlugin.FONT_FAMILY, FroalaPlugin.FIND_AND_REPLACE, FroalaPlugin.TRACK_CHANGES)
@@ -105,8 +105,8 @@ class FroalaOptionsTest {
 
     @Test
     void null_removesTheOptionAgain() {
-        // Not the same as setting it to JSON null: an option that is absent lets Froala's own default stand, an option
-        // that is present and null overrides it with nothing.
+        // Not the same as setting it to JSON null. An absent option lets Froala's own default stand, but one that is
+        // present and null overrides it with nothing.
         assertEquals("{}", FroalaOptions.defaults().withLanguage("de").withLanguage(null).toString());
         assertEquals("{}", FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.ALIGN)
                 .withPluginsEnabled((List<FroalaPlugin>) null).toString());

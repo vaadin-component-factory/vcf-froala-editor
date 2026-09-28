@@ -20,9 +20,8 @@ package com.vaadin.componentfactory.froala;
  * {@link FroalaEditor#setValueChangeMode(ValueChangeMode)}.
  *
  * <p>
- * Not {@link com.vaadin.flow.data.value.ValueChangeMode}, which shares this name and has five constants. Froala reports
- * no change during an uninterrupted burst of typing, so there is no equivalent of Vaadin's {@code EAGER} or
- * {@code LAZY}.
+ * Not {@link com.vaadin.flow.data.value.ValueChangeMode}, which shares this name. There is no equivalent of Vaadin's
+ * {@code EAGER} or {@code LAZY}. See {@link #INTERVAL}.
  */
 public enum ValueChangeMode implements ClientSideReference {
 

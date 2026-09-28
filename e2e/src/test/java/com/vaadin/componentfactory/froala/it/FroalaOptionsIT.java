@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * End-to-end test for the options channel. The only layer that can answer whether an option reaches Froala at all:
- * Karibu proves the JSON arrives on the element, nothing more, because it runs no JavaScript.
+ * End-to-end test for the options channel. This is the only layer that can answer whether an option reaches Froala at
+ * all, because Karibu runs no JavaScript and only proves the JSON arrives on the element.
  */
 @SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaOptionsIT extends SpringPlaywrightIT {
@@ -75,8 +75,8 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
 
     @Test
     void optionsInFroalasOwnOptionObject() {
-        // The toolbar is what the user sees; this is the option itself, in the place Froala keeps it. An option we
-        // pass but Froala silently ignores would still show up here, which is the point -- our end is what we own.
+        // The toolbar is what the user sees. This is the option itself, in the place Froala keeps it. An option we
+        // pass but Froala silently ignores would still show up here, which is the point. Our end is what we own.
         editableArea().waitFor();
 
         Object placeholder = page.evaluate("() => document.querySelector('#editor').editor.opts.placeholderText");
@@ -89,8 +89,6 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         assertEquals(List.of("bold", "italic"), toolbarButtons());
 
         page.locator("#other-options").click();
-        // the button disables itself server side, so this is the round trip having landed -- reading the client right
-        // after the click would race it
         assertThat(page.locator("#other-options")).isDisabled();
 
         assertEquals(List.of("undo", "redo", "insertLink"), toolbarButtons());
@@ -116,7 +114,7 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         assertThat(page.locator("#reattach-with-options")).isDisabled();
 
         // The editor that gets thrown away here is still building, and Froala finishes building it and fires its
-        // events regardless. Those belong to an instance that no longer exists; letting them run touches the
+        // events regardless. Those belong to an instance that no longer exists, and letting them run touches the
         // half-built successor.
         assertEquals(List.of("undo", "redo", "insertLink"), toolbarButtons());
         assertEquals(List.of(), pageErrors, "the rebuild raised an error in the browser");
@@ -125,7 +123,7 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
     @Test
     void rebuild_keepsWhatTheUserTyped() {
         // A rebuild throws the editor away, so the value has to be carried across. Caret, selection and undo history
-        // are not -- that is the documented trade, and the same one a detach and re-attach makes.
+        // are not. That is the documented trade, and the same one a detach and re-attach makes.
         editableArea().click();
         editableArea().type("typed before the rebuild");
         assertThat(page.locator("vcf-froala-viewer")).containsText("typed before the rebuild");

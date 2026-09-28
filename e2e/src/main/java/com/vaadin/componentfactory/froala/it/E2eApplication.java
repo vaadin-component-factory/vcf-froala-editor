@@ -18,7 +18,7 @@ package com.vaadin.componentfactory.froala.it;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * The app the e2e tests boot: only the test views in {@code views}, nothing of the demo. Test code in
+ * The app the e2e tests boot. It holds only the test views in {@code views}, nothing of the demo. Test code in
  * {@code src/main/java}, see ADR-0006.
  */
 @SpringBootApplication

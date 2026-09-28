@@ -24,9 +24,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
  * Fixture view whose editor is disabled and read-only <em>before</em> it is ever attached.
  *
  * <p>
- * This is the only way to reach the connector's init-time re-apply path: Froala builds asynchronously, so a state the
- * server set while it was still building can only be applied from Froala's own {@code initialized} event. A view that
- * toggles the state after load exercises the ordinary update path instead and proves nothing about this one.
+ * This is the only way to reach the connector's init-time re-apply path, see {@code FroalaDisabledAtInitIT}.
  */
 @Route(FroalaDisabledAtInitTestView.ROUTE)
 @AnonymousAllowed

@@ -24,12 +24,12 @@ import com.vaadin.componentfactory.froala.it.views.FroalaDisabledAtInitTestView;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /**
- * Covers the connector's init-time re-apply path: state the server set while Froala was still building.
+ * Covers the connector's init-time re-apply path, for state the server set while Froala was still building.
  *
  * <p>
  * Separate from {@code FroalaEditorIT} because it needs a view whose editors are disabled and read-only before they are
  * ever attached. Toggling the state after load, as that suite does, runs through Lit's ordinary {@code updated()} and
- * says nothing about this path — Froala's modules cannot be touched before its own {@code initialized} event, so the
+ * says nothing about this path. Froala's modules cannot be touched before its own {@code initialized} event, so the
  * pending state has to be re-applied from that handler.
  */
 @SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)

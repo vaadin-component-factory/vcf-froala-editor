@@ -31,15 +31,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Browserless UI-unit test using Karibu Testing (license-free) — runs the component in the JVM, no browser.
+ * Browserless UI-unit test using Karibu Testing (license-free). It runs the component in the JVM, without a browser.
  *
  * <p>
  * Karibu executes no JavaScript, so everything here is server-side state, element properties and the JS calls the
  * server queues. Whether Froala then honours them is an e2e question, see {@code FroalaEditorIT}.
  *
  * <p>
- * Every test builds the component it asserts on. Nothing here navigates to a view, in particular not to one of the
- * demo's — the demo exists to show the add-on off and its author has to stay free to change it.
+ * Every test builds the component it asserts on. Nothing here navigates to a view.
  */
 class FroalaEditorKaribuTest {
 
@@ -117,12 +116,11 @@ class FroalaEditorKaribuTest {
 
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(-1));
 
-        // zero used to pass here and then throw in the client's own setter, so the failure surfaced in the browser
-        // instead of at the call site
+        // zero must fail here at the call site, not later in the client's own setter
         assertThrows(IllegalArgumentException.class, () -> editor.setValueChangeTimeout(0));
 
-        // Froala floors typingTimer at 250, so a smaller value would be accepted here and then quietly ignored --
-        // the editor would keep syncing at 250 while the getter claimed otherwise
+        // Froala uses at least 250 ms for change reporting, whatever typingTimer says. A smaller value accepted here
+        // would be quietly ignored, and the editor would keep syncing at 250 while the getter claimed otherwise.
         assertThrows(IllegalArgumentException.class,
                 () -> editor.setValueChangeTimeout(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT - 1));
 
@@ -153,7 +151,7 @@ class FroalaEditorKaribuTest {
         editor.setValue("<p>A</p>");
 
         // Same value the property already holds, so Flow sends no property update and the browser would ignore one
-        // anyway -- this is the case that needs the explicit push (finding 6).
+        // anyway. This is the case that needs the explicit push.
         assertTrue(hasPendingValuePush());
     }
 
@@ -164,9 +162,9 @@ class FroalaEditorKaribuTest {
         drainPendingJavaScript();
 
         // The detach listener calls setPresentationValue with the value the property already holds, which is exactly
-        // the shape the explicit push reacts to. A push queued here is not dropped: Flow defers it to the next attach,
-        // where it would overwrite whatever the server set in between. isAttached() is no guard against it -- it
-        // still answers true inside a detach listener.
+        // the shape the explicit push reacts to. A push queued here is not dropped. Flow defers it to the next attach,
+        // where it would overwrite whatever the server set in between. isAttached() is no guard against it, because
+        // it still answers true inside a detach listener.
         layout.remove(editor);
         editor.setValue("<p>B</p>");
         layout.add(editor);
@@ -190,8 +188,8 @@ class FroalaEditorKaribuTest {
         assertTrue(binder.writeBeanIfValid(note));
         assertEquals("<p>edited in the editor</p>", note.getBody());
 
-        // asRequired works off the field's empty value, which is the empty string for this one -- that is what makes
-        // AbstractSinglePropertyField the right base and is the half of API-1 a plain setValue test cannot show
+        // asRequired works off the field's empty value, which is the empty string for this one. That is what makes
+        // AbstractSinglePropertyField the right base (API-1).
         editor.setValue("");
         assertFalse(binder.writeBeanIfValid(note));
         assertEquals("<p>edited in the editor</p>", note.getBody());
@@ -229,7 +227,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void options_canBeGivenToTheConstructor() {
-        // A configured editor has to arrive configured: options are read once, when Froala builds, so setting them
+        // A configured editor has to arrive configured. Options are read once, when Froala builds, so setting them
         // after the first attach would cost a rebuild for nothing.
         FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withToolbarInline(true));
 
@@ -298,10 +296,7 @@ class FroalaEditorKaribuTest {
         return UI.getCurrent().getInternals().containsPendingJavascript("this.value = $0");
     }
 
-    /**
-     * Exposes the client-originated model update the delta listener performs, which no browserless test can trigger.
-     */
-    /** Minimal bean for the Binder test -- a field this add-on would realistically be bound to. */
+    /** Minimal bean for the Binder test, a field this add-on would realistically be bound to. */
     private static class Note {
 
         private String body;
@@ -315,6 +310,9 @@ class FroalaEditorKaribuTest {
         }
     }
 
+    /**
+     * Exposes the client-originated model update the delta listener performs, which no browserless test can trigger.
+     */
     private static class ProbeEditor extends FroalaEditor {
         void simulateClientEdit(String value) {
             setModelValue(value, true);

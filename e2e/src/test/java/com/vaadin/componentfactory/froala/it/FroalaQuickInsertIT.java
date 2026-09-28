@@ -29,7 +29,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Covers the overflow of the element's own shadow template (#6): it has to keep Froala within the field's size without
+ * Covers the overflow of the element's own shadow template. It has to keep Froala within the field's size without
  * clipping what Froala deliberately places outside its box.
  */
 @SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)

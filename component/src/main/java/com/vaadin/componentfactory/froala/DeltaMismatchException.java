@@ -20,8 +20,11 @@ package com.vaadin.componentfactory.froala;
  *
  * <p>
  * The usual cause is that the client computed the delta against a different base value, so the two sides no longer
- * agree. The exception also covers diff-match-patch returning a result of an unexpected shape. Both cases are handled
- * the same way: the client is asked to resend its full value.
+ * agree. Also thrown if diff-match-patch returns a result of an unexpected shape.
+ *
+ * <p>
+ * {@link FroalaEditor} catches it itself and asks the client to resend its value. Only a direct caller of
+ * {@code applyDelta} has to handle it.
  */
 public class DeltaMismatchException extends RuntimeException {
 

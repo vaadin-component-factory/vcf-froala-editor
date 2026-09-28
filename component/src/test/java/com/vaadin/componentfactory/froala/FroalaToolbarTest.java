@@ -22,14 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Plain JUnit, no Vaadin: a toolbar's whole job is the JSON Froala reads it as, so the JSON is what is asserted. That
- * Froala then draws the buttons is Froala's business — see the project's testing rules.
+ * Plain JUnit, no Vaadin. A toolbar's whole job is the JSON Froala reads it as, so the JSON is what is asserted. That
+ * Froala then draws the buttons is Froala's business. See the project's testing rules.
  */
 class FroalaToolbarTest {
 
     @Test
     void flatToolbar_isAnArrayInTheOrderGiven() {
-        // The array form is what makes Froala show every button: it switches its own overflow panel off.
+        // The array form is what makes Froala show every button, because it switches its own overflow panel off.
         assertEquals("{\"toolbarButtons\":[\"bold\",\"italic\",\"|\",\"undo\"]}", FroalaOptions.defaults()
                 .withToolbarButtons(FroalaToolbar.of("bold", "italic", "|", "undo")).toString());
     }
@@ -67,8 +67,8 @@ class FroalaToolbarTest {
     @Test
     void freelyNamedGroup_isRejectedWhenItWouldHideButtonsNothingCanShow() {
         // Froala draws the button that opens the overflow panel from a command registered under the group's name, and
-        // it only has one for its own four. Measured 2026-08-27: any other name leaves the hidden buttons in the DOM
-        // with nothing to reach them, which is worse than saying so at the call site.
+        // it only has one for its own four. Any other name leaves the hidden buttons in the DOM with nothing to reach
+        // them, which is worse than saying so at the call site.
         assertThrows(IllegalArgumentException.class, () -> FroalaToolbar
                 .ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic", "underline", "strikeThrough")));
 
@@ -80,7 +80,7 @@ class FroalaToolbarTest {
         FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic", "underline", "strikeThrough")
                 .withButtonsVisible(4));
 
-        // zero is the opposite of "no overflow": it moves the whole group into the panel
+        // zero is the opposite of "no overflow", because it moves the whole group into the panel
         assertThrows(IllegalArgumentException.class,
                 () -> FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold").withButtonsVisible(0)));
 
@@ -120,8 +120,8 @@ class FroalaToolbarTest {
 
     @Test
     void noButtonsVisible_isWrittenRatherThanTreatedAsUnset() {
-        // The one value the API documents as meaningful and dangerous: zero moves every button of the group into the
-        // overflow panel. Dropping it as "nothing set" would silently give Froala's three instead.
+        // Zero is the one value the API documents as meaningful and dangerous. It moves every button of the group into
+        // the overflow panel. Dropping it as "nothing set" would silently give Froala's three instead.
         assertEquals("{\"toolbarButtons\":{\"moreText\":{\"buttons\":[\"bold\"],\"buttonsVisible\":0}}}",
                 FroalaOptions.defaults()
                         .withToolbarButtons(FroalaToolbar.ofGroups(
