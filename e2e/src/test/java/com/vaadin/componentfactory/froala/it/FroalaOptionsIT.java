@@ -62,6 +62,10 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         assertThat(page.locator("#selection-log")).hasText("true false");
     }
 
+    private int saveInterval() {
+        return ((Number) page.evaluate("() => document.querySelector('#editor').editor.opts.saveInterval")).intValue();
+    }
+
     private Locator editableArea() {
         return page.locator("#editor .fr-element[contenteditable='true']");
     }
@@ -82,6 +86,20 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         Object placeholder = page.evaluate("() => document.querySelector('#editor').editor.opts.placeholderText");
 
         assertEquals(FroalaOptionsTestView.PLACEHOLDER, placeholder);
+    }
+
+    @Test
+    void saveInterval_isOffUnlessTheOptionsSetIt() {
+        // The add-on switches Froala's save plugin off by default. The value reaches the server through the value
+        // change listener, and without a saveURL the plugin only runs a save per edit that fails.
+        editableArea().waitFor();
+        assertEquals(0, saveInterval());
+
+        page.locator("#other-options").click();
+        assertThat(page.locator("#other-options")).isDisabled();
+        editableArea().waitFor();
+
+        assertEquals(FroalaOptionsTestView.OTHER_SAVE_INTERVAL, saveInterval());
     }
 
     @Test

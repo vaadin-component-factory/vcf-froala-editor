@@ -47,9 +47,12 @@ public class FroalaOptionsTestView extends VerticalLayout {
     public static final FroalaOptions INITIAL_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
             .withToolbarButtons(FroalaToolbar.of("bold", "italic"));
 
+    /** Not 0, the add-on's default, so a test can tell an explicit value from the default. */
+    public static final int OTHER_SAVE_INTERVAL = 5000;
+
     /** A second set, to show that options really are re-read when they change on a running editor. */
     public static final FroalaOptions OTHER_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
-            .withToolbarButtons(FroalaToolbar.of("undo", "redo", "insertLink"));
+            .withToolbarButtons(FroalaToolbar.of("undo", "redo", "insertLink")).withSaveInterval(OTHER_SAVE_INTERVAL);
 
     public FroalaOptionsTestView() {
         setSizeFull();

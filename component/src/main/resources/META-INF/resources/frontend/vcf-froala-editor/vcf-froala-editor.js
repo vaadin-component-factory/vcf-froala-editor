@@ -224,7 +224,11 @@ class FroalaEditorElement extends SlotStylesMixin(
       // The server's options first, ours on top. Where this add-on owns a setter for something Froala also has as
       // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
       // overwritten with an undefined we do not have.
-      const options = { ...this.options };
+      //
+      // Underneath the server's options sits one default of ours. The save plugin is off unless they ask for it. The
+      // value reaches the server through the value change listener, and without a saveURL the plugin only runs a
+      // failing save after every edit.
+      const options = { saveInterval: 0, ...this.options };
       this._appliedOptions = JSON.stringify(this.options ?? null);
 
       if (this.licenseKey) {

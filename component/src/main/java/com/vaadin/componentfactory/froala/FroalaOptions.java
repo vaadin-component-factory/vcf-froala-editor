@@ -450,12 +450,12 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets how many milliseconds after a change Froala's {@code save} plugin posts the content to its {@code saveURL}.
-     * Froala's {@code saveInterval}, 10000 by default. {@code 0} turns the plugin off.
+     * Froala's {@code saveInterval}. {@code 0} turns the plugin off.
      *
      * <p>
-     * A Flow application gets the content through the value change listener, so this is normally not what saves
-     * anything. At the default interval and without a {@code saveURL}, the plugin schedules a request per edit that
-     * then fails.
+     * {@link FroalaEditor} uses {@code 0} unless this is set, where Froala's own default is 10000. A Flow application
+     * gets the content through the value change listener, so the save plugin is normally not what saves anything, and
+     * without a {@code saveURL} it only reports a failed save after every edit.
      *
      * @param saveInterval milliseconds between two saves, or 0 to switch the save plugin off
      * @return a new instance

@@ -86,6 +86,8 @@ Limits of options:
   scroll position and undo history are lost.
 - `key`, `height` and `width` have no `with…` method. Use `setLicenseKey` and the Vaadin
   size methods.
+- The add-on sets Froala's `saveInterval` to 0 unless your options set it, so the save
+  plugin is off. The value reaches the server through the value change listener.
 - `setLicenseKey` wins over the `key` option while it holds a key. `setValueChangeTimeout`
   wins over `typingTimer` once it has been called.
 - `events` and `aiAssistRequest` cannot be set from Java, because they take JavaScript
