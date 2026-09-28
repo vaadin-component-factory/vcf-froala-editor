@@ -41,6 +41,11 @@
         <maven-surefire.version>3.5.6</maven-surefire.version>
 
         <spotless.plugin.version>3.10.2</spotless.plugin.version>
+        <!-- The formatter engines Spotless runs. Pinned, because otherwise they follow
+             Spotless's own defaults and a plugin bump reformats the repo unasked.
+             Moving prettier to 3.x is a deliberate one-off reformat. -->
+        <prettier.version>2.8.8</prettier.version>
+        <eclipse.formatter.version>4.40</eclipse.formatter.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <checkstyle.version>13.10.0</checkstyle.version>
         <!-- Adopting on an existing codebase? Set this to e.g. origin/main so
@@ -89,6 +94,7 @@
                     <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
                     <java>
                         <eclipse>
+                            <version>${eclipse.formatter.version}</version>
                             <file>${maven.multiModuleProjectDirectory}/eclipse/VaadinJavaConventions.xml</file>
                         </eclipse>
                         <endWithNewline/>
@@ -112,6 +118,7 @@
                             <exclude>**/generated/**</exclude>
                         </excludes>
                         <prettier>
+                            <prettierVersion>${prettier.version}</prettierVersion>
                             <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
                         </prettier>
                     </typescript>
@@ -124,6 +131,7 @@
                             <exclude>**/generated/**</exclude>
                         </excludes>
                         <prettier>
+                            <prettierVersion>${prettier.version}</prettierVersion>
                             <configFile>${maven.multiModuleProjectDirectory}/.prettierrc</configFile>
                         </prettier>
                     </css>
