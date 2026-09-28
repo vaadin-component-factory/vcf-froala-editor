@@ -38,6 +38,9 @@ are in `docs/adr/`.
 - **Commits:** one commit per logical phase or feature; run the tests before
   committing, and don't commit on the user's behalf unless asked. `/implement`
   closes out with `/code-review` before the commit is offered.
+- **README:** a change that users of the add-on notice (new or changed API, changed
+  behaviour, a new limitation) updates `README.md` in the same commit. #20 stays open
+  as the release reminder, but the content lives in the README, not in the ticket.
 - **Never push.** Pushing, opening pull requests and anything else that leaves this
   machine is the maintainer's step, always — not something to offer or do, even when
   the commits are ready and a remote exists. The agent's GitHub token enforces this
