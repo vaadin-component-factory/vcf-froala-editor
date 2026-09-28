@@ -21,15 +21,20 @@ GitHub shares one number space across issues and PRs, so a bare `#42` may be eit
 
 ## If `gh` is old again after a container rebuild
 
-The base image ships Debian's `gh` **2.23.0 (February 2023)**, which predates fine-grained
+The base image ships Debian bookworm ships `gh` **2.23.0 (February 2023)**, which predates fine-grained
 personal access tokens: it checks permissions through the `X-OAuth-Scopes` header, which
 those tokens never send, so `gh issue create` and `gh issue edit` refuse a perfectly valid
-token. The container currently carries **2.100.0**, installed from the project's own `.deb`,
-and porcelain commands work with it.
+token. The devcontainer's `Dockerfile` therefore installs `gh` not from apt but from the
+upstream release `.deb`, pinned through `ARG GH_VERSION` (**2.101.0**), and porcelain
+commands work with it. `.devcontainer/` is gitignored, so that pin lives only in the local
+file; if it is ever replaced by one that installs `gh` from apt, 2.23.0 is back.
 
-If a rebuild puts 2.23.0 back, either install the current release again or fall back to
-`gh api`, which sends only the bearer and does no scope check. The token is not the problem
-in either case.
+If `gh --version` shows 2.23.0 again, either restore the pinned install and rebuild, or fall
+back to `gh api`, which sends only the bearer and does no scope check. The token is not the
+problem in either case.
+
+The token itself does not survive a rebuild: `gh auth login` stores it under
+`~/.config/gh`, which is not a mounted volume, so log in again after every rebuild.
 
 ## Agent write access is deliberately narrow
 
