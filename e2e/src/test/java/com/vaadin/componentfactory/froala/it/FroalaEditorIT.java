@@ -565,6 +565,54 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         assertThat(page.locator("#viewer")).containsText(FroalaTestView.SNIPPET_TEXT);
     }
 
+    @Test
+    void selectionChange_isReportedOncePerSwitch() {
+        editableArea().click();
+        page.keyboard().press("End");
+        page.evaluate("""
+                () => {
+                    window.__selectionChanges = 0;
+                    document.addEventListener('selectionchange', () => window.__selectionChanges++);
+                }
+                """);
+
+        // Three selection changes, but only the first turns "no selection" into "some". Each press waits for its own
+        // selectionchange: Chrome merges the ones that come in quick succession, and three presses sent at once would
+        // look like a single change -- the test would then pass without the connector filtering anything.
+        for (int i = 1; i <= 3; i++) {
+            page.keyboard().press("Shift+ArrowLeft");
+            page.waitForFunction("n => window.__selectionChanges >= n", i);
+        }
+        page.keyboard().press("ArrowRight");
+
+        assertThat(page.locator("#selection-log")).hasText("true false");
+    }
+
+    @Test
+    void selectionChange_reportsASelectionOutsideTheEditorAsNone() {
+        editableArea().click();
+        page.keyboard().press("ControlOrMeta+A");
+        assertThat(page.locator("#selection-log")).hasText("true");
+
+        // not collapsed, but outside the editor
+        page.locator("#viewer").click(new Locator.ClickOptions().setClickCount(3));
+
+        assertThat(page.locator("#selection-log")).hasText("true false");
+    }
+
+    @Test
+    void selectionChange_reportsNoneAfterTheEditorIsRebuilt() {
+        editableArea().click();
+        page.keyboard().press("ControlOrMeta+A");
+        assertThat(page.locator("#selection-log")).hasText("true");
+
+        page.locator("#attach-toggle").click();
+        assertThat(page.locator("#editor")).hasCount(0);
+        page.locator("#attach-toggle").click();
+
+        assertThat(page.locator("#selection-log")).hasText("true false");
+    }
+
     private void assertLastChangeSurvivesAnImmediateDetach(String text) {
         editableArea().click();
         editableArea().type(text);

@@ -25,6 +25,7 @@ import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasHelper;
 import com.vaadin.flow.component.HasLabel;
@@ -38,6 +39,7 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.shared.Registration;
 
 /**
  * Flow integration of the Froala WYSIWYG editor.
@@ -86,6 +88,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /** The JSON the editor was last configured with, kept for {@link #getOptionsJson()}. Null when nothing was set. */
     private String optionsJson;
+
+    /** What the listeners were last told about the selection, see the detach listener in the constructor. */
+    private boolean hasSelection;
 
     /**
      * Creates a new instance with the given label.
@@ -205,6 +210,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         element.addEventListener("_value-resync",
                 event -> setModelValue(event.getEventData().get("event.detail.value").asString(), true))
                 .addEventData("event.detail.value");
+
+        // A re-attach builds a new element in the browser, which starts out knowing nothing of a selection and so never
+        // reports that the old one is gone. Listeners that were told "some" hear "none" from here instead.
+        addSelectionChangeListener(event -> hasSelection = event.hasSelection());
+        addDetachListener(event -> {
+            if (hasSelection) {
+                fireEvent(new SelectionChangeEvent(this, false, false));
+            }
+        });
 
         // Set in before-client-response, not directly on attach, so that other attach listeners still see a component
         // that the browser does not know yet -- the same reason hugerte-for-flow gives for its own flag. For the value
@@ -385,6 +399,20 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         Objects.requireNonNull(html, "html must not be null");
 
         getElement().callJsFunction("replaceSelectionContent", html);
+    }
+
+    /**
+     * Adds a listener that learns when something gets selected in the editor and when the selection is gone again --
+     * collapsed to a caret, or moved outside the editor. Useful to enable an action that works on the selection, such
+     * as one calling {@link #replaceSelectionContent(String)}, only while there is one.
+     * <p>
+     * Clicking a button outside the editor leaves the selection in place, so an action in the view still finds it.
+     * 
+     * @param listener the listener, not null
+     * @return a handle to remove the listener
+     */
+    public Registration addSelectionChangeListener(ComponentEventListener<SelectionChangeEvent> listener) {
+        return addListener(SelectionChangeEvent.class, listener);
     }
 
     /**

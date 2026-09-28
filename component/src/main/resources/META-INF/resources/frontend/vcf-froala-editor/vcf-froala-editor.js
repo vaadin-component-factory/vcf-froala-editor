@@ -49,6 +49,9 @@ class FroalaEditorElement extends SlotStylesMixin(
   // replaceSelectionContent calls that arrived before the editor was initialized, applied from its `initialized` event
   _pendingInserts = [];
 
+  // what the server was last told about the selection, so that only a switch between "none" and "some" is reported
+  _hasSelection = false;
+
   static properties = {
     // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync -- do not redeclare it here.
     // `focused` is an attribute that FocusMixin toggles directly; declaring it as a reflected property would let
@@ -266,6 +269,17 @@ class FroalaEditorElement extends SlotStylesMixin(
             }
 
             this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
+
+            // Froala has no selection event of its own. The document's selectionchange catches every way a selection
+            // is made -- mouse, Shift+arrows, select all -- and registered through Froala it goes away with the editor.
+            this.editor.events.$on(
+              this.editor.$doc,
+              'selectionchange',
+              fromCurrentEditor(() => this._reportSelection())
+            );
+            // After an options rebuild the server may still believe in the old editor's selection: its listener was
+            // gone before its content was removed. (A re-attach is a new element, the server handles that one.)
+            this._reportSelection();
           }),
           blur: fromCurrentEditor(() => {
             // Flush in every mode, not just ON_BLUR. Focus leaving usually means a click somewhere
@@ -285,6 +299,14 @@ class FroalaEditorElement extends SlotStylesMixin(
           }),
         },
       });
+    }
+  }
+
+  _reportSelection() {
+    const hasSelection = this.editor.selection.inEditor() && !this.editor.selection.isCollapsed();
+    if (hasSelection !== this._hasSelection) {
+      this._hasSelection = hasSelection;
+      this.dispatchEvent(new CustomEvent('selection-change', { detail: { hasSelection } }));
     }
   }
 

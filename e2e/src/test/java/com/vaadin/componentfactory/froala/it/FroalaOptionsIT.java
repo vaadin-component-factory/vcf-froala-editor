@@ -50,6 +50,18 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
                 .evaluateAll("buttons => buttons.map(button => button.getAttribute('data-cmd'))");
     }
 
+    @Test
+    void selectionChange_reportsNoneAfterAnOptionsRebuild() {
+        editableArea().click();
+        page.keyboard().press("ControlOrMeta+A");
+        assertThat(page.locator("#selection-log")).hasText("true");
+
+        // the same client element builds a new editor, so the connector itself has to report that the selection is gone
+        page.locator("#other-options").click();
+
+        assertThat(page.locator("#selection-log")).hasText("true false");
+    }
+
     private Locator editableArea() {
         return page.locator("#editor .fr-element[contenteditable='true']");
     }

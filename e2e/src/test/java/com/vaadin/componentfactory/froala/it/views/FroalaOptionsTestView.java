@@ -20,6 +20,7 @@ import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -63,6 +64,11 @@ public class FroalaOptionsTestView extends VerticalLayout {
 
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
 
+        Span selectionLog = new Span();
+        selectionLog.setId("selection-log");
+        editor.addSelectionChangeListener(
+                event -> selectionLog.setText(selectionLog.getText() + " " + event.hasSelection()));
+
         Button otherOptions = new Button("Other options");
         otherOptions.addClickListener(event -> {
             editor.setOptions(OTHER_OPTIONS);
@@ -92,7 +98,7 @@ public class FroalaOptionsTestView extends VerticalLayout {
         });
         clearOptions.setId("clear-options");
 
-        add(otherOptions, reattachWithOptions, clearOptions, editor, viewer);
+        add(otherOptions, reattachWithOptions, clearOptions, selectionLog, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

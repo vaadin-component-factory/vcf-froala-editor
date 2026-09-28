@@ -93,6 +93,11 @@ public class FroalaTestView extends VerticalLayout {
         editor.addFocusListener(event -> focusLog.setText(focusLog.getText() + " focus"));
         editor.addBlurListener(event -> focusLog.setText(focusLog.getText() + " blur"));
 
+        Span selectionLog = new Span();
+        selectionLog.setId("selection-log");
+        editor.addSelectionChangeListener(
+                event -> selectionLog.setText(selectionLog.getText() + " " + event.hasSelection()));
+
         Button otherLicenseKey = new Button("Other license key");
         otherLicenseKey.addClickListener(event -> {
             editor.setLicenseKey(OTHER_LICENSE_KEY);
@@ -150,8 +155,8 @@ public class FroalaTestView extends VerticalLayout {
         });
         reattachAndInsert.setId("reattach-and-insert");
 
-        add(focus, focusLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue, otherLicenseKey,
-                toggleAttached, insertSnippet, reattachAndInsert, editor, viewer);
+        add(focus, focusLog, selectionLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue,
+                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);
