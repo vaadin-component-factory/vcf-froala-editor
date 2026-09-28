@@ -143,6 +143,8 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         // A rebuild throws the editor away, so the value has to be carried across. Caret, selection and undo history
         // are not. That is the documented trade, and the same one a detach and re-attach makes.
         editableArea().click();
+        // where the click puts the caret depends on how wide the text is, so it goes to the end first
+        page.keyboard().press("ControlOrMeta+End");
         editableArea().type("typed before the rebuild");
         assertThat(page.locator("vcf-froala-viewer")).containsText("typed before the rebuild");
 
