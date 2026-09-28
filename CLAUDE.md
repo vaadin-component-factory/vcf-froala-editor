@@ -1,8 +1,7 @@
 # Froala Editor for Vaadin Flow
 
 A Vaadin Component Factory add-on that wraps the Froala WYSIWYG Editor as a Java
-Flow component, requested for the NST application. The customer named v4.6.2; the
-add-on targets **5.4.0** and NST's sign-off on that is still open. The goal is to
+Flow component, targeting Froala **5.4.0**. The goal is to
 expose Froala's full feature set — rich-text formatting, media/content insertion,
 inline/document/full-screen modes, productivity plugins (paste-from-Word, markdown, find-and-replace, counts,
 track changes, mentions, templates), localization/RTL and accessibility, HTML
@@ -41,6 +40,11 @@ are in `docs/adr/`.
 - **README:** a change that users of the add-on notice (new or changed API, changed
   behaviour, a new limitation) updates `README.md` in the same commit. #20 stays open
   as the release reminder, but the content lives in the README, not in the ticket.
+- **No customer names, anywhere** — files, commit messages, issues. And no customer
+  information in the README, the code or the issues: the add-on is published in the
+  Vaadin Component Factory. Write requirements and decisions as the add-on's own, e.g.
+  "decided (maintainer, date)". Only `docs/customer-request.md` keeps the request, with
+  names redacted.
 - **Never push.** Pushing, opening pull requests and anything else that leaves this
   machine is the maintainer's step, always — not something to offer or do, even when
   the commits are ready and a remote exists. The agent's GitHub token enforces this

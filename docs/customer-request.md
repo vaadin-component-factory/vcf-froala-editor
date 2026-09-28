@@ -1,12 +1,12 @@
-# Customer request — NST (verbatim)
+# Customer request (verbatim)
 
 Source: customer request forwarded to Vaadin, received before 2026-08-13.
-This is the **original wording**; do not edit it. Interpretations and scope cuts
+This is the **original wording**, with names redacted; do not edit it otherwise. Interpretations and scope cuts
 belong in the issue tracker, decisions with their reasons in `docs/adr/`.
 
 ---
 
-> As part of NST application development we would like to integrate the Froala
+> As part of [redacted] application development we would like to integrate the Froala
 > WYSIWYG Editor (currently v4.6.2, https://froala.com/wysiwyg-editor) as one of
 > our rich‑text editing component. To keep our application code clean and to speed
 > up development, we would like to request an official Vaadin connector / add‑on
@@ -52,8 +52,8 @@ New in 5.x, nothing removed: `ai_assist`, `code_snippet`, `collaborative` (yjs),
 **The request is ~11 months stale on the version:** 5.0.0 shipped 2026-01-15 and
 5.4.0 is current. "Forward-compatible with the upcoming 5.x" is no longer a
 forward-looking requirement — it was a *target-version decision*, and it has been
-made: **this connector targets 5.4.0** (decided 2026-08-21). NST's sign-off is
-still open, since their request names 4.6.2.
+made: **this connector targets 5.4.0** (decided 2026-08-21). The customer has signed
+off on it, although their request names 4.6.2.
 
 **"mentions" is not a standalone Froala plugin — but it is not entirely absent
 either.** Corrected 2026-08-21 after reading `index.d.ts`:
@@ -65,7 +65,7 @@ either.** Corrected 2026-08-21 after reading `index.d.ts`:
   @mention inside comments", and there is a `mention` entry in the UI-label map.
 
 So: **@mention inside comments ships; @mention in the document body does not.**
-Which one NST means is an open question — and it matters, because the shipping one
+Which one the customer means is an open question — and it matters, because the shipping one
 comes bundled with a whole collaboration stack (Yjs, `docId`, `commentsUrl`,
 `suggestionsUrl`, roles), not as an isolated feature.
 
@@ -86,7 +86,7 @@ string into one). Not exposed for now — a single key covers the customer's cas
 
 ---
 
-## Open questions back to NST
+## Open questions back to the customer
 
 Six questions. Each one changes what gets built, so they are written out with
 Froala's actual situation next to them and can be asked without knowing Froala's

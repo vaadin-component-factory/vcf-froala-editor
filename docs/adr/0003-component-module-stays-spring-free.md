@@ -9,5 +9,5 @@ Everything Spring-shaped lives in `demo/` instead.
 
 The rule extends to the module's tests: plain `karibu-testing-v10`, never the `-spring`
 artifact, because `MockSpringServlet` would pull Spring back in through the test scope.
-The customer's request to read the license key from `application.properties` cannot be
-satisfied inside the component either; see ADR-0004.
+Reading the license key from `application.properties` cannot happen inside the component
+either; see ADR-0004.

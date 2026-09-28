@@ -67,8 +67,8 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void typing_neverPushesTheFullValueBackToTheClient() {
-        // The point of the whole delta design, and the customer's actual requirement: an NST document can be large, so
-        // a keystroke must not put it back on the wire. The server pushes a full value by writing the element's `value`
+        // The point of the whole delta design: a document can be large, so a keystroke must not put it back on the
+        // wire. The server pushes a full value by writing the element's `value`
         // property, so counting those writes measures exactly that. A regression to setPresentationValue on every
         // change would pass every other test in this suite.
         page.locator("#editor .fr-element").waitFor();

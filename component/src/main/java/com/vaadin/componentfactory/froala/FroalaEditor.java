@@ -419,7 +419,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Sets the license key of this instance. Maps onto Froala's {@code key} option.
      *
      * <p>
-     * Froala is commercial software and the key is customer specific, so this add-on ships none. Without a key the
+     * Froala is commercial software and every user needs their own key, so this add-on ships none. Without a key the
      * editor works, but shows Froala's unlicensed watermark.
      *
      * <p>

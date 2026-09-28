@@ -54,7 +54,7 @@ Consequences, all confirmed in the browser:
 - `FroalaPlugin.TRACK_CHANGES` and `FroalaPlugin.TRIM_VIDEO` are therefore
   **dead constants today**. Passing them to `withPluginsEnabled` adds a string
   that matches no loaded plugin. Nothing throws and nothing happens.
-- Track changes is on the customer's list. Turning it on means importing
+- Track changes is on the feature list. Turning it on means importing
   `froala-editor/js/plugins/track_changes.min.js` in addition to the bundle —
   an open decision, not something the current build supports.
 
@@ -165,8 +165,8 @@ the libraries `markdown` and `collaborative` use.
 
 **The browser's own spell checker is a different thing entirely**: it is Froala's
 `spellcheck` option, `true` by default, written onto the editable element as the
-`spellcheck` attribute at init and again on every `html.set`. That is what the
-customer asked for, and it is already running. SCAYT is unrelated and stays
+`spellcheck` attribute at init and again on every `html.set`. That is the spell
+checker the add-on relies on, and it is already running. SCAYT is unrelated and stays
 unwired.
 
 ## `edit_in_popup`
