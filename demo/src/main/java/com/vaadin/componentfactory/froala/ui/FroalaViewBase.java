@@ -17,11 +17,12 @@ package com.vaadin.componentfactory.froala.ui;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 public abstract class FroalaViewBase extends VerticalLayout {
-    private final HorizontalLayout toolbar;
+    private final Component toolbar;
     private final FroalaEditor editor;
     private final FroalaViewer viewer;
 
@@ -45,7 +46,7 @@ public abstract class FroalaViewBase extends VerticalLayout {
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
     }
 
-    protected HorizontalLayout createToolbar(FroalaEditor editor, FroalaViewer viewer) {
+    protected Component createToolbar(FroalaEditor editor, FroalaViewer viewer) {
         HorizontalLayout toolbar = new HorizontalLayout();
         toolbar.setWrap(true);
         toolbar.setAlignItems(Alignment.BASELINE);
@@ -61,7 +62,7 @@ public abstract class FroalaViewBase extends VerticalLayout {
         return viewer;
     }
 
-    protected HorizontalLayout getToolbar() {
+    protected Component getToolbar() {
         return toolbar;
     }
 }

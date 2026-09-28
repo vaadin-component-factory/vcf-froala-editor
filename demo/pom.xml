@@ -17,6 +17,13 @@
     <name>Froala Editor for Vaadin Flow Demo</name>
     <packaging>jar</packaging>
 
+    <repositories>
+        <repository>
+            <id>vaadin-addons</id>
+            <url>https://maven.vaadin.com/vaadin-addons</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.vaadin.componentfactory</groupId>
@@ -42,15 +49,18 @@
             <artifactId>commons-text</artifactId>
             <version>1.15.0</version>
         </dependency>
+        <!-- VCF Toolbar Layout, for the demo's own controls. 1.0.2 is the last release
+             built for Vaadin 24; 2.x needs Vaadin 25. -->
+        <dependency>
+            <groupId>org.vaadin.addons.componentfactory</groupId>
+            <artifactId>vcf-toolbar-layout-flow</artifactId>
+            <version>1.0.2</version>
+        </dependency>
         <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
             <version>1.0.1</version>
         </dependency>
-
-        <!-- ===== Test stack ===== JUnit base plus the browserless layer (Karibu,
-             license-free on Vaadin 24) beside the views it drives. The browser
-             e2e layer lives in the separate `e2e/` module. -->
     </dependencies>
 
     <build>
