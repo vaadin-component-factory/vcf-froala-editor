@@ -15,8 +15,8 @@
 **/.claude/
 **/.devcontainer/
 
-# Regenerated on every production build, and the production profile sets
-# forceProductionBuild anyway, so the committed copy would never be used.
+# Regenerated on every production build, and forceProductionBuild is set anyway,
+# so the committed copy would never be used.
 **/src/main/bundles/prod.bundle
 /demo/package.json
 /demo/package-lock.json

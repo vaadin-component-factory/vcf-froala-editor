@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- End-to-end module: Playwright tests that boot their own small app and drive
-     it in a real browser, via failsafe in the `production` profile. Depends on the
-     add-on only, never on the demo (maintainer, 2026-09-28): the demo's author has
-     to stay free to change it.
+     it in a real browser, via failsafe, always against a production bundle. Depends
+     on the add-on only, never on the demo (maintainer, 2026-09-28). The demo's
+     author has to stay free to change it.
 
      The app and its test views are test code in src/main/java; why is in
      docs/adr/0006. So that they never ship, deploy is skipped.
@@ -54,50 +54,47 @@
         </dependency>
     </dependencies>
 
-    <profiles>
-        <profile>
-            <id>production</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.vaadin</groupId>
-                        <artifactId>vaadin-maven-plugin</artifactId>
-                        <version>${vaadin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>frontend</id>
-                                <phase>compile</phase>
-                                <goals>
-                                    <goal>prepare-frontend</goal>
-                                    <goal>build-frontend</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <!-- The real optimized build rather than the platform's pre-compiled
-                                 bundle, so route components load on demand as in production. -->
-                            <forceProductionBuild>true</forceProductionBuild>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <headless>true</headless>
-                            </systemPropertyVariables>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+    <!-- Always a production build, so a plain `mvn verify` runs the tests against the
+         optimized bundle. No profile to forget. -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-maven-plugin</artifactId>
+                <version>${vaadin.version}</version>
+                <executions>
+                    <execution>
+                        <id>frontend</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>prepare-frontend</goal>
+                            <goal>build-frontend</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- The real optimized build rather than the platform's pre-compiled
+                         bundle, so route components load on demand as in production. -->
+                    <forceProductionBuild>true</forceProductionBuild>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <headless>true</headless>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

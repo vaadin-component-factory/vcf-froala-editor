@@ -76,7 +76,8 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
 
 - **Vaadin** 24.10.9 (Core) on **Spring Boot** 3.5.15, **JDK** 17+
 - Base package: `com.vaadin.componentfactory.froala`
-- Build/verify gate: `mvn clean verify -Pproduction`
+- Build/verify gate: `mvn clean verify`. `-Pproduction` additionally builds the demo's
+  production bundle.
 
 Spring Boot 3.5.15 is not "the latest 3.5.x" — it is the version
 `com.vaadin:vaadin-spring:24.10.9` is built against. Derive it from the Vaadin
@@ -98,12 +99,13 @@ without writing the reason down as an ADR first.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and shows
   it off. Holds everything Spring-shaped (`Application`, `@Service` beans, the future
   `@ConfigurationProperties` license-key binding) and **no tests at all**.
-- **`e2e/`** — Playwright tests in a real browser, run by failsafe in the `production`
-  profile. **Completely independent of `demo/`** (maintainer, 2026-09-28): no dependency
-  on it, and its own app (`E2eApplication`), views, frontend bundle and test data. It
-  depends on `component/` only. The app and views sit in `e2e/src/main/java` although
-  they are test code: `vaadin-maven-plugin` builds the bundle from the compile/runtime
-  classpath and never sees `target/test-classes`.
+- **`e2e/`** — Playwright tests in a real browser, run by failsafe on every `verify`,
+  always against a production bundle. **Completely independent of `demo/`**
+  (maintainer, 2026-09-28). It has no dependency on the demo, and its own app
+  (`E2eApplication`), views, frontend bundle and test data. It depends on `component/`
+  only. The app and views sit in `e2e/src/main/java` although they are test code,
+  because `vaadin-maven-plugin` builds the bundle from the compile/runtime classpath and
+  never sees `target/test-classes`.
 
 The reactor root imports `spring-boot-dependencies` as a **BOM, not a parent**
 (ADR-0002), and therefore pins plugin versions and compiler settings itself.
@@ -128,7 +130,7 @@ Do not introduce Signals (ADR-0005).
 
 ## Testing
 
-License-free stack, all run by `mvn clean verify -Pproduction`.
+License-free stack, all run by `mvn clean verify`.
 
 - **JUnit 5** — unit tests, in `component/`, pinned to the version
   `spring-boot-dependencies` manages in the reactor root, so a standalone build of the
@@ -141,7 +143,7 @@ License-free stack, all run by `mvn clean verify -Pproduction`.
   it can assert server-side state and element attributes, never the Froala editor
   itself.
 - **Browser e2e — plain Playwright** (`*IT` extending `SpringPlaywrightIT`), real
-  headless Chromium, run by failsafe in the `production` profile. No DramaFinder
+  headless Chromium, run by failsafe on every `verify`. No DramaFinder
   (ADR-0005). **Every Froala behaviour that needs the JS to run must be tested here.**
 
 **Test our wiring, not Froala.** The add-on's job is the connection between Flow and
@@ -162,8 +164,9 @@ the bug deliberately put back. They are written out under *Testing standards* in
 
 Mirror existing tests when adding new ones. When a module's Java or frontend changes,
 rebuild that module before running the demo or e2e tests so they don't run against a
-stale jar. The e2e `production` profile sets `forceProductionBuild`, so the e2e run
-exercises the true optimized bundle rather than a precompiled one.
+stale jar. The e2e module always builds with `forceProductionBuild`. No profile is
+needed, and the e2e run exercises the true optimized bundle rather than a precompiled
+one.
 
 ## Who owns which file
 
