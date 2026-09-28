@@ -92,9 +92,12 @@ without writing the reason down as an ADR first.
   it off. Holds everything Spring-shaped (`Application`, `@Service` beans, the future
   `@ConfigurationProperties` license-key binding) and **no tests at all**. Its
   `spring-boot-maven-plugin` uses `<classifier>exec</classifier>` so the main jar stays
-  a plain library jar the `e2e` module can depend on — don't remove that.
-- **`e2e/`** — Playwright tests that boot the demo and drive it in a real browser, run
-  by failsafe in the `production` profile.
+  a plain library jar the `e2e` module can depend on — goes away with #32.
+- **`e2e/`** — Playwright tests in a real browser, run by failsafe in the `production`
+  profile. **Completely independent of `demo/`** (maintainer, 2026-09-28): no dependency
+  on it, and its own app, views, layout, properties, frontend bundle and test data.
+  It depends on `component/` only. Today it still boots the demo and uses its bundle;
+  #32 removes that.
 
 The reactor root imports `spring-boot-dependencies` as a **BOM, not a parent**
 (ADR-0002), and therefore pins plugin versions and compiler settings itself.
