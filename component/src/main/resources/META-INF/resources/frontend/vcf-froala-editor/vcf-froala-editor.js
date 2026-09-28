@@ -125,23 +125,7 @@ class FroalaEditorElement extends SlotStylesMixin(
           <slot name="error-message"></slot>
         </div>
       </div>
-
-      <slot name="tooltip"></slot>
     `;
-  }
-
-  ready() {
-    super.ready();
-
-    // TODO Phase 2: tooltip support. Froala has its own Tooltip and Popups modules, so decide there whether the
-    // host exposes a single Vaadin tooltip or delegates to Froala's. The commented wiring below is the Vaadin half.
-    // this._tooltipController = new TooltipController(this);
-    // this.addController(this._tooltipController);
-    // this._tooltipController.setShouldShow(target => {
-    //     // const inputs = target.inputs || [];
-    //     // return !inputs.some((el) => el.opened);
-    //     return true;
-    // });
   }
 
   async firstUpdated(changedProperties) {
