@@ -160,6 +160,17 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
+     * Switches the browser's spell checker on or off for the editing area. Froala's {@code spellcheck}, on by default.
+     * On mobile devices it also switches autocorrect and autocapitalization.
+     *
+     * @param spellcheck whether the browser checks the spelling
+     * @return a new instance
+     */
+    public FroalaOptions withSpellcheck(boolean spellcheck) {
+        return with("spellcheck", spellcheck);
+    }
+
+    /**
      * Sets extra form fields sent along with every image upload. Froala's {@code imageUploadParams}.
      *
      * @param imageUploadParams parameter name to value, or null to leave Froala's default

@@ -63,6 +63,7 @@ class FroalaOptionsTest {
                 FroalaOptions.defaults().withVideoUploadUrl("/upload").toString());
         assertEquals("{\"emoticonsUseImage\":false}", FroalaOptions.defaults().withEmoticonsUseImage(false).toString());
         assertEquals("{\"saveInterval\":0}", FroalaOptions.defaults().withSaveInterval(0).toString());
+        assertEquals("{\"spellcheck\":false}", FroalaOptions.defaults().withSpellcheck(false).toString());
     }
 
     @Test
