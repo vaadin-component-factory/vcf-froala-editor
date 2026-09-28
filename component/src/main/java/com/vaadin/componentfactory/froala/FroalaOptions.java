@@ -58,8 +58,8 @@ import elemental.json.JsonValue;
  * take JavaScript functions, and options are transferred as JSON, which cannot hold a function.
  * {@link FroalaEditor#setOptions(String)} throws if the options contain {@code events}, since Froala would try to call
  * what arrived. It does not check for {@code aiAssistRequest}: passing that as raw JSON is accepted and has no effect.
- * Value changes are reported through {@link FroalaEditor#addValueChangeListener}; no other Froala event has a server
- * side listener.
+ * Froala events reach the server only through the listeners {@link FroalaEditor} offers, such as
+ * {@link FroalaEditor#addValueChangeListener}.
  */
 public final class FroalaOptions implements Serializable {
 

@@ -339,8 +339,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // options were written to do something, and silently doing nothing is the worse answer.
         if (options.hasKey("events")) {
             throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
-                    + " it cannot be set from the server. Value changes are reported through"
-                    + " addValueChangeListener; anything else Froala fires has no server side listener.");
+                    + " it cannot be set from the server. Froala events reach the server only through the listeners"
+                    + " FroalaEditor offers, such as addValueChangeListener.");
         }
 
         optionsJson = options.toJson();
