@@ -132,6 +132,18 @@ expensive way: every one of them let a test pass with the bug deliberately put b
 guards something, reinstate the defect and watch it fail. If it stays green either way,
 fix it or delete it, and say which.
 
+### Writing
+
+Applies to everything a person reads: the README, Javadoc, comments, commit messages and
+issues.
+
+- **No semicolons or colons joining two sentences.** Write two sentences, or join them
+  with a word such as "because", "so" or "but". A colon is fine before an example, a
+  list or a table. Chained clauses are hard to read and mark a text as machine-written.
+- **The README is written for developers who know Vaadin and Froala.** It documents what
+  the add-on adds or changes, not how Vaadin or Froala work. Where it states a rule or a
+  failure case, a short example follows.
+
 ### Error handling & logging
 
 > _e.g. when to throw vs. return, exception types, logging levels and format._

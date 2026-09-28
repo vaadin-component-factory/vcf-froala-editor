@@ -35,8 +35,8 @@ editor.setLicenseKey(key);
 
 The key is set on each editor. There is no global default, so an application that reads
 its key from configuration passes it to every editor it creates. The key is read when the
-editor starts in the browser: setting it on an editor that is already attached takes
-effect only after it has been detached and attached again.
+editor starts in the browser. On an editor that is already attached, a new key takes
+effect only after the editor has been detached and attached again.
 
 ### When the value is sent
 
@@ -86,10 +86,10 @@ Limits of options:
   scroll position and undo history are lost.
 - `key`, `height` and `width` have no `with…` method. Use `setLicenseKey` and the Vaadin
   size methods.
-- The setters win over the options: `setLicenseKey` over `key` while it holds a key, and
-  `setValueChangeTimeout` over `typingTimer` once it has been called.
-- `events` and `aiAssistRequest` cannot be set from Java: they take JavaScript functions,
-  and options are sent as JSON. `setOptions` throws on `events`. `aiAssistRequest` is
+- `setLicenseKey` wins over the `key` option while it holds a key. `setValueChangeTimeout`
+  wins over `typingTimer` once it has been called.
+- `events` and `aiAssistRequest` cannot be set from Java, because they take JavaScript
+  functions and options are sent as JSON. `setOptions` throws on `events`. `aiAssistRequest` is
   accepted, but has no effect. Froala events reach the server only through the
   listeners `FroalaEditor` offers.
 
@@ -132,7 +132,7 @@ editor.addSelectionChangeListener(event -> redact.setEnabled(event.hasSelection(
 ```
 
 Clicking a button outside the editor keeps the selection, so the action still finds it.
-The call is asynchronous: the new value arrives in the value change listener, whatever the
+The call is asynchronous. The new value arrives in the value change listener, whatever the
 value change mode, and is not in `getValue()` right after the call.
 
 ### Showing the content outside the editor
@@ -146,10 +146,10 @@ viewer.setContent(editor.getValue());
 
 ### Sanitizing
 
-Nothing is sanitized on the server: neither the value `FroalaEditor` receives nor what
+Nothing is sanitized on the server, neither the value `FroalaEditor` receives nor what
 `FroalaViewer.setContent` displays. Froala's own cleaning runs in the browser and does not
-protect a value that reaches the server any other way. Treat the value
-as untrusted input, and sanitize it before storing or displaying it.
+protect a value that reaches the server any other way. Treat the value as untrusted input,
+and sanitize it before storing or displaying it.
 
 ## Known issues
 
@@ -173,7 +173,7 @@ sets, in a global stylesheet (the editor's content lives in the light DOM):
 This puts the button inside the editor box. The row of insert buttons that opens from it
 follows along, because Froala positions it from the button's computed `left`. In an empty
 editor the button covers the start of the placeholder text. The add-on cannot offer a
-custom property for this: the right value depends on the layout around each editor. If
+custom property for this, because the right value depends on the layout around each editor. If
 you need it to vary, use a property of your own:
 
 ```css
