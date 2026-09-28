@@ -37,6 +37,10 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <vaadin.version>24.10.9</vaadin.version>
+        <!-- The vaadin-maven-plugin uses its own Node.js in ~/.vaadin rather than the system's,
+             because a system npm that rejects the flags Vaadin passes breaks the frontend build.
+             Where ~/.vaadin cannot be written, -Drequire.home.node=false goes back to the system's. -->
+        <require.home.node>true</require.home.node>
         <spring-boot.version>3.5.15</spring-boot.version>
         <maven-surefire.version>3.5.6</maven-surefire.version>
 
