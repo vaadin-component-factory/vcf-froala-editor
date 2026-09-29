@@ -383,8 +383,8 @@ Froala keeps a command's title, icon and shortcut for the whole page, not per ed
 listener, the buttons and the shortcut still belong to the editors that added the command.
 What is shared:
 
-- Two editors that add the same name with a different title, icon or shortcut both show the
-  definition of the editor built last.
+- Two editors that add the same name with a different title, icon, shortcut or toggle both
+  show the definition of the editor built last.
 - A name of one of Froala's own commands, such as `bold`, replaces Froala's command in every
   editor on the page. A shortcut with the keys of one of Froala's, such as Ctrl+B, replaces
   that one as well.
@@ -433,6 +433,33 @@ popover.setCloseOnEsc(false);
 
 This works for toolbar buttons only. An editor whose toolbar does not list the command has no
 button, so the popover never opens there, not even by the shortcut.
+
+#### Toggle commands
+
+`withToggle()` makes a command's button show a pressed state, like Froala's bold button. Your
+application holds the state per editor and switches it with `setCommandActive`, typically in
+the command's listener:
+
+```java
+FroalaCommand reviewMode = new FroalaCommand("reviewMode", "Review mode", VaadinIcon.EYE.create()).withToggle();
+editor.addCommand(reviewMode, event -> editor.setCommandActive(reviewMode, !editor.isCommandActive(reviewMode)));
+```
+
+Switching the state does not build the editor again, and a rebuild keeps it. Two editors with
+the same command show their own state. A command the editor does not have, or one that is no
+toggle, throws:
+
+```java
+editor.setCommandActive(insertTemplate, true); // IllegalArgumentException, not a toggle
+```
+
+A toggle with a popover does not follow the popover by itself. One line connects the two, so
+the button shows as pressed while its popover is open:
+
+```java
+editor.addCommand(reviewMode, popover);
+popover.addOpenedChangeListener(event -> editor.setCommandActive(reviewMode, event.isOpened()));
+```
 
 ### Uploads
 

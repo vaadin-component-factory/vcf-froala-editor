@@ -17,11 +17,13 @@ package com.vaadin.componentfactory.froala;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import elemental.json.Json;
 import elemental.json.JsonArray;
@@ -89,6 +91,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     private static final String DEFAULT_PLUGINS_PROPERTY = "defaultPluginsEnabled";
     private static final String LOCALE_LANGUAGES_PROPERTY = "localeLanguages";
     private static final String COMMANDS_PROPERTY = "commands";
+    private static final String ACTIVE_COMMANDS_PROPERTY = "activeCommands";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
@@ -107,6 +110,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /** The commands added with {@link #addCommand}, by name, in the order they were added. */
     private final Map<String, AddedCommand> commands = new LinkedHashMap<>();
+
+    /** The names of the toggle commands whose buttons show as pressed, see {@link #setCommandActive}. */
+    private final Set<String> activeCommands = new LinkedHashSet<>();
 
     /**
      * Creates a new instance with the given label.
@@ -476,10 +482,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * within one server round trip cause one rebuild.
      *
      * <p>
-     * Froala keeps a command's title, icon and shortcut for the whole page, not per editor. Two editors that add a
-     * command of the same name with a different title, icon or shortcut show the definition of the editor built last in
-     * both. A command name that is also one of Froala's own, e.g. {@code bold}, replaces Froala's command in every
-     * editor on the page, and a shortcut replaces one of Froala's with the same keys.
+     * Froala keeps a command's title, icon, shortcut and whether it is a toggle for the whole page, not per editor. Two
+     * editors that add a command of the same name with a different definition show the definition of the editor built
+     * last in both. A command name that is also one of Froala's own, e.g. {@code bold}, replaces Froala's command in
+     * every editor on the page, and a shortcut replaces one of Froala's with the same keys.
      *
      * <p>
      * A shortcut works only while the command is listed in the {@code shortcutsEnabled} option. Froala lists it there
@@ -551,12 +557,69 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             // a stale handle must not remove a later command of the same name
             if (commands.remove(name, added)) {
                 sendCommands();
+                if (activeCommands.remove(name)) {
+                    sendActiveCommands();
+                }
                 if (added.popover() != null) {
                     added.popover().setTarget(null);
                     getElement().callJsFunction("_setCommandPopover", name, null);
                 }
             }
         };
+    }
+
+    /**
+     * Shows the button of a toggle command as pressed or released in this editor, e.g. in the command's listener:
+     *
+     * <pre>
+     * FroalaCommand reviewMode = new FroalaCommand("reviewMode", "Review mode", VaadinIcon.EYE.create()).withToggle();
+     * editor.addCommand(reviewMode, event -&gt; editor.setCommandActive(reviewMode, !editor.isCommandActive(reviewMode)));
+     * </pre>
+     *
+     * <p>
+     * The state belongs to this editor, so two editors with the same command show their own. Setting it does not build
+     * the editor again, and a rebuild or a detach and re-attach keeps it. Removing the command drops it.
+     *
+     * @param command a toggle command of this editor, matched by its name, not null
+     * @param active whether the button shows as pressed
+     * @throws IllegalArgumentException if this editor has no command of that name, or it is not a
+     *             {@link FroalaCommand#withToggle() toggle}
+     */
+    public void setCommandActive(FroalaCommand command, boolean active) {
+        requireToggle(command);
+        if (active ? activeCommands.add(command.name()) : activeCommands.remove(command.name())) {
+            sendActiveCommands();
+        }
+    }
+
+    /**
+     * Returns whether the button of a toggle command shows as pressed in this editor.
+     *
+     * @param command a toggle command of this editor, matched by its name, not null
+     * @return whether the button shows as pressed
+     * @throws IllegalArgumentException if this editor has no command of that name, or it is not a
+     *             {@link FroalaCommand#withToggle() toggle}
+     */
+    public boolean isCommandActive(FroalaCommand command) {
+        requireToggle(command);
+        return activeCommands.contains(command.name());
+    }
+
+    private void requireToggle(FroalaCommand command) {
+        Objects.requireNonNull(command, "command must not be null");
+        AddedCommand added = commands.get(command.name());
+        if (added == null) {
+            throw new IllegalArgumentException("This editor has no command named '" + command.name() + "'");
+        }
+        if (!added.command().toggle()) {
+            throw new IllegalArgumentException("The command '" + command.name() + "' is not a toggle");
+        }
+    }
+
+    private void sendActiveCommands() {
+        JsonArray json = Json.createArray();
+        activeCommands.forEach(name -> json.set(json.length(), name));
+        getElement().setPropertyJson(ACTIVE_COMMANDS_PROPERTY, json);
     }
 
     /**

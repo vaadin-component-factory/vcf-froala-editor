@@ -30,10 +30,10 @@ function commandPlugin(name) {
 
 /**
  * Registers the given own commands with Froala. Froala keeps commands, icons and shortcuts for the whole page, so the
- * editor built last decides a name's title, icon and shortcut in all editors.
+ * editor built last decides a name's title, icon, shortcut and toggle in all editors.
  */
 function registerCommands(commands) {
-  for (const { name, title, icon, shortcut } of commands) {
+  for (const { name, title, icon, shortcut, toggle } of commands) {
     const attributes = Object.entries(icon)
       .map(([attribute, value]) => `${attribute}="${escapeHtml(value)}"`)
       .join(' ');
@@ -47,6 +47,16 @@ function registerCommands(commands) {
       // own.
       undo: false,
       refreshAfterCallback: false,
+      // Froala clears fr-active and aria-pressed before it calls refresh, with the editor as `this`. That is how two
+      // editors show their own state of a command registered for the whole page. forcedRefresh keeps the state while
+      // the editor has no focus, where Froala would clear the button without calling refresh.
+      toggle,
+      forcedRefresh: toggle,
+      refresh(button) {
+        if (toggle && this.el?.closest('vcf-froala-editor')?._isCommandActive(name)) {
+          button.addClass('fr-active').attr('aria-pressed', true);
+        }
+      },
       callback() {
         // Froala calls this with the editor as `this` from a button and from commands.exec. A shortcut goes through
         // the toolbar's button if there is one. Without one Froala calls this without an editor, which is why the
@@ -146,6 +156,12 @@ class FroalaEditorElement extends SlotStylesMixin(
 
     // The application's own commands, as FroalaCommand sends them. Declared for the same reason as `options`.
     commands: {
+      type: Array,
+    },
+
+    // The names of the toggle commands whose buttons show as pressed. Declared for the same reason as `options`, and
+    // not part of _config(), because the buttons show a change without a rebuild.
+    activeCommands: {
       type: Array,
     },
   };
@@ -419,6 +435,11 @@ class FroalaEditorElement extends SlotStylesMixin(
 
           this._targetCommandPopovers();
 
+          // Froala refreshes its buttons on a selection change only, which a new editor has not had yet
+          if (this.activeCommands?.length) {
+            this.editor.button.bulkRefresh();
+          }
+
           // For a command without a toolbar button Froala runs the shortcut without the editor, see registerCommands.
           // Returning false stops Froala from running it itself. Put in front of Froala's own handlers, because the
           // toolbar's handler returns false for a command with a button, and no later handler would see it.
@@ -483,6 +504,10 @@ class FroalaEditorElement extends SlotStylesMixin(
         }),
       },
     });
+  }
+
+  _isCommandActive(name) {
+    return (this.activeCommands ?? []).includes(name);
   }
 
   _hasCommand(name) {
@@ -729,6 +754,11 @@ class FroalaEditorElement extends SlotStylesMixin(
 
     if (changedProperties.has('disabled') || changedProperties.has('readonly')) {
       this.updateReadonlyMode();
+    }
+
+    // Froala refreshes its buttons on a selection change only, so a state the server switched shows right away
+    if (changedProperties.has('activeCommands') && this._editorInitialized) {
+      this.editor.button.bulkRefresh();
     }
 
     // Compared by content, not by `changedProperties.has`. On the update that builds the editor the options and

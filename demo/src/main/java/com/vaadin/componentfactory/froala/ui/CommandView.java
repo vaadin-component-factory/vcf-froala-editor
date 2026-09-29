@@ -55,9 +55,13 @@ public class CommandView extends VerticalLayout {
         editor.addCommand(new FroalaCommand("showDialog", "Show dialog", VaadinIcon.MODAL.create())
                 .withShortcut(Key.KEY_L, KeyModifier.SHIFT), event -> dialog.open());
 
-        // the editor puts the popover into the UI and opens it at the button
-        editor.addCommand(new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create()),
-                new Popover(new Paragraph("A popover next to the button that opened it.")));
+        // The editor puts the popover into the UI and opens it at the button. The button is a toggle that shows as
+        // pressed while the popover is open.
+        FroalaCommand showPopover = new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create())
+                .withToggle();
+        Popover popover = new Popover(new Paragraph("A popover next to the button that opened it."));
+        editor.addCommand(showPopover, popover);
+        popover.addOpenedChangeListener(event -> editor.setCommandActive(showPopover, event.isOpened()));
 
         add(new Paragraph("The last three buttons are commands of the application's own, each with a Vaadin icon. "
                 + "Ctrl+Shift+L opens the dialog as well."), editor);

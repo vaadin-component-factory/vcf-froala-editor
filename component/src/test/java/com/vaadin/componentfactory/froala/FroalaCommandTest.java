@@ -24,7 +24,9 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FroalaCommandTest {
 
@@ -33,7 +35,8 @@ class FroalaCommandTest {
         FroalaCommand command = new FroalaCommand("insertTemplate", "Insert template", VaadinIcon.FILE_TEXT.create());
 
         assertEquals(
-                "{\"name\":\"insertTemplate\",\"title\":\"Insert template\",\"icon\":{\"icon\":\"vaadin:file-text\"}}",
+                "{\"name\":\"insertTemplate\",\"title\":\"Insert template\",\"icon\":{\"icon\":\"vaadin:file-text\"},"
+                        + "\"toggle\":false}",
                 command.toJson().toJson());
     }
 
@@ -67,6 +70,17 @@ class FroalaCommandTest {
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.CONTROL));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.META));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.F2));
+    }
+
+    @Test
+    void toggle_isSentAndKeptByTheOtherCopies() {
+        FroalaCommand plain = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
+        FroalaCommand toggle = plain.withToggle().withShortcut(Key.KEY_T);
+
+        assertFalse(plain.toJson().getBoolean("toggle"));
+        assertTrue(toggle.toJson().getBoolean("toggle"));
+        assertEquals(Key.KEY_T, toggle.shortcutKey());
+        assertTrue(plain.withShortcut(Key.KEY_T).withToggle().toggle());
     }
 
     @Test

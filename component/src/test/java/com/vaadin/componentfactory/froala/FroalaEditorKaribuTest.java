@@ -447,6 +447,53 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
+    void setCommandActive_sendsTheStateAndIsCommandActiveReadsIt() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand first = new FroalaCommand("first", "First", VaadinIcon.STAR.create()).withToggle();
+        FroalaCommand second = new FroalaCommand("second", "Second", VaadinIcon.STAR.create()).withToggle();
+        editor.addCommand(first, event -> {
+        });
+        editor.addCommand(second, event -> {
+        });
+
+        editor.setCommandActive(first, true);
+        editor.setCommandActive(second, true);
+        editor.setCommandActive(first, false);
+
+        assertEquals("[\"second\"]", activeCommandsOn(editor));
+        assertFalse(editor.isCommandActive(first));
+        assertTrue(editor.isCommandActive(second));
+    }
+
+    @Test
+    void setCommandActive_takesOnlyAToggleOfThisEditor() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand plain = new FroalaCommand("plain", "Plain", VaadinIcon.STAR.create());
+        editor.addCommand(plain, event -> {
+        });
+
+        assertThrows(IllegalArgumentException.class, () -> editor.setCommandActive(plain, true));
+        assertThrows(IllegalArgumentException.class, () -> editor
+                .isCommandActive(new FroalaCommand("other", "Other", VaadinIcon.STAR.create()).withToggle()));
+    }
+
+    @Test
+    void removedCommand_dropsItsState() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand toggle = new FroalaCommand("first", "First", VaadinIcon.STAR.create()).withToggle();
+        Registration registration = editor.addCommand(toggle, event -> {
+        });
+        editor.setCommandActive(toggle, true);
+
+        registration.remove();
+        editor.addCommand(toggle, event -> {
+        });
+
+        assertEquals("[]", activeCommandsOn(editor));
+        assertFalse(editor.isCommandActive(toggle));
+    }
+
+    @Test
     void addCommand_sendsTheUiLocaleAsItIsNow() {
         FroalaEditor editor = attachedEditor();
         UI.getCurrent().setLocale(Locale.forLanguageTag("fi"));
@@ -467,6 +514,11 @@ class FroalaEditorKaribuTest {
     /** The commands as they sit on the element, which is what the client registers with Froala. */
     private String commandsOn(FroalaEditor editor) {
         return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("commands")).toJson();
+    }
+
+    /** The names of the pressed toggle commands as they sit on the element. */
+    private String activeCommandsOn(FroalaEditor editor) {
+        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("activeCommands")).toJson();
     }
 
     /** The options as they sit on the element, which is what the client will read them from. */

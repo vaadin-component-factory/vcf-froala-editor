@@ -53,9 +53,10 @@ import com.vaadin.flow.dom.Element;
  * @param icon the button's icon
  * @param shortcutKey the key that triggers the command together with Ctrl, or Cmd on a Mac. Null for no shortcut.
  * @param shortcutModifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} on top of Ctrl or Cmd, or empty
+ * @param toggle whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}
  */
 public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key shortcutKey,
-        Set<KeyModifier> shortcutModifiers) implements Serializable {
+        Set<KeyModifier> shortcutModifiers, boolean toggle) implements Serializable {
 
     /** What Froala puts into a {@code data-cmd} attribute and its button ids unescaped, so nothing else is allowed. */
     private static final Pattern NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_]*");
@@ -102,7 +103,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
      * @param icon the button's icon
      */
     public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
-        this(name, title, icon, null, Set.of());
+        this(name, title, icon, null, Set.of(), false);
     }
 
     /**
@@ -116,7 +117,18 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
         Objects.requireNonNull(key, "key must not be null");
-        return new FroalaCommand(name, title, icon, key, Set.copyOf(Arrays.asList(modifiers)));
+        return new FroalaCommand(name, title, icon, key, Set.copyOf(Arrays.asList(modifiers)), toggle);
+    }
+
+    /**
+     * Returns a copy of this command whose button shows a pressed state, like Froala's bold button. The application
+     * holds the state and switches it with {@link FroalaEditor#setCommandActive(FroalaCommand, boolean)}, typically in
+     * the command's listener.
+     *
+     * @return a new command that is a toggle
+     */
+    public FroalaCommand withToggle() {
+        return new FroalaCommand(name, title, icon, shortcutKey, shortcutModifiers, true);
     }
 
     /** The command as the client registers it with Froala. */
@@ -125,6 +137,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
         json.put("name", name);
         json.put("title", title);
         json.put("icon", iconAttributes());
+        json.put("toggle", toggle);
 
         if (shortcutKey != null) {
             String letter = shortcutLetter(shortcutKey);
