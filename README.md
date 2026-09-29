@@ -125,7 +125,8 @@ FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print"
 
 The editor follows the Vaadin theme, including Lumo's dark variant. This is Froala's `theme`
 option set to `vaadin`, and it is on by default. Its look comes from custom properties of the
-add-on, which are set from Lumo. Override them to change the editor without touching Lumo:
+add-on, which are set from Lumo. [Appendix: Theme properties](#appendix-theme-properties) lists
+them all. Override them to change the editor without touching Lumo:
 
 ```css
 html {
@@ -134,47 +135,11 @@ html {
 }
 ```
 
-| Property | What it is | Set from |
-|---|---|---|
-| `--vcf-froala-background-color` | Background of the editor, toolbar and popups | `--lumo-base-color` |
-| `--vcf-froala-neutral-color` | The tone all greys are mixed from | `--lumo-contrast` |
-| `--vcf-froala-accent-color` | Active buttons, links, selections | `--lumo-primary-color` |
-| `--vcf-froala-accent-contrast-color` | Text on the accent colour | `--lumo-primary-contrast-color` |
-| `--vcf-froala-error-color` | Errors and deleted text | `--lumo-error-color` |
-| `--vcf-froala-success-color` | Inserted text in track changes | `--lumo-success-color` |
-| `--vcf-froala-warning-color` | Warnings and changed text | `--lumo-warning-color` |
-| `--vcf-froala-border-color` | Grey borders | `--lumo-contrast-20pct` |
-| `--vcf-froala-text-color` | Text in the toolbar and popups | `--lumo-body-text-color` |
-| `--vcf-froala-text-color-secondary` | Lighter labels | `--lumo-secondary-text-color` |
-| `--vcf-froala-text-color-tertiary` | Fainter labels | `--lumo-tertiary-text-color` |
-| `--vcf-froala-text-color-disabled` | Disabled buttons | `--lumo-disabled-text-color` |
-| `--vcf-froala-value-color` | Text in the editing area | `--vaadin-input-field-value-color`, else `--lumo-body-text-color` |
-| `--vcf-froala-disabled-value-color` | The same, when disabled | `--vaadin-input-field-disabled-value-color`, else `--lumo-disabled-text-color` |
-| `--vcf-froala-placeholder-color` | Placeholder | `--vaadin-input-field-placeholder-color`, else `--lumo-secondary-text-color` |
-| `--vcf-froala-font-family` | Font | `--lumo-font-family` |
-| `--vcf-froala-content-font-size` | Text size in the editing area | `--vaadin-input-field-value-font-size`, else `--lumo-font-size-m` |
-| `--vcf-froala-content-font-weight` | Text weight in the editing area | `--vaadin-input-field-value-font-weight`, else `400` |
-| `--vcf-froala-content-line-height` | Line height in the editing area | `--lumo-line-height-m` |
-| `--vcf-froala-font-size-xxs` … `-m` | Text sizes in the toolbar and popups | `--lumo-font-size-xxs` … `-m` |
-| `--vcf-froala-field-border-radius` | Corners of the editor | `--vaadin-input-field-border-radius`, else `--lumo-border-radius-m` |
-| `--vcf-froala-radius-s` … `-l` | Corners of buttons, inputs, popups and dialogs | `--lumo-border-radius-s` … `-l` |
-| `--vcf-froala-shadow-xs` … `-l` | Shadows of dropdowns, popups and dialogs | `--lumo-box-shadow-xs` … `-l` |
-| `--vcf-froala-focus-ring-color` | Colour of focus rings | `--vaadin-focus-ring-color`, else `--lumo-primary-color-50pct` |
-| `--vcf-froala-focus-ring-width` | Width of focus rings | `--vaadin-focus-ring-width`, else `2px` |
-| `--vcf-froala-clickable-cursor` | Cursor over buttons | `--lumo-clickable-cursor` |
-| `--vcf-froala-field-background` | Fill of the editor | `--vaadin-input-field-background`, else `--lumo-contrast-10pct` |
-| `--vcf-froala-hover-highlight` | Highlight while the mouse is over the editor | `--vaadin-input-field-hover-highlight`, else `--lumo-contrast-50pct` |
-| `--vcf-froala-hover-highlight-opacity` | Its strength | `--vaadin-input-field-hover-highlight-opacity`, else `0.1` |
-| `--vcf-froala-invalid-border-color` | Border of an invalid editor, with `OUTLINED` | `--lumo-error-color` |
-| `--vcf-froala-invalid-background` | Tint of an invalid editor | `--vaadin-input-field-invalid-background`, else `--lumo-error-color-10pct` |
-| `--vcf-froala-invalid-hover-highlight` | Its hover highlight | `--vaadin-input-field-invalid-hover-highlight`, else `--lumo-error-color-50pct` |
-| `--vcf-froala-readonly-border` | Border of a read-only editor | `--vaadin-input-field-readonly-border`, else `1px dashed var(--lumo-contrast-30pct)` |
-| `--vcf-froala-disabled-background` | Tint of a disabled editor | `--vaadin-input-field-disabled-background`, else `--lumo-contrast-5pct` |
-
-The greys and tints are mixed from these colours, so `--vcf-froala-neutral-color` changes every
-grey in the editor. Hues Lumo has no colour for keep their tone, such as the purple of track
-changes. The field states look as they do on a Vaadin text field. The heights and spacing of the
-toolbar and popups stay Froala's, because Froala places parts of them at fixed offsets.
+The greys and tints are mixed from the theme's colours, so `--vcf-froala-neutral-color`
+changes every grey in the editor. Hues Lumo has no colour for keep their tone, such as the
+purple of track changes. The field states look as they do on a Vaadin text field. The heights
+and spacing of the toolbar and popups stay Froala's, because Froala places parts of them at
+fixed offsets.
 
 The editor provides a set of variants for the Vaadin theme:
 
@@ -267,3 +232,44 @@ you need it to vary, use a property of your own:
 
 Alternatively, leave enough room to the left of the editor inside its container, or switch
 the `quickInsert` plugin off.
+
+## Appendix: Theme properties
+
+The custom properties of the `vaadin` theme. [Theme](#theme) explains how to use them.
+
+| Property | What it is | Set from |
+|---|---|---|
+| `--vcf-froala-background-color` | Background of the editor, toolbar and popups | `--lumo-base-color` |
+| `--vcf-froala-neutral-color` | The tone all greys are mixed from | `--lumo-contrast` |
+| `--vcf-froala-accent-color` | Active buttons, links, selections | `--lumo-primary-color` |
+| `--vcf-froala-accent-contrast-color` | Text on the accent colour | `--lumo-primary-contrast-color` |
+| `--vcf-froala-error-color` | Errors and deleted text | `--lumo-error-color` |
+| `--vcf-froala-success-color` | Inserted text in track changes | `--lumo-success-color` |
+| `--vcf-froala-warning-color` | Warnings and changed text | `--lumo-warning-color` |
+| `--vcf-froala-border-color` | Grey borders | `--lumo-contrast-20pct` |
+| `--vcf-froala-text-color` | Text in the toolbar and popups | `--lumo-body-text-color` |
+| `--vcf-froala-text-color-secondary` | Lighter labels | `--lumo-secondary-text-color` |
+| `--vcf-froala-text-color-tertiary` | Fainter labels | `--lumo-tertiary-text-color` |
+| `--vcf-froala-text-color-disabled` | Disabled buttons | `--lumo-disabled-text-color` |
+| `--vcf-froala-value-color` | Text in the editing area | `--vaadin-input-field-value-color`, else `--lumo-body-text-color` |
+| `--vcf-froala-disabled-value-color` | The same, when disabled | `--vaadin-input-field-disabled-value-color`, else `--lumo-disabled-text-color` |
+| `--vcf-froala-placeholder-color` | Placeholder | `--vaadin-input-field-placeholder-color`, else `--lumo-secondary-text-color` |
+| `--vcf-froala-font-family` | Font | `--lumo-font-family` |
+| `--vcf-froala-content-font-size` | Text size in the editing area | `--vaadin-input-field-value-font-size`, else `--lumo-font-size-m` |
+| `--vcf-froala-content-font-weight` | Text weight in the editing area | `--vaadin-input-field-value-font-weight`, else `400` |
+| `--vcf-froala-content-line-height` | Line height in the editing area | `--lumo-line-height-m` |
+| `--vcf-froala-font-size-xxs` … `-m` | Text sizes in the toolbar and popups | `--lumo-font-size-xxs` … `-m` |
+| `--vcf-froala-field-border-radius` | Corners of the editor | `--vaadin-input-field-border-radius`, else `--lumo-border-radius-m` |
+| `--vcf-froala-radius-s` … `-l` | Corners of buttons, inputs, popups and dialogs | `--lumo-border-radius-s` … `-l` |
+| `--vcf-froala-shadow-xs` … `-l` | Shadows of dropdowns, popups and dialogs | `--lumo-box-shadow-xs` … `-l` |
+| `--vcf-froala-focus-ring-color` | Colour of focus rings | `--vaadin-focus-ring-color`, else `--lumo-primary-color-50pct` |
+| `--vcf-froala-focus-ring-width` | Width of focus rings | `--vaadin-focus-ring-width`, else `2px` |
+| `--vcf-froala-clickable-cursor` | Cursor over buttons | `--lumo-clickable-cursor` |
+| `--vcf-froala-field-background` | Fill of the editor | `--vaadin-input-field-background`, else `--lumo-contrast-10pct` |
+| `--vcf-froala-hover-highlight` | Highlight while the mouse is over the editor | `--vaadin-input-field-hover-highlight`, else `--lumo-contrast-50pct` |
+| `--vcf-froala-hover-highlight-opacity` | Its strength | `--vaadin-input-field-hover-highlight-opacity`, else `0.1` |
+| `--vcf-froala-invalid-border-color` | Border of an invalid editor, with `OUTLINED` | `--lumo-error-color` |
+| `--vcf-froala-invalid-background` | Tint of an invalid editor | `--vaadin-input-field-invalid-background`, else `--lumo-error-color-10pct` |
+| `--vcf-froala-invalid-hover-highlight` | Its hover highlight | `--vaadin-input-field-invalid-hover-highlight`, else `--lumo-error-color-50pct` |
+| `--vcf-froala-readonly-border` | Border of a read-only editor | `--vaadin-input-field-readonly-border`, else `1px dashed var(--lumo-contrast-30pct)` |
+| `--vcf-froala-disabled-background` | Tint of a disabled editor | `--vaadin-input-field-disabled-background`, else `--lumo-contrast-5pct` |
