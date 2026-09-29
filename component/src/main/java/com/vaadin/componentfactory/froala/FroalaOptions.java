@@ -151,7 +151,12 @@ public final class FroalaOptions implements Serializable {
      * editor downloads that file from {@code js/languages/} before it is built. A name with no such file leaves the
      * editor in English, which is built in and has no file of its own.
      *
-     * @param language language file name, or null to leave Froala's default
+     * <p>
+     * Without this option the editor takes the language of the UI's locale, when it is built. It tries language and
+     * country first and the language alone second, so {@code zh_CN} gives {@code zh_cn} and {@code de_AT} gives
+     * {@code de}. A locale without a file, such as English, leaves the editor in English.
+     *
+     * @param language language file name, or null for the UI's locale
      * @return a new instance
      */
     public FroalaOptions withLanguage(String language) {
@@ -162,10 +167,11 @@ public final class FroalaOptions implements Serializable {
      * Sets the reading direction of the edited text. Froala's {@code direction}.
      *
      * <p>
-     * This takes effect only without a language. Every Froala language file names its own direction, and Froala lets it
-     * win over this option. So {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
-     * {@code withLanguage("de").withDirection(RTL)} a left-to-right one. For right-to-left text with English tooltips,
-     * set this option and no language.
+     * This takes effect only without a language file, and the UI's locale picks one as well, see
+     * {@link #withLanguage(String)}. Every Froala language file names its own direction, and Froala lets it win over
+     * this option. So {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
+     * {@code withLanguage("de").withDirection(RTL)} a left-to-right one. For right-to-left text with English tooltips
+     * under any locale, use {@code withLanguage("en").withDirection(RTL)}. English has no file.
      *
      * <p>
      * The component's own {@code dir} follows the direction the editor is built with, so the label, helper text and

@@ -1,4 +1,4 @@
-import { FroalaEditor, loadFroalaFiles } from './froala-loader.js';
+import { FroalaEditor, firstLanguageWithFile, loadFroalaFiles } from './froala-loader.js';
 import { css, html, LitElement } from 'lit';
 import { defineCustomElement } from '@vaadin/component-base/src/define.js';
 import { ElementMixin } from '@vaadin/component-base/src/element-mixin.js';
@@ -75,6 +75,12 @@ class FroalaEditorElement extends SlotStylesMixin(
     // The plugins for options without pluginsEnabled, FroalaPlugin.basics() on the server. Declared for the same
     // reason as `options`.
     defaultPluginsEnabled: {
+      type: Array,
+    },
+
+    // The language file names that fit the UI's locale, best first, for options without a language. Declared for the
+    // same reason as `options`.
+    localeLanguages: {
       type: Array,
     },
   };
@@ -264,7 +270,10 @@ class FroalaEditorElement extends SlotStylesMixin(
     const generation = ++this._editorGeneration;
     const serverOptions = this.options;
     const pluginsEnabled = serverOptions?.pluginsEnabled ?? this.defaultPluginsEnabled ?? [];
-    await loadFroalaFiles(pluginsEnabled, serverOptions?.language);
+    // Without a language in the options the editor takes the UI's locale, which the server sent as the file names
+    // that fit it, best first. Its `en` has no file and leaves Froala in English.
+    const language = serverOptions?.language ?? firstLanguageWithFile(this.localeLanguages);
+    await loadFroalaFiles(pluginsEnabled, language);
 
     if (generation !== this._editorGeneration || !this.isConnected) {
       return;
@@ -296,6 +305,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     const options = { saveInterval: 0, theme: 'vaadin', ...this.options, pluginsEnabled };
     this._appliedOptions = JSON.stringify(this.options ?? null);
 
+    if (language) {
+      options.language = language;
+    }
     if (this.licenseKey) {
       options.key = this.licenseKey;
     }

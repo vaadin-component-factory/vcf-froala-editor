@@ -156,4 +156,9 @@ async function loadFroalaFiles(pluginsEnabled, language) {
     .forEach((result) => console.error('vcf-froala-editor: a Froala file failed to load', result.reason));
 }
 
-export { FroalaEditor, loadFroalaFiles };
+/** The first of the given language file names that Froala has a file for, or undefined for none. */
+function firstLanguageWithFile(names) {
+  return names?.find((name) => Object.hasOwn(LANGUAGE_FILES, name));
+}
+
+export { FroalaEditor, firstLanguageWithFile, loadFroalaFiles };

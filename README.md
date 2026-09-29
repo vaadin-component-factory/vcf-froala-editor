@@ -202,6 +202,23 @@ FroalaOptions options = FroalaOptions.defaults()
 - `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
   A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
   shows English tooltips, because the file is called `de`.
+- Without `withLanguage` the editor takes the language of the UI's locale, `UI.getLocale()`.
+  It tries language and country first and the language alone second. For example `zh_CN`
+  gives `zh_cn`, and `de_AT` gives `de` because there is no `de_at` file. A locale without a
+  file leaves the editor in English. For example `en` has no file, while `en_GB` and `en_CA`
+  get Froala's British and Canadian files.
+- The locale is read when the editor is built. A later `UI.setLocale` does not change a
+  running editor, because Froala cannot change the language of one. To switch at runtime,
+  give the editor new options with the language:
+
+  ```java
+  editor.setOptions(options.withLanguage("fr"));
+  ```
+
+  This builds the editor again, which keeps the value but loses caret, selection and undo
+  history. A build without a language reads the locale again. Only options that differ from
+  the current ones cause a build, though. For example `setOptions` with the same options after
+  `UI.setLocale` leaves the editor in its old language.
 - Track changes marks insertions and deletions in the HTML. That markup reaches the server
   with the value unless the changes are accepted or rejected first. For example a deletion
   stays in the value as a `<span data-tracking-deleted="true">`. Froala also adds the plugin's
@@ -214,17 +231,20 @@ FroalaOptions options = FroalaOptions.defaults()
 The component's `dir` follows the direction Froala builds the editor with, so the label,
 helper text and error message sit on the same side as the text. That direction comes from
 the language file if there is one, and from `withDirection` otherwise. Every Froala language
-file names a direction, and Froala uses it over the option:
+file names a direction, and Froala uses it over the option. The UI's locale picks a language
+file too (see [Plugins and languages](#plugins-and-languages)), so `withDirection` takes
+effect only for a locale without a file, such as English:
 
 ```java
-FroalaOptions.defaults().withDirection(FroalaTextDirection.RTL);  // dir="rtl", English tooltips
-FroalaOptions.defaults().withLanguage("ar");                      // dir="rtl"
-FroalaOptions.defaults().withLanguage("de");                      // dir="ltr", even on a right-to-left page
+FroalaOptions.defaults().withLanguage("ar");                                        // dir="rtl"
+FroalaOptions.defaults().withLanguage("de");                                        // dir="ltr", even on a right-to-left page
 FroalaOptions.defaults().withLanguage("ar").withDirection(FroalaTextDirection.LTR); // still dir="rtl"
+FroalaOptions.defaults().withDirection(FroalaTextDirection.RTL);                    // dir="rtl" only under a locale without a file
+FroalaOptions.defaults().withLanguage("en").withDirection(FroalaTextDirection.RTL); // dir="rtl" and English under any locale
 ```
 
 The direction is applied each time the editor is built, and it wins over a `dir` you set on
-the component yourself. With neither a language nor a direction, Froala's default `AUTO`
+the component yourself. With neither a language file nor a direction, Froala's default `AUTO`
 applies and sets no `dir`. When a build with `AUTO` follows one with a direction, the
 component gets back the `dir` it had before, your own or none. With none it follows the page
 again.

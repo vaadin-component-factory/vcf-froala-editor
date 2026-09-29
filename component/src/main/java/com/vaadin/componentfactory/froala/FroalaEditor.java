@@ -17,6 +17,7 @@ package com.vaadin.componentfactory.froala;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import elemental.json.Json;
@@ -81,6 +82,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     private static final String VALUE_PROPERTY = "value";
     private static final String OPTIONS_PROPERTY = "options";
     private static final String DEFAULT_PLUGINS_PROPERTY = "defaultPluginsEnabled";
+    private static final String LOCALE_LANGUAGES_PROPERTY = "localeLanguages";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
@@ -236,6 +238,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // that the browser does not know yet.
         addAttachListener(event -> event.getUI().beforeClientResponse(this, context -> liveOnClient = true));
 
+        // The editor is built on attach, and the locale is read for that build. See setOptions for the other builds.
+        addAttachListener(event -> sendLocaleLanguages());
+
         addDetachListener(event -> {
             liveOnClient = false;
 
@@ -334,6 +339,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @throws IllegalArgumentException if the options contain Froala's {@code events} option
      */
     public void setOptions(JsonObject options) {
+        // new options build the editor again, and that build reads the locale as it is now
+        sendLocaleLanguages();
+
         if (options == null) {
             optionsJson = null;
             getElement().removeProperty(OPTIONS_PROPERTY);
@@ -351,6 +359,29 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
         optionsJson = options.toJson();
         getElement().setPropertyJson(OPTIONS_PROPERTY, options);
+    }
+
+    /**
+     * Tells the client which language files fit the UI's locale, for a build without {@code language} in its options.
+     * The client takes the first name it has a file for, so the list of Froala's language files lives in one place.
+     */
+    private void sendLocaleLanguages() {
+        JsonArray names = Json.createArray();
+        languageFileCandidates(getLocale()).forEach(name -> names.set(names.length(), name));
+        getElement().setPropertyJson(LOCALE_LANGUAGES_PROPERTY, names);
+    }
+
+    /**
+     * The language file names that fit a locale, best first: language and country such as {@code zh_cn}, then the
+     * language alone such as {@code de}. Froala names its files that way, lower case and joined by an underscore.
+     */
+    static List<String> languageFileCandidates(Locale locale) {
+        String language = locale.getLanguage();
+        if (language.isEmpty()) {
+            return List.of();
+        }
+        String country = locale.getCountry().toLowerCase(Locale.ROOT);
+        return country.isEmpty() ? List.of(language) : List.of(language + "_" + country, language);
     }
 
     /**

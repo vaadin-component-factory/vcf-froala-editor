@@ -15,6 +15,9 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.List;
+import java.util.Locale;
+
 import com.github.mvysny.kaributesting.v10.MockVaadin;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -215,6 +218,35 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
+    void languageFileCandidates_tryLanguageAndCountryThenTheLanguageAlone() {
+        assertEquals(List.of("zh_cn", "zh"), FroalaEditor.languageFileCandidates(Locale.SIMPLIFIED_CHINESE));
+        assertEquals(List.of("pt_br", "pt"), FroalaEditor.languageFileCandidates(Locale.forLanguageTag("pt-BR")));
+        assertEquals(List.of("de_at", "de"), FroalaEditor.languageFileCandidates(Locale.forLanguageTag("de-AT")));
+        assertEquals(List.of("de"), FroalaEditor.languageFileCandidates(Locale.GERMAN));
+        assertEquals(List.of("he"), FroalaEditor.languageFileCandidates(Locale.forLanguageTag("he")));
+        assertEquals(List.of(), FroalaEditor.languageFileCandidates(Locale.ROOT));
+    }
+
+    @Test
+    void uiLocale_reachesTheElementOnAttach() {
+        UI.getCurrent().setLocale(Locale.forLanguageTag("de-AT"));
+
+        FroalaEditor editor = attachedEditor();
+
+        assertEquals("[\"de_at\",\"de\"]", localeLanguagesOn(editor));
+    }
+
+    @Test
+    void setOptions_sendsTheUiLocaleAsItIsNow() {
+        FroalaEditor editor = attachedEditor();
+        UI.getCurrent().setLocale(Locale.forLanguageTag("ar"));
+
+        editor.setOptions(FroalaOptions.defaults());
+
+        assertEquals("[\"ar\"]", localeLanguagesOn(editor));
+    }
+
+    @Test
     void options_reachTheElementAsJson() {
         FroalaEditor editor = new FroalaEditor();
         layout.add(editor);
@@ -287,6 +319,11 @@ class FroalaEditorKaribuTest {
     /** The options as they sit on the element, which is what the client will read them from. */
     private String optionsOn(FroalaEditor editor) {
         return ((elemental.json.JsonObject) editor.getElement().getPropertyRaw("options")).toJson();
+    }
+
+    /** The locale's language file names as they sit on the element, best first. */
+    private String localeLanguagesOn(FroalaEditor editor) {
+        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("localeLanguages")).toJson();
     }
 
     /** The invocations only exist once the before-client-response tasks have run, so run them first. */
