@@ -4,19 +4,19 @@
    the track changes and collaboration plugins, keep their own tone. :where() keeps the specificity at zero, so an
    override on html or :root wins whatever order the stylesheets load in. */
 :where(html) {
-  --vcf-froala-base-color: var(--lumo-base-color);
-  --vcf-froala-contrast-color: var(--lumo-contrast);
-  --vcf-froala-primary-color: var(--lumo-primary-color);
-  --vcf-froala-primary-contrast-color: var(--lumo-primary-contrast-color);
+  --vcf-froala-background-color: var(--lumo-base-color);
+  --vcf-froala-neutral-color: var(--lumo-contrast);
+  --vcf-froala-accent-color: var(--lumo-primary-color);
+  --vcf-froala-accent-contrast-color: var(--lumo-primary-contrast-color);
   --vcf-froala-error-color: var(--lumo-error-color);
   --vcf-froala-success-color: var(--lumo-success-color);
   --vcf-froala-warning-color: var(--lumo-warning-color);
   --vcf-froala-border-color: var(--lumo-contrast-20pct);
 
   --vcf-froala-text-color: var(--lumo-body-text-color);
-  --vcf-froala-secondary-text-color: var(--lumo-secondary-text-color);
-  --vcf-froala-tertiary-text-color: var(--lumo-tertiary-text-color);
-  --vcf-froala-disabled-text-color: var(--lumo-disabled-text-color);
+  --vcf-froala-text-color-secondary: var(--lumo-secondary-text-color);
+  --vcf-froala-text-color-tertiary: var(--lumo-tertiary-text-color);
+  --vcf-froala-text-color-disabled: var(--lumo-disabled-text-color);
   --vcf-froala-value-color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
   --vcf-froala-disabled-value-color: var(--vaadin-input-field-disabled-value-color, var(--lumo-disabled-text-color));
   --vcf-froala-placeholder-color: var(--vaadin-input-field-placeholder-color, var(--lumo-secondary-text-color));
@@ -31,14 +31,14 @@
   --vcf-froala-font-size-m: var(--lumo-font-size-m);
 
   --vcf-froala-field-border-radius: var(--vaadin-input-field-border-radius, var(--lumo-border-radius-m));
-  --vcf-froala-border-radius-s: var(--lumo-border-radius-s);
-  --vcf-froala-border-radius-m: var(--lumo-border-radius-m);
-  --vcf-froala-border-radius-l: var(--lumo-border-radius-l);
+  --vcf-froala-radius-s: var(--lumo-border-radius-s);
+  --vcf-froala-radius-m: var(--lumo-border-radius-m);
+  --vcf-froala-radius-l: var(--lumo-border-radius-l);
 
-  --vcf-froala-box-shadow-xs: var(--lumo-box-shadow-xs);
-  --vcf-froala-box-shadow-s: var(--lumo-box-shadow-s);
-  --vcf-froala-box-shadow-m: var(--lumo-box-shadow-m);
-  --vcf-froala-box-shadow-l: var(--lumo-box-shadow-l);
+  --vcf-froala-shadow-xs: var(--lumo-box-shadow-xs);
+  --vcf-froala-shadow-s: var(--lumo-box-shadow-s);
+  --vcf-froala-shadow-m: var(--lumo-box-shadow-m);
+  --vcf-froala-shadow-l: var(--lumo-box-shadow-l);
 
   --vcf-froala-focus-ring-color: var(--vaadin-focus-ring-color, var(--lumo-primary-color-50pct));
   --vcf-froala-focus-ring-width: var(--vaadin-focus-ring-width, 2px);
@@ -70,10 +70,10 @@ vcf-froala-editor:has(.vaadin-theme.fr-box) {
   --_vcf-froala-box-radius: var(--vcf-froala-field-border-radius);
 }
 
-/* The frame is the box's toolbar, editing area and bottom bar. Its fill lies over its base colour as an image, so a
+/* The frame is the box's toolbar, editing area and bottom bar. Its fill lies over its background colour as an image, so a
    see-through fill such as Lumo's still hides what scrolls below a sticky toolbar. Without the outlined variant the
    frame is filled like a Vaadin text field and has no border. A state replaces the fill with its own tint, as on a
-   Vaadin text field, and the outlined frame gets the tint over its base colour. */
+   Vaadin text field, and the outlined frame gets the tint over its background colour. */
 vcf-froala-editor:not([theme~='outlined']) {
   --_vcf-froala-fill: var(--vcf-froala-field-background);
 }
@@ -100,33 +100,33 @@ vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box :is(.fr-toolbar,
   background-clip: border-box;
 }
 
-/* Froala's greys in the toolbar are mixed with the base colour, which would hide them on the fill. Mixed with
-   transparent they lie over the fill instead, and look the same on the base colour. The 4%, 6% and 8% are the
+/* Froala's greys in the toolbar are mixed with the background colour, which would hide them on the fill. Mixed with
+   transparent they lie over the fill instead, and look the same on the background colour. The 4%, 6% and 8% are the
    generated shades of the toolbar's second row, row divider and separators. Dropdown menus are not inside the
-   buttons and keep their base colour. Popups that Froala places in the toolbar are left out, because they are
-   opaque themselves. A collaborator's avatar needs the real base colour for its initials and ring. */
+   buttons and keep their background colour. Popups that Froala places in the toolbar are left out, because they are
+   opaque themselves. A collaborator's avatar needs the real background colour for its initials and ring. */
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar {
-  --_vcf-froala-base-color: var(--vcf-froala-base-color);
+  --_vcf-froala-background-color: var(--vcf-froala-background-color);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn:not(.fr-popup .fr-btn) {
-  --vcf-froala-base-color: transparent;
+  --vcf-froala-background-color: transparent;
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn .fr-collab-avatar {
-  --vcf-froala-base-color: var(--_vcf-froala-base-color);
+  --vcf-froala-background-color: var(--_vcf-froala-background-color);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-more-toolbar {
-  background-color: color-mix(in srgb, var(--vcf-froala-contrast-color) 4%, transparent);
+  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 4%, transparent);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-newline {
-  background-color: color-mix(in srgb, var(--vcf-froala-contrast-color) 6%, transparent);
+  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 6%, transparent);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-separator {
-  background-color: color-mix(in srgb, var(--vcf-froala-contrast-color) 8%, transparent);
+  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 8%, transparent);
 }
 
 /* A bottom toolbar with its second row open pads the divider, and Froala paints it like the toolbar */

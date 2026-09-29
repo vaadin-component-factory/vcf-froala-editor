@@ -9,8 +9,8 @@ So `component/src/theme-generator/generate-vaadin-theme.js` repeats every rule t
 these under `.vaadin-theme`, with the value expressed through the add-on's own `--vcf-froala-*`
 properties. Every value Lumo has a property for gets one of ours, unless a technical reason
 speaks against it (maintainer, 2026-09-28). Each colour is read as a full tone mixed with white.
-A grey is the contrast colour mixed with white, a light blue is the primary colour mixed with
-white, and the white becomes the base colour. Since Lumo's dark variant swaps base and contrast,
+A grey is the neutral colour mixed with white, a light blue is the accent colour mixed with
+white, and the white becomes the background colour. Since Lumo's dark variant swaps these colours,
 every mix turns dark with it, and dark mode needs no rules of its own.
 
 ## Consequences
@@ -38,13 +38,13 @@ every mix turns dark with it, and dark mode needs no rules of its own.
 - The editable area, the field states and Vaadin's focus ring are set by hand in
   `vcf-froala-theme-vaadin.css`, not generated, because Froala has no rules for them.
 - The theme fills the box like a Vaadin text field and hides Froala's border, because the editor
-  sits among Vaadin fields (maintainer, 2026-09-28). Froala's look, the base colour with a border,
+  sits among Vaadin fields (maintainer, 2026-09-28). Froala's look, the background colour with a border,
   is the theme variant `OUTLINED`. The border keeps its width and only turns transparent, so
-  nothing moves between the two. The fill lies over the base colour as an image, because Lumo's
+  nothing moves between the two. The fill lies over the background colour as an image, because Lumo's
   fill is see-through and a sticky toolbar has to hide the content that scrolls below it. Froala's
-  button greys, second toolbar row and row divider are mixed with the base colour and would vanish
+  button greys, second toolbar row and row divider are mixed with the background colour and would vanish
   on the fill, so on the filled toolbar they are mixed with transparent instead.
 - Froala's darker hover shades of a colour collapse onto the colour itself. A shade mixed with
   black would disappear on a dark background.
 - Hues Lumo has no colour for, such as the purple and teal of the track changes and collaboration
-  plugins, keep their tone but mix it against the base colour.
+  plugins, keep their tone but mix it against the background colour.

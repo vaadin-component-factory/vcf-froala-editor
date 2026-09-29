@@ -20,8 +20,8 @@
 //
 //   node component/src/theme-generator/generate-vaadin-theme.js demo/node_modules/froala-editor
 //
-// Every colour is read as a full tone mixed with white. A grey is the contrast colour mixed with white, a light blue is
-// the primary colour mixed with white, and so on. The white becomes the base colour, so the mix turns dark along with
+// Every colour is read as a full tone mixed with white. A grey is the neutral colour mixed with white, a light blue is
+// the accent colour mixed with white, and so on. The white becomes the background colour, so the mix turns dark along with
 // it. A grey border is read against the border colour instead, so one property recolours all grey borders, and grey text
 // goes to the closest of Lumo's text colours. White text on a coloured background stays light, like the text on a Lumo
 // primary button.
@@ -62,8 +62,8 @@ const target = path.join(
 );
 
 const THEME = 'vaadin-theme';
-const BASE = 'var(--vcf-froala-base-color)';
-const ON_TONE = 'var(--vcf-froala-primary-contrast-color)';
+const BASE = 'var(--vcf-froala-background-color)';
+const ON_TONE = 'var(--vcf-froala-accent-contrast-color)';
 const BORDER = 'var(--vcf-froala-border-color)';
 const FOCUS_COLOR = 'var(--vcf-froala-focus-ring-color)';
 const FOCUS_WIDTH = 'var(--vcf-froala-focus-ring-width)';
@@ -93,9 +93,9 @@ const RADIUS_SURFACES = [
 // Lumo's text colours by the share of contrast they carry, darkest first
 const TEXT_COLORS = [
   [80, 'var(--vcf-froala-text-color)'],
-  [60, 'var(--vcf-froala-secondary-text-color)'],
-  [40, 'var(--vcf-froala-tertiary-text-color)'],
-  [0, 'var(--vcf-froala-disabled-text-color)'],
+  [60, 'var(--vcf-froala-text-color-secondary)'],
+  [40, 'var(--vcf-froala-text-color-tertiary)'],
+  [0, 'var(--vcf-froala-text-color-disabled)'],
 ];
 
 // Shadows of elements Lumo has a level for, like its overlays and dialogs. Other shadows go by their blur.
@@ -251,13 +251,13 @@ function hue([r, g, b]) {
 
 /** The theme property standing in for a tone, or null for a hue Lumo has no colour for. */
 function roleOf(rgb) {
-  if (isGrey(rgb)) return 'var(--vcf-froala-contrast-color)';
+  if (isGrey(rgb)) return 'var(--vcf-froala-neutral-color)';
 
   const h = hue(rgb);
   if (h < 20 || h >= 340) return 'var(--vcf-froala-error-color)';
   if (h < 70) return 'var(--vcf-froala-warning-color)';
   if (h >= 90 && h < 160) return 'var(--vcf-froala-success-color)';
-  if (h >= 190 && h < 245) return 'var(--vcf-froala-primary-color)';
+  if (h >= 190 && h < 245) return 'var(--vcf-froala-accent-color)';
   return null;
 }
 
@@ -282,12 +282,12 @@ function themed(token, onTone, border, text) {
   } else if (text && isGrey([r, g, b])) {
     color = TEXT_COLORS.find(([minimum]) => percent >= minimum)[1];
   } else if (border && isGrey([r, g, b])) {
-    // Froala's usual border, #ccc, is the border colour itself. Lighter ones are mixed with the base colour, darker
-    // ones with the contrast colour.
+    // Froala's usual border, #ccc, is the border colour itself. Lighter ones are mixed with the background colour, darker
+    // ones with the neutral colour.
     color =
       percent <= 20
         ? mix(BORDER, percent * 5, BASE)
-        : mix('var(--vcf-froala-contrast-color)', Math.round(((percent - 20) * 100) / 80), BORDER);
+        : mix('var(--vcf-froala-neutral-color)', Math.round(((percent - 20) * 100) / 80), BORDER);
   } else {
     // the full tone, with the white taken out
     const tone = [r, g, b].map((c) => (c - 255 * whiteShare) / (1 - whiteShare));
@@ -302,7 +302,7 @@ const isTone = (token) => !isGrey(parseColor(token).slice(0, 3));
 
 const isColor = (token) => new RegExp(`^(?:${COLOR_TOKEN.source})$`, 'i').test(token);
 
-const isFocusPrimary = (token) => roleOf(parseColor(token).slice(0, 3)) === 'var(--vcf-froala-primary-color)';
+const isFocusAccent = (token) => roleOf(parseColor(token).slice(0, 3)) === 'var(--vcf-froala-accent-color)';
 
 /** A value set by the theme. */
 const set = (longhand, value) => ({ longhand, value });
@@ -315,7 +315,7 @@ function colorOf(property, plain, context) {
   const border = /^border/.test(longhand);
   const focusable = context.focus && /^(border|outline)/.test(longhand);
   const themedToken = (token) => {
-    if (focusable && isFocusPrimary(token)) return FOCUS_COLOR;
+    if (focusable && isFocusAccent(token)) return FOCUS_COLOR;
     if (property === 'color' && context.subjects.includes('.fr-placeholder'))
       return 'var(--vcf-froala-placeholder-color)';
     if (property === 'color' && context.subjects.includes('.fr-element')) return 'var(--vcf-froala-value-color)';
@@ -349,7 +349,7 @@ function colorOf(property, plain, context) {
   }
 
   const result = [set(longhand, themedToken(color))];
-  if (property === 'outline' && focusable && isFocusPrimary(color)) {
+  if (property === 'outline' && focusable && isFocusAccent(color)) {
     result.push(set('outline-width', FOCUS_WIDTH));
   }
   return result;
@@ -369,7 +369,7 @@ function radiusOf(property, plain, context) {
     found = true;
     return n === 10 && context.subjects.some((name) => FIELD_PARTS.includes(name))
       ? 'var(--vcf-froala-field-border-radius)'
-      : `var(--vcf-froala-border-radius-${size})`;
+      : `var(--vcf-froala-radius-${size})`;
   });
   return [found ? set(property, value) : keep(property, plain)];
 }
@@ -402,7 +402,7 @@ function shadowOf(property, plain, context) {
   const size =
     SHADOW_BY_CLASS.find(([name]) => context.subjects.includes(name))?.[1] ??
     (blur <= 2 ? 'xs' : blur <= 6 ? 's' : blur <= 18 ? 'm' : 'l');
-  return [set(property, `var(--vcf-froala-box-shadow-${size})`)];
+  return [set(property, `var(--vcf-froala-shadow-${size})`)];
 }
 
 function fontFamilyOf(property, plain) {

@@ -116,7 +116,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         // THM-7. The rules read our properties, so overriding one restyles the editor without touching Lumo.
         waitForEditors();
 
-        setProperty("--vcf-froala-base-color", "rgb(1, 2, 3)");
+        setProperty("--vcf-froala-background-color", "rgb(1, 2, 3)");
         setProperty("--vcf-froala-border-color", "rgb(4, 5, 6)");
         setProperty("--vcf-froala-field-background", "rgb(16, 17, 18)");
         setProperty("--vcf-froala-field-border-radius", "3px");
@@ -135,7 +135,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
 
     @Test
     void default_isFilledLikeAVaadinField() {
-        // The fill lies over the base colour, and the border stays but is transparent
+        // The fill lies over the background colour, and the border stays but is transparent
         waitForEditors();
 
         assertTrue(computed("#themed .fr-wrapper", "background-image").contains(lumo("--lumo-contrast-10pct")));
@@ -164,7 +164,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
 
     @Test
     void filledToolbar_letsTheButtonShadesShowOnTheFill() {
-        // Froala's button greys are mixed with the base colour, and would disappear on the fill. Mixed with
+        // Froala's button greys are mixed with the background colour, and would disappear on the fill. Mixed with
         // transparent they lie over it.
         waitForEditors();
         page.addStyleTag(new Page.AddStyleTagOptions().setContent("* { transition: none !important; }"));
@@ -267,7 +267,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         // no fill either
         assertEquals("linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0))",
                 computed("#themed .fr-wrapper", "background-image"));
-        // the outlined variant loses its border and base colour the same way
+        // the outlined variant loses its border and background colour the same way
         assertEquals("dashed", computed("#outlined .fr-box", "outline-style"));
         assertEquals("rgba(0, 0, 0, 0)", computed("#outlined .fr-wrapper", "border-left-color"));
         assertEquals("rgba(0, 0, 0, 0)", computed("#outlined .fr-wrapper", "background-color"));
@@ -296,7 +296,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         switchToLumoDark();
 
         assertEquals(lumo("--lumo-base-color"), computed("#outlined .fr-wrapper", "background-color"));
-        // the default's fill is see-through and lies over the same base colour
+        // the default's fill is see-through and lies over the same background colour
         assertEquals(lumo("--lumo-base-color"), computed("#themed .fr-wrapper", "background-color"));
         assertTrue(computed("#themed .fr-wrapper", "background-image").contains(lumo("--lumo-contrast-10pct")));
     }
@@ -308,7 +308,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         switchToLumoDark();
 
         String heading = computed("#themed .fr-element h1", "color");
-        // the fill as it looks over the base colour
+        // the fill as it looks over the background colour
         String background = (String) page.evaluate("""
                 ([fill, base]) => {
                   const [fr, fg, fb, fa] = (%s)(fill);
