@@ -144,6 +144,14 @@ const PLUGIN_FILES = { ...BUNDLED_PLUGIN_FILES, ...OTHER_PLUGIN_FILES };
  * not know and stays English without its language file, as it would with the packaged bundle.
  */
 async function loadFroalaFiles(pluginsEnabled, language) {
+  // The image manager, Filerobot and TUI files throw while loading unless the image plugin is registered already. So
+  // the image file goes first, rather than racing them.
+  if (pluginsEnabled.includes('image')) {
+    await PLUGIN_FILES.image().catch((reason) =>
+      console.error('vcf-froala-editor: a Froala file failed to load', reason)
+    );
+  }
+
   const loads = pluginsEnabled.filter((name) => Object.hasOwn(PLUGIN_FILES, name)).map((name) => PLUGIN_FILES[name]());
 
   if (Object.hasOwn(LANGUAGE_FILES, language ?? '')) {
