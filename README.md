@@ -160,6 +160,39 @@ FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print"
 FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen").withButtonsVisible(4));
 ```
 
+Two ready-made toolbars cover the common cases. `FroalaToolbar.froalaDefault()` is Froala's
+own default toolbar. `FroalaToolbar.basics()` has the same groups, reduced to the buttons of
+`FroalaPlugin.basics()`. The Javadoc of each lists every group with its buttons. Both are a
+starting point for a toolbar that differs in a detail:
+
+```java
+// every button of every group shown, no overflow panels
+FroalaOptions options = FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.basics().withAllButtonsVisible());
+
+// Froala's toolbar, with every insert button shown and five text buttons before the overflow
+FroalaToolbar toolbar = FroalaToolbar.froalaDefault()
+        .withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH)
+        .withButtonsVisible(FroalaToolbarGroup.MORE_TEXT, 5);
+```
+
+Changing a single group needs a grouped toolbar. A flat one shows every button anyway, so
+changing one of its groups throws:
+
+```java
+FroalaToolbar.of("bold", "italic").withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH); // IllegalStateException
+```
+
+Setting a toolbar also replaces Froala's narrower variants, which show fewer buttons per group.
+For example `froalaDefault()` on a phone still shows four insert buttons, where Froala's own
+default shows none. Set the narrow ones yourself where they should differ. For example, to hide
+the insert buttons on phones as Froala does:
+
+```java
+FroalaOptions options = FroalaOptions.defaults()
+        .withToolbarButtons(FroalaToolbar.froalaDefault())
+        .withToolbarButtonsXs(FroalaToolbar.froalaDefault().withButtonsVisible(FroalaToolbarGroup.MORE_RICH, 0));
+```
+
 ### Theme
 
 The editor follows the Vaadin theme, including Lumo's dark variant. This is Froala's `theme`

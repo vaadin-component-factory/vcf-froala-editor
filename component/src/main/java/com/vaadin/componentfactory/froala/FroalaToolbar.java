@@ -16,12 +16,14 @@
 package com.vaadin.componentfactory.froala;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import elemental.json.Json;
 import elemental.json.JsonArray;
@@ -60,6 +62,49 @@ import elemental.json.JsonValue;
  */
 public final class FroalaToolbar implements Serializable {
 
+    /** Froala's default toolbar with only the buttons of {@link FroalaPlugin#basics()} and of no plugin at all. */
+    private static final FroalaToolbar BASICS = new FroalaToolbar(null, List.of(
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough",
+                    "subscript", "superscript", "fontFamily", "fontSize", "textColor", "backgroundColor",
+                    "clearFormatting"),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, "alignLeft", "alignCenter", "formatOLSimple",
+                    "alignRight", "alignJustify", "formatOL", "formatUL", "paragraphFormat", "lineHeight", "outdent",
+                    "indent", "quote"),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_RICH, "insertAnchor", "insertLink", "insertHR")
+                    .withButtonsVisible(4),
+            FroalaToolbarGroup
+                    .named(FroalaToolbarGroup.MORE_MISC, "undo", "redo", "selectAll", "help", "findReplaceButton")
+                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2)));
+
+    /**
+     * Froala's {@code TOOLBAR_BUTTONS} in 5.4.0. Built without {@link #ofGroups(Collection)}, whose check would reject
+     * Froala's own {@code trackChanges} group. It shows none of its buttons outside the overflow panel, under a name
+     * that is not one of the four the check knows.
+     */
+    private static final FroalaToolbar FROALA_DEFAULT = new FroalaToolbar(null, List.of(
+            FroalaToolbarGroup.named("versionControl", "versionControl", "autoSaveStatus").withButtonsVisible(2),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough",
+                    "subscript", "superscript", "fontFamily", "fontSize", "textColor", "backgroundColor", "inlineClass",
+                    "inlineStyle", "clearFormatting"),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, "alignLeft", "alignCenter", "formatOLSimple",
+                    "alignRight", "alignJustify", "formatOL", "formatUL", "paragraphFormat", "paragraphStyle",
+                    "lineHeight", "outdent", "indent", "quote"),
+            FroalaToolbarGroup.named("exportImport", "import_from_word", "export_to_word"),
+            FroalaToolbarGroup
+                    .named(FroalaToolbarGroup.MORE_RICH, "collabPanel", "aiChatAssistant", "aiAssist", "aiShortCuts",
+                            "collabAddComment", "trackChanges", "markdown", "insertAnchor", "insertLink", "insertFiles",
+                            "insertImage", "insertVideo", "pageBreak", "insertTable", "emoticons", "fontAwesome",
+                            "specialCharacters", "embedly", "insertFile", "insertHR", "openFilePicker", "codeSnippet")
+                    .withButtonsVisible(4),
+            FroalaToolbarGroup
+                    .named(FroalaToolbarGroup.MORE_MISC, "undo", "redo", "fullscreen", "print", "getPDF",
+                            "spellChecker", "selectAll", "html", "help", "findReplaceButton")
+                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2),
+            FroalaToolbarGroup.named("collab", "collabMode", "collabPresence").withAlign(FroalaToolbarAlign.RIGHT)
+                    .withButtonsVisible(2),
+            FroalaToolbarGroup.named("trackChanges", "showChanges", "applyAll", "removeAll", "applyLast", "removeLast")
+                    .withButtonsVisible(0)));
+
     /** Set in the flat form, null in the grouped one. Exactly one of the two fields is set. */
     private final List<String> buttons;
 
@@ -90,6 +135,57 @@ public final class FroalaToolbar implements Serializable {
         }
 
         return new FroalaToolbar(List.of(buttons), null);
+    }
+
+    /**
+     * Returns Froala's default toolbar reduced to the buttons of {@link FroalaPlugin#basics()}, plus the commands that
+     * need no plugin, such as bold, italic, undo and redo. Its groups and their visible counts are Froala's:
+     *
+     * <ul>
+     * <li>{@link FroalaToolbarGroup#MORE_TEXT}: bold, italic, underline, strikeThrough, subscript, superscript,
+     * fontFamily, fontSize, textColor, backgroundColor, clearFormatting</li>
+     * <li>{@link FroalaToolbarGroup#MORE_PARAGRAPH}: alignLeft, alignCenter, formatOLSimple, alignRight, alignJustify,
+     * formatOL, formatUL, paragraphFormat, lineHeight, outdent, indent, quote</li>
+     * <li>{@link FroalaToolbarGroup#MORE_RICH}: insertAnchor, insertLink, insertHR</li>
+     * <li>{@link FroalaToolbarGroup#MORE_MISC}: undo, redo, selectAll, help, findReplaceButton</li>
+     * </ul>
+     *
+     * @return the toolbar, the same on every call
+     */
+    public static FroalaToolbar basics() {
+        return BASICS;
+    }
+
+    /**
+     * Returns Froala's own default toolbar, the one an editor shows when {@code toolbarButtons} is not set. It is a
+     * starting point for a toolbar that differs in a detail, such as
+     * {@code froalaDefault().withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH)}. Froala drops the buttons whose
+     * plugin is not enabled. The groups and their buttons, as froala-editor 5.4.0 defines them:
+     *
+     * <ul>
+     * <li>{@code versionControl}: versionControl, autoSaveStatus</li>
+     * <li>{@link FroalaToolbarGroup#MORE_TEXT}: bold, italic, underline, strikeThrough, subscript, superscript,
+     * fontFamily, fontSize, textColor, backgroundColor, inlineClass, inlineStyle, clearFormatting</li>
+     * <li>{@link FroalaToolbarGroup#MORE_PARAGRAPH}: alignLeft, alignCenter, formatOLSimple, alignRight, alignJustify,
+     * formatOL, formatUL, paragraphFormat, paragraphStyle, lineHeight, outdent, indent, quote</li>
+     * <li>{@code exportImport}: import_from_word, export_to_word</li>
+     * <li>{@link FroalaToolbarGroup#MORE_RICH}: collabPanel, aiChatAssistant, aiAssist, aiShortCuts, collabAddComment,
+     * trackChanges, markdown, insertAnchor, insertLink, insertFiles, insertImage, insertVideo, pageBreak, insertTable,
+     * emoticons, fontAwesome, specialCharacters, embedly, insertFile, insertHR, openFilePicker, codeSnippet</li>
+     * <li>{@link FroalaToolbarGroup#MORE_MISC}: undo, redo, fullscreen, print, getPDF, spellChecker, selectAll, html,
+     * help, findReplaceButton</li>
+     * <li>{@code collab}: collabMode, collabPresence</li>
+     * <li>{@code trackChanges}: showChanges, applyAll, removeAll, applyLast, removeLast</li>
+     * </ul>
+     *
+     * <p>
+     * Froala's own default also has narrower variants with fewer visible buttons per group. Setting a toolbar replaces
+     * those as well, unless {@link FroalaOptions#withToolbarButtonsSm(FroalaToolbar)} and its siblings set their own.
+     *
+     * @return the toolbar, the same on every call
+     */
+    public static FroalaToolbar froalaDefault() {
+        return FROALA_DEFAULT;
     }
 
     /**
@@ -125,16 +221,84 @@ public final class FroalaToolbar implements Serializable {
                         + "'. Froala keys its groups by name, so the second one would replace the first.");
             }
 
-            if (group.overflowsWithNothingToOpenIt()) {
-                throw new IllegalArgumentException("Toolbar group '" + group.getName()
-                        + "' shows fewer buttons than it holds, and Froala draws no button to open the rest. It takes"
-                        + " that button from a command registered under the group's name, and only its own four have"
-                        + " one. Name the group FroalaToolbarGroup.MORE_TEXT, MORE_PARAGRAPH, MORE_RICH or MORE_MISC,"
-                        + " or raise withButtonsVisible to the group's size so nothing has to be opened.");
-            }
+            requireOpenableOverflow(group);
         }
 
         return new FroalaToolbar(null, List.copyOf(groups));
+    }
+
+    /**
+     * Returns a copy in which every group shows all its buttons, so that none needs an overflow panel. A flat toolbar
+     * shows every button anyway and is returned as it is.
+     *
+     * @return a new instance, or this one if it is flat
+     */
+    public FroalaToolbar withAllButtonsVisible() {
+        if (groups == null) {
+            return this;
+        }
+
+        return new FroalaToolbar(null,
+                groups.stream().map(group -> group.withButtonsVisible(group.countButtons())).toList());
+    }
+
+    /**
+     * Returns a copy in which the named group shows all its buttons, so that it needs no overflow panel. Froala then
+     * draws no button to open one.
+     *
+     * @param group the group's name, such as {@link FroalaToolbarGroup#MORE_RICH}
+     * @return a new instance
+     * @throws IllegalArgumentException if no group has that name
+     * @throws IllegalStateException if this is a flat toolbar, which has no groups
+     */
+    public FroalaToolbar withAllButtonsVisible(String group) {
+        return withGroup(group, found -> found.withButtonsVisible(found.countButtons()));
+    }
+
+    /**
+     * Returns a copy in which the named group shows the given number of buttons before the rest move into its overflow
+     * panel. See {@link FroalaToolbarGroup#withButtonsVisible(int)}.
+     *
+     * @param group the group's name, such as {@link FroalaToolbarGroup#MORE_TEXT}
+     * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest
+     * @return a new instance
+     * @throws IllegalArgumentException if no group has that name, or under the same conditions as
+     *             {@link #ofGroups(Collection)}. That includes Froala's own groups {@code versionControl},
+     *             {@code collab} and {@code trackChanges} of {@link #froalaDefault()}, whose names the check does not
+     *             know, at a count below their size.
+     * @throws IllegalStateException if this is a flat toolbar, which has no groups
+     */
+    public FroalaToolbar withButtonsVisible(String group, int buttonsVisible) {
+        return withGroup(group, found -> found.withButtonsVisible(buttonsVisible));
+    }
+
+    private FroalaToolbar withGroup(String name, UnaryOperator<FroalaToolbarGroup> change) {
+        if (groups == null) {
+            throw new IllegalStateException("A flat toolbar has no groups, and it shows every button anyway.");
+        }
+
+        List<FroalaToolbarGroup> changed = new ArrayList<>(groups);
+        for (int i = 0; i < changed.size(); i++) {
+            if (changed.get(i).getName().equals(name)) {
+                FroalaToolbarGroup group = change.apply(changed.get(i));
+                requireOpenableOverflow(group);
+                changed.set(i, group);
+
+                return new FroalaToolbar(null, List.copyOf(changed));
+            }
+        }
+
+        throw new IllegalArgumentException("The toolbar has no group named '" + name + "'.");
+    }
+
+    private static void requireOpenableOverflow(FroalaToolbarGroup group) {
+        if (group.overflowsWithNothingToOpenIt()) {
+            throw new IllegalArgumentException("Toolbar group '" + group.getName()
+                    + "' shows fewer buttons than it holds, and Froala draws no button to open the rest. It takes"
+                    + " that button from a command registered under the group's name, and only its own four have"
+                    + " one. Name the group FroalaToolbarGroup.MORE_TEXT, MORE_PARAGRAPH, MORE_RICH or MORE_MISC,"
+                    + " or raise withButtonsVisible to the group's size so nothing has to be opened.");
+        }
     }
 
     /** Returns the toolbar as Froala receives it: an array in the flat form, an object of named groups in the other. */

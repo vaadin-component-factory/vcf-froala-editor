@@ -155,10 +155,15 @@ public final class FroalaToolbarGroup implements Serializable {
             return false;
         }
 
-        long drawn = buttons.stream().filter(button -> !SEPARATORS.contains(button)).count();
+        int drawn = countButtons();
 
         // A group with no buttons has nothing to hide, not even at a negative count.
         return drawn > 0 && drawn > (buttonsVisible == null ? DEFAULT_BUTTONS_VISIBLE : buttonsVisible);
+    }
+
+    /** The number of buttons that count towards {@code buttonsVisible}, which is all of them but the separators. */
+    int countButtons() {
+        return (int) buttons.stream().filter(button -> !SEPARATORS.contains(button)).count();
     }
 
     /** Returns the group as Froala receives it: its buttons, plus align and buttonsVisible when they were set. */

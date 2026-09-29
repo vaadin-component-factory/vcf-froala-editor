@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Plain JUnit, no Vaadin. A toolbar's whole job is the JSON Froala reads it as, so the JSON is what is asserted. That
@@ -159,5 +161,71 @@ class FroalaToolbarTest {
 
         // A one-group toolbar and a one-button toolbar are different shapes to Froala, so they are different here too.
         assertNotEquals(FroalaToolbar.of("bold"), FroalaToolbar.ofGroups(FroalaToolbarGroup.named("group1", "bold")));
+    }
+
+    @Test
+    void withAllButtonsVisible_changesOnlyThatGroup() {
+        FroalaToolbar toolbar = FroalaToolbar.ofGroups(FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold"),
+                FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_RICH, "insertLink", "insertImage"));
+
+        assertEquals(
+                "{\"moreText\":{\"buttons\":[\"bold\"]},"
+                        + "\"moreRich\":{\"buttons\":[\"insertLink\",\"insertImage\"],\"buttonsVisible\":2}}",
+                toolbar.withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH).toString());
+    }
+
+    @Test
+    void withAllButtonsVisible_showsEveryGroupInFull() {
+        String json = FroalaToolbar.froalaDefault().withAllButtonsVisible().toString();
+
+        // moreText has 13 buttons and no count of its own. Froala's trackChanges group shows none of its 5.
+        assertTrue(json.contains("\"clearFormatting\"],\"buttonsVisible\":13}"), json);
+        assertTrue(json.contains("\"removeLast\"],\"buttonsVisible\":5}"), json);
+    }
+
+    @Test
+    void withAllButtonsVisible_leavesAFlatToolbarAsItIs() {
+        FroalaToolbar flat = FroalaToolbar.of("bold", "italic");
+
+        assertSame(flat, flat.withAllButtonsVisible());
+    }
+
+    @Test
+    void basics_areFroalasGroupsWithTheBasicButtons() {
+        assertEquals("{\"moreText\":{\"buttons\":[\"bold\",\"italic\",\"underline\",\"strikeThrough\",\"subscript\","
+                + "\"superscript\",\"fontFamily\",\"fontSize\",\"textColor\",\"backgroundColor\",\"clearFormatting\"]},"
+                + "\"moreParagraph\":{\"buttons\":[\"alignLeft\",\"alignCenter\",\"formatOLSimple\",\"alignRight\","
+                + "\"alignJustify\",\"formatOL\",\"formatUL\",\"paragraphFormat\",\"lineHeight\",\"outdent\",\"indent\","
+                + "\"quote\"]},\"moreRich\":{\"buttons\":[\"insertAnchor\",\"insertLink\",\"insertHR\"],\"buttonsVisible\":4},"
+                + "\"moreMisc\":{\"buttons\":[\"undo\",\"redo\",\"selectAll\",\"help\",\"findReplaceButton\"],"
+                + "\"align\":\"right\",\"buttonsVisible\":2}}", FroalaToolbar.basics().toString());
+    }
+
+    @Test
+    void withButtonsVisible_setsTheCountOfThatGroup() {
+        String json = FroalaToolbar.froalaDefault().withButtonsVisible(FroalaToolbarGroup.MORE_TEXT, 5).toString();
+
+        assertTrue(json.contains("\"clearFormatting\"],\"buttonsVisible\":5}"), json);
+    }
+
+    @Test
+    void groupVisibility_ofAnUnknownGroup_isRejected() {
+        FroalaToolbar toolbar = FroalaToolbar.froalaDefault();
+
+        assertThrows(IllegalArgumentException.class, () -> toolbar.withAllButtonsVisible("noSuchGroup"));
+    }
+
+    @Test
+    void groupVisibility_belowTheSizeOfAGroupWithoutOverflowButton_isRejected() {
+        // a group of its own name has no button to open its overflow panel, so it must keep showing everything
+        FroalaToolbar toolbar = FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic"));
+
+        assertThrows(IllegalArgumentException.class, () -> toolbar.withButtonsVisible("myGroup", 1));
+    }
+
+    @Test
+    void groupVisibility_onAFlatToolbar_isRejected() {
+        assertThrows(IllegalStateException.class,
+                () -> FroalaToolbar.of("bold", "italic").withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH));
     }
 }

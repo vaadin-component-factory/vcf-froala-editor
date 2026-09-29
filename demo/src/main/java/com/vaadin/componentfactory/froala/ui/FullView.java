@@ -15,26 +15,26 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
-import java.util.EnumSet;
-
-import com.vaadin.componentfactory.froala.FroalaPlugin;
+import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaToolbar;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
-/** The basics view with every plugin that works without a service behind it. */
+/** Every plugin that needs no service, with Froala's own toolbar. */
 @Route("full")
 @Menu(title = "Full", order = 0.5)
-public class FullView extends BasicView {
+public class FullView extends FroalaViewBase {
 
-    @Override
-    protected EnumSet<FroalaPlugin> plugins() {
-        return DemoPlugins.full();
-    }
+    public FullView() {
+        getEditor().setHeight("500px");
+        getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
+                .withToolbarButtons(FroalaToolbar.froalaDefault().withAllButtonsVisible()));
 
-    @Override
-    protected String description() {
-        return "Every Froala plugin except those that need a server, a second library or a paid service, such as the AI "
-                + "assistant, collaboration or the image manager. No upload URL is set, so a file or an image picked "
-                + "from disk does not reach a server.";
+        addComponentAtIndex(indexOf(getToolbar()) + 1,
+                new Paragraph("Every Froala plugin except those that need a server, a second library or a paid "
+                        + "service, such as the AI assistant, collaboration or the image manager. The toolbar is "
+                        + "Froala's own, with all buttons visible. No upload URL is set, so a file or an "
+                        + "image picked from disk does not reach a server."));
     }
 }

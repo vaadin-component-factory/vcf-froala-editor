@@ -34,6 +34,7 @@ import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
 import com.vaadin.componentfactory.froala.FroalaTheme;
+import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.Component;
@@ -72,22 +73,13 @@ public class BasicView extends FroalaViewBase {
 
         editor.setHeight("500px");
         viewer.setMinHeight("250px");
-        // plugins() and description() are overridden by FullView, whose overrides must not read fields of their own,
-        // because they run before the subclass is initialized
-        editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins()));
+        // starts without plugin options, so the editor gets FroalaPlugin.basics()
+        editor.setOptions(FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.basics().withAllButtonsVisible()));
 
-        addComponentAtIndex(indexOf(getToolbar()) + 1, new Paragraph(description()));
-    }
-
-    /** The plugins the editor is built with, before the counters from the options menu. */
-    protected EnumSet<FroalaPlugin> plugins() {
-        return FroalaPlugin.basics();
-    }
-
-    /** One or two lines above the editor, saying what it shows. */
-    protected String description() {
-        return "The plugins an editor gets without options, FroalaPlugin.basics(): text and paragraph formats, lists, "
-                + "quotes, links and find and replace. Nothing that inserts images, tables or other content.";
+        addComponentAtIndex(indexOf(getToolbar()) + 1, new Paragraph(
+                "An editor without plugin options gets FroalaPlugin.basics(): text and paragraph formats, "
+                        + "lists, quotes, links and find and replace. Nothing that inserts images, tables or other "
+                        + "content. The toolbar is FroalaToolbar.basics() with all buttons visible."));
     }
 
     @Override
@@ -158,15 +150,14 @@ public class BasicView extends FroalaViewBase {
         MenuItem bottom = checkable(toolbarMenu, "Below the text", false);
 
         MenuItem documentReady = checkable(menu, "Document layout", false);
-        MenuItem charCounter = checkable(menu, "Character counter", plugins().contains(FroalaPlugin.CHAR_COUNTER));
-        MenuItem wordCounter = checkable(menu, "Word counter", plugins().contains(FroalaPlugin.WORD_COUNTER));
+        MenuItem charCounter = checkable(menu, "Character counter", false);
+        MenuItem wordCounter = checkable(menu, "Word counter", false);
 
         AtomicReference<FroalaTextDirection> direction = new AtomicReference<>();
         AtomicReference<FroalaTheme> theme = new AtomicReference<>();
         Runnable apply = () -> {
-            // the counters are plugins of their own, so the menu switches the plugin
-            EnumSet<FroalaPlugin> plugins = plugins();
-            plugins.removeAll(EnumSet.of(FroalaPlugin.CHAR_COUNTER, FroalaPlugin.WORD_COUNTER));
+            // the counters are plugins of their own, not among the basics
+            EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
             if (charCounter.isChecked()) {
                 plugins.add(FroalaPlugin.CHAR_COUNTER);
             }
@@ -174,7 +165,8 @@ public class BasicView extends FroalaViewBase {
                 plugins.add(FroalaPlugin.WORD_COUNTER);
             }
 
-            editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins).withDirection(direction.get())
+            editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins)
+                    .withToolbarButtons(FroalaToolbar.basics().withAllButtonsVisible()).withDirection(direction.get())
                     .withTheme(theme.get()).withToolbarSticky(sticky.isChecked()).withToolbarInline(inline.isChecked())
                     .withToolbarBottom(bottom.isChecked()).withDocumentReady(documentReady.isChecked()));
         };
