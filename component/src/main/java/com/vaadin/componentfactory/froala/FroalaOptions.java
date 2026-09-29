@@ -136,11 +136,9 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets the language Froala's own texts are shown in, such as toolbar tooltips, popups and error messages. Froala's
-     * {@code language}, which takes a language file's name such as {@code de}, {@code pt_br} or {@code zh_cn}.
-     *
-     * <p>
-     * <b>Setting this alone changes nothing.</b> Froala reads the option only after the matching file from
-     * {@code js/languages/} has been loaded, and this add-on loads no language file, so the editor stays English.
+     * {@code language}, which takes a language file's name such as {@code de}, {@code pt_br} or {@code zh_cn}. The
+     * editor downloads that file from {@code js/languages/} before it is built. A name with no such file leaves the
+     * editor in English, which is built in and has no file of its own.
      *
      * @param language language file name, or null to leave Froala's default
      * @return a new instance
@@ -408,10 +406,12 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}, which is all of them when left alone.
-     * A toolbar button is dropped silently when its command declares a plugin that is not enabled. It is then neither
-     * drawn nor counted towards a group's {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no
-     * plugin, among them {@code bold} and {@code italic}, are drawn whatever this option holds.
+     * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}. Left alone, the editor gets the
+     * plugins of Froala's packaged bundle, which {@link FroalaPlugin} lists. The browser downloads only the files of
+     * the plugins an editor enables. A toolbar button is dropped silently when its command declares a plugin that is
+     * not enabled. It is then neither drawn nor counted towards a group's
+     * {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no plugin, among them {@code bold} and
+     * {@code italic}, are drawn whatever this option holds.
      *
      * @param plugins the plugins the editor may use, or null to leave Froala's default
      * @return a new instance

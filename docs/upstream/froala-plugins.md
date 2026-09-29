@@ -10,8 +10,12 @@ out to be off.
 
 ## What the add-on loads
 
-`vcf-froala-editor.js` imports `froala-editor/js/froala_editor.pkgd.min.js` and
-nothing else. Everything below follows from that single import.
+Since #14 (2026-09-29) `froala-loader.js` imports Froala's core (`froala-editor`, which is
+`js/froala_editor.min.js`) plus the `edit_in_popup` module, and loads every other plugin and
+language file with a dynamic `import()` when an editor needs it. An editor without
+`pluginsEnabled` gets the 46 plugins of the packaged bundle, named explicitly. The
+measurements below were taken against the packaged bundle, which the add-on imported until
+then.
 
 Froala ships three bundles and two plugin directories:
 
@@ -51,12 +55,9 @@ Consequences, all confirmed in the browser:
   carries toolbar code that special-cases the name — it checks
   `pluginsEnabled.indexOf("track_changes")` and builds a `trackChanges` group —
   but the command that would fill it is not there.
-- `FroalaPlugin.TRACK_CHANGES` and `FroalaPlugin.TRIM_VIDEO` are therefore
-  **dead constants today**. Passing them to `withPluginsEnabled` adds a string
-  that matches no loaded plugin. Nothing throws and nothing happens.
-- Track changes is on the feature list. Turning it on means importing
-  `froala-editor/js/plugins/track_changes.min.js` in addition to the bundle —
-  an open decision, not something the current build supports.
+- With the packaged bundle, `FroalaPlugin.TRACK_CHANGES` and `TRIM_VIDEO` were
+  dead constants. Since #14 the add-on loads their files when an editor enables
+  them.
 
 `trim_video` is only ever called from `files_manager`
 (`y.trimVideoPlugin.trimVideo(...)`), so it has no toolbar button and no
@@ -149,8 +150,9 @@ Every other loaded plugin needs nothing.
 
 ## The five plugins under `js/third_party/`
 
-Not in any bundle, so not loaded, so not in `FroalaPlugin`. Each needs a library
-or a service the add-on does not ship:
+Not in any bundle. Since #14 each has a `FroalaPlugin` constant and is loaded,
+with its CSS from `css/third_party/`, when an editor enables it. Each needs a
+library or a service the add-on does not ship:
 
 | File | Registers | Needs |
 |---|---|---|

@@ -16,12 +16,11 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * The Froala plugins that {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} accepts, which are those shipped
- * under {@code js/plugins/} in froala-editor 5.4.0. Five more ship under {@code js/third_party/} and register
- * themselves the same way ({@code embedly}, {@code fontAwesome}, {@code imageFilerobot}, {@code imageTUI},
- * {@code spellChecker}). They are not listed here, because each needs a third-party library or service. A list
- * containing one has to be passed as raw JSON through {@link FroalaEditor#setOptions(String)}. Passing a list disables
- * every plugin not in it, and the toolbar buttons of a disabled plugin disappear. See
+ * The Froala plugins that {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} accepts. These are all plugin files
+ * of froala-editor 5.4.0, the ones under {@code js/plugins/} and the five under {@code js/third_party/}. The browser
+ * downloads a plugin's file only when an editor enables it. An editor without {@code pluginsEnabled} gets the plugins
+ * of Froala's packaged bundle, which leaves out {@link #TRACK_CHANGES}, {@link #TRIM_VIDEO} and the five third-party
+ * ones. Passing a list disables every plugin not in it, and the toolbar buttons of a disabled plugin disappear. See
  * {@link FroalaOptions#withPluginsEnabled(java.util.Collection)}.
  *
  * <p>
@@ -32,8 +31,9 @@ package com.vaadin.componentfactory.froala;
  * Six of them need a server endpoint or an account that neither Froala nor this add-on provides, and do nothing without
  * it. These are {@link #AI_ASSIST}, {@link #COLLABORATIVE}, {@link #FILESTACK}, {@link #IMAGE_MANAGER}, {@link #SAVE},
  * and {@link #FILES_MANAGER} for uploading, though its by-URL tab works without one. {@link #IMPORT_FROM_WORD} needs
- * the third-party mammoth.js script in the page instead. The documentation of each names what it needs, and the options
- * they read have no methods on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
+ * the third-party mammoth.js script in the page instead, and the five under {@code js/third_party/} each need a library
+ * or a service of their own. The documentation of each names what it needs, and the options they read have no methods
+ * on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
  *
  * <p>
  * {@code edit_in_popup} ships as a plugin file but registers a module, not a plugin, so {@code pluginsEnabled} has no
@@ -96,6 +96,12 @@ public enum FroalaPlugin {
     DRAGGABLE("draggable", "draggable"),
 
     /**
+     * Embeds a rich preview of a link, rendered by Embedly. Requires an Embedly account and loads Embedly's script from
+     * {@code cdn.embedly.com}. Ships under {@code js/third_party/}.
+     */
+    EMBEDLY("embedly", "embedly"),
+
+    /**
      * An emoji picker. {@link FroalaOptions#withEmoticonsUseImage(boolean)} controls how the emoji are inserted.
      */
     EMOTICONS("emoticons", "emoticons"),
@@ -135,6 +141,12 @@ public enum FroalaPlugin {
     FIND_AND_REPLACE("find_and_replace", "findReplace"),
 
     /**
+     * A picker that inserts Font Awesome icons. Requires the Font Awesome stylesheet on the page, which neither Froala
+     * nor this add-on provides. Ships under {@code js/third_party/}.
+     */
+    FONT_AWESOME("font_awesome", "fontAwesome"),
+
+    /**
      * A font picker for the selection.
      */
     FONT_FAMILY("font_family", "fontFamily"),
@@ -165,11 +177,23 @@ public enum FroalaPlugin {
     IMAGE("image", "image"),
 
     /**
+     * Opens an inserted image in the Filerobot image editor. Requires the Filerobot library on the page
+     * ({@code window.FilerobotImageEditor}). Ships under {@code js/third_party/}.
+     */
+    IMAGE_FILEROBOT("imageFileRobot", "imageFilerobot"),
+
+    /**
      * A browser for images already uploaded. Requires a server endpoint that lists them, in Froala's
      * {@code imageManagerLoadURL} option, whose default points at Froala's own demo server. Set the option with
      * {@link FroalaEditor#setOptions(String)}.
      */
     IMAGE_MANAGER("image_manager", "imageManager"),
+
+    /**
+     * Opens an inserted image in the Toast UI image editor. Requires that library on the page ({@code window.tui}).
+     * Ships under {@code js/third_party/}.
+     */
+    IMAGE_TUI("image_tui", "imageTUI"),
 
     /**
      * Reads a {@code .docx} file into the editor. Converts it in the browser using the third-party mammoth.js library,
@@ -261,6 +285,13 @@ public enum FroalaPlugin {
     SPECIAL_CHARACTERS("special_characters", "specialCharacters"),
 
     /**
+     * Spell checking through WebSpellChecker's SCAYT service, which is a paid subscription. Loads its script from
+     * {@code svc.webspellchecker.net}. Not the browser's own spell checker, which Froala's {@code spellcheck} option
+     * switches and which works without this plugin. Ships under {@code js/third_party/}.
+     */
+    SPELL_CHECKER("spell_checker", "spellChecker"),
+
+    /**
      * Inserting and editing tables, including cell styling.
      */
     TABLE("table", "table"),
@@ -305,7 +336,8 @@ public enum FroalaPlugin {
     }
 
     /**
-     * Returns the plugin's file name without extension, as it appears under {@code js/plugins/} in the npm package.
+     * Returns the plugin's file name without extension, as it appears under {@code js/plugins/} or
+     * {@code js/third_party/} in the npm package.
      *
      * @return the file name, for example {@code font_family}
      */

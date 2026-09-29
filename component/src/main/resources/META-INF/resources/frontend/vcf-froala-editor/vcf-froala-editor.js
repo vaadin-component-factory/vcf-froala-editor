@@ -1,5 +1,4 @@
-import 'froala-editor/css/froala_editor.pkgd.min.css';
-import FroalaEditor from 'froala-editor/js/froala_editor.pkgd.min.js';
+import { FroalaEditor, loadFroalaFiles } from './froala-loader.js';
 import { css, html, LitElement } from 'lit';
 import { defineCustomElement } from '@vaadin/component-base/src/define.js';
 import { ElementMixin } from '@vaadin/component-base/src/element-mixin.js';
@@ -44,6 +43,9 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   // replaceSelectionContent calls that arrived before the editor was initialized, applied from its `initialized` event
   _pendingInserts = [];
+
+  // a focus() that arrived before the editor was initialized, applied from its `initialized` event
+  _pendingFocus = false;
 
   // what the server was last told about the selection, so that only a switch between "none" and "some" is reported
   _hasSelection = false;
@@ -210,91 +212,112 @@ class FroalaEditorElement extends SlotStylesMixin(
     // `isConnected` is the DOM's own flag. Lit does not check it before running firstUpdated, and Flow can attach
     // and detach an element before that first update flushes. The editor would then belong to a host that
     // already had its one and only disconnectedCallback, and nothing would ever destroy it.
-    if (!this.isConnected) {
+    if (!this.isConnected || this.editor) {
       return;
     }
 
-    if (!this.editor) {
-      this.editorElement = document.createElement('div');
+    // Counted up front, because loading the files is asynchronous. A destroy or another build in the meantime counts
+    // again, and this build then gives up. See _editorGeneration.
+    const generation = ++this._editorGeneration;
+    const serverOptions = this.options;
+    const pluginsEnabled = await loadFroalaFiles(serverOptions);
 
-      // Froala adopts the content of the element it initializes on, so seeding it here is what applies the
-      // server's initial value. There is no init option for the content.
-      this.editorElement.innerHTML = this._lastSyncedValue;
-      this.append(this.editorElement); // will be put into the default slot
-
-      // The server's options first, ours on top. Where this add-on owns a setter for something Froala also has as
-      // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
-      // overwritten with an undefined we do not have.
-      //
-      // Underneath the server's options sit two defaults of ours. The vaadin theme is on unless they pick another.
-      // The save plugin is off unless they ask for it. The value reaches the server through the value change
-      // listener, and without a saveURL the plugin only runs a failing save after every edit.
-      const options = { saveInterval: 0, theme: 'vaadin', ...this.options };
-      this._appliedOptions = JSON.stringify(this.options ?? null);
-
-      if (this.licenseKey) {
-        options.key = this.licenseKey;
-      }
-      if (this._valueChangeTimeout !== null) {
-        options.typingTimer = this._valueChangeTimeout;
-      }
-
-      // Froala builds asynchronously, so an options change can arrive while the editor being replaced is still
-      // bootstrapping. See _editorGeneration.
-      const generation = ++this._editorGeneration;
-      const fromCurrentEditor =
-        (handler) =>
-        (...args) => {
-          if (generation === this._editorGeneration) {
-            handler(...args);
-          }
-        };
-
-      this.editor = new FroalaEditor(this.editorElement, {
-        ...options,
-        events: {
-          initialized: fromCurrentEditor(() => {
-            this._editorInitialized = true;
-
-            // anything touching editor modules has to wait for this event, so re-apply what the server may
-            // already have set while Froala was still building
-            this.updateReadonlyMode();
-
-            if (this.valueChangeMode === 'interval') {
-              this.startValueChangeInterval();
-            }
-
-            this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
-
-            // Froala has no selection event of its own. The document's selectionchange catches every way a selection
-            // is made (mouse, Shift+arrows, select all), and registered through Froala it goes away with the editor.
-            this.editor.events.$on(
-              this.editor.$doc,
-              'selectionchange',
-              fromCurrentEditor(() => this._reportSelection())
-            );
-            // After an options rebuild the server may still believe in the old editor's selection, because its
-            // listener was gone before its content was removed. A re-attach is a new element, and the server handles
-            // that one itself.
-            this._reportSelection();
-          }),
-          blur: fromCurrentEditor(() => {
-            // Flush in every mode, not just ON_BLUR. The click that moved focus can detach the component, which
-            // clears pending timers and would take the last edit with it. An empty delta sends nothing.
-            this.onValueChange();
-            this.dispatchEvent(new CustomEvent('blur'));
-          }),
-          focus: fromCurrentEditor(() => {
-            this.dispatchEvent(new CustomEvent('focus'));
-          }),
-          contentChanged: fromCurrentEditor(() => {
-            if (this.valueChangeMode === 'change') {
-              this.onValueChangeThrottled();
-            }
-          }),
-        },
-      });
+    if (generation !== this._editorGeneration || !this.isConnected) {
+      return;
     }
+
+    if (this.options !== serverOptions) {
+      // the server sent other options while the files were loading, and those may need other files
+      await this._initEditor();
+      return;
+    }
+
+    this.editorElement = document.createElement('div');
+
+    // Froala adopts the content of the element it initializes on, so seeding it here is what applies the
+    // server's initial value. There is no init option for the content.
+    this.editorElement.innerHTML = this._lastSyncedValue;
+    this.append(this.editorElement); // will be put into the default slot
+
+    // The server's options first, ours on top. Where this add-on owns a setter for something Froala also has as
+    // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
+    // overwritten with an undefined we do not have.
+    //
+    // Underneath the server's options sit two defaults of ours. The vaadin theme is on unless they pick another.
+    // The save plugin is off unless they ask for it. The value reaches the server through the value change
+    // listener, and without a saveURL the plugin only runs a failing save after every edit.
+    //
+    // pluginsEnabled always comes from loadFroalaFiles, which names the plugins explicitly.
+    const options = { saveInterval: 0, theme: 'vaadin', ...this.options, pluginsEnabled };
+    this._appliedOptions = JSON.stringify(this.options ?? null);
+
+    if (this.licenseKey) {
+      options.key = this.licenseKey;
+    }
+    if (this._valueChangeTimeout !== null) {
+      options.typingTimer = this._valueChangeTimeout;
+    }
+
+    // Froala builds asynchronously, so an options change can arrive while the editor being replaced is still
+    // bootstrapping. See _editorGeneration.
+    const fromCurrentEditor =
+      (handler) =>
+      (...args) => {
+        if (generation === this._editorGeneration) {
+          handler(...args);
+        }
+      };
+
+    this.editor = new FroalaEditor(this.editorElement, {
+      ...options,
+      events: {
+        initialized: fromCurrentEditor(() => {
+          this._editorInitialized = true;
+
+          // anything touching editor modules has to wait for this event, so re-apply what the server may
+          // already have set while Froala was still building
+          this.updateReadonlyMode();
+
+          if (this.valueChangeMode === 'interval') {
+            this.startValueChangeInterval();
+          }
+
+          this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
+
+          if (this._pendingFocus) {
+            this._pendingFocus = false;
+            this.editor.events.focus();
+          }
+
+          // Froala has no selection event of its own. The document's selectionchange catches every way a selection
+          // is made (mouse, Shift+arrows, select all), and registered through Froala it goes away with the editor.
+          this.editor.events.$on(
+            this.editor.$doc,
+            'selectionchange',
+            fromCurrentEditor(() => this._reportSelection())
+          );
+
+          // After an options rebuild the server may still believe in the old editor's selection, because its
+          // listener was gone before its content was removed. A re-attach is a new element, and the server handles
+          // that one itself.
+          this._reportSelection();
+        }),
+        blur: fromCurrentEditor(() => {
+          // Flush in every mode, not just ON_BLUR. The click that moved focus can detach the component, which
+          // clears pending timers and would take the last edit with it. An empty delta sends nothing.
+          this.onValueChange();
+          this.dispatchEvent(new CustomEvent('blur'));
+        }),
+        focus: fromCurrentEditor(() => {
+          this.dispatchEvent(new CustomEvent('focus'));
+        }),
+        contentChanged: fromCurrentEditor(() => {
+          if (this.valueChangeMode === 'change') {
+            this.onValueChangeThrottled();
+          }
+        }),
+      },
+    });
   }
 
   _reportSelection() {
@@ -482,9 +505,18 @@ class FroalaEditorElement extends SlotStylesMixin(
     this.onValueChange();
   }
 
+  /**
+   * Focuses the editing area. A call that arrives while the editor is still loading its files or building, typically
+   * in the same round trip as the attach, is held back until the editor is initialized.
+   */
   focus() {
     super.focus();
-    this.editor?.events.focus();
+
+    if (this._editorInitialized) {
+      this.editor.events.focus();
+    } else {
+      this._pendingFocus = true;
+    }
   }
 
   updated(changedProperties) {

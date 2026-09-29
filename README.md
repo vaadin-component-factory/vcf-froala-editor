@@ -95,6 +95,28 @@ Limits of options:
   accepted, but has no effect. Froala events reach the server only through the
   listeners `FroalaEditor` offers.
 
+### Plugins and languages
+
+The browser downloads a Froala plugin or language file only when an editor needs it. An
+editor gets the plugins of Froala's packaged bundle unless you name them:
+
+```java
+FroalaOptions options = FroalaOptions.defaults()
+        .withPluginsEnabled(FroalaPlugin.ALIGN, FroalaPlugin.LISTS, FroalaPlugin.TRACK_CHANGES)
+        .withLanguage("de");
+```
+
+- `FroalaPlugin` covers every plugin file of the npm package. `TRACK_CHANGES`, `TRIM_VIDEO`
+  and the five under `js/third_party/` are in no Froala bundle, so an editor only gets them
+  when you enable them. The Javadoc of each constant names what it needs, such as a library
+  on the page or a service account.
+- `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
+  A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
+  shows English tooltips, because the file is called `de`.
+- Track changes marks insertions and deletions in the HTML. That markup reaches the server
+  with the value unless the changes are accepted or rejected first. For example a deletion
+  stays in the value as a `<span data-tracking-deleted="true">`.
+
 ### Toolbar
 
 `withToolbarButtons` takes a `FroalaToolbar`, either flat or grouped.
