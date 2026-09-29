@@ -56,6 +56,18 @@ are in `docs/adr/`.
   demo has no tests and `e2e/` does not depend on it (maintainer, 2026-09-28).
 - **Never self-dispatch after a question:** if you ask the user something, wait
   for the answer before acting.
+- **Subagent models:** pick the cheapest model that fits a subagent. Always pass `model`
+  explicitly — the inherited default is Opus or better, which is expensive for mechanical
+  work. Restate the critical rules in each subagent's prompt. When unsure, start cheaper
+  and escalate only if the output is shallow.
+
+  | Subagent role | Model |
+  |---|---|
+  | Mechanical implementer (plan specifies the exact code) | Haiku |
+  | Explore / search ("where is X defined") | Haiku |
+  | Multi-file integration / pattern matching | Sonnet |
+  | Per-phase code-quality or spec-compliance review | Sonnet |
+  | Final whole-branch / holistic / deep design review | Opus or better |
 
 ## Agent skills
 
