@@ -15,7 +15,7 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
@@ -108,7 +108,7 @@ public class OptionsView extends VerticalLayout {
 
     private FroalaOptions buildOptions() {
         // the counters are not among the basics, and their options do nothing without their plugins
-        EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
+        Set<String> plugins = FroalaPlugin.basics();
         plugins.add(FroalaPlugin.CHAR_COUNTER);
         plugins.add(FroalaPlugin.WORD_COUNTER);
 

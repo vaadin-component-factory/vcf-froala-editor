@@ -16,50 +16,41 @@
 package com.vaadin.componentfactory.froala;
 
 /**
- * The look of the editor. Maps to Froala's {@code theme} option. The add-on uses {@link #VAADIN} unless the options set
- * another one.
+ * The names of the editor's looks, for Froala's {@code theme} option. The add-on uses {@link #VAADIN} unless the
+ * options set another one.
  *
- * @see FroalaOptions#withTheme(FroalaTheme)
- * @see FroalaOptions#withCustomTheme(String)
+ * <p>
+ * The constants are plain strings, so a theme of your own is a plain string too. Froala puts the class
+ * {@code <theme>-theme} on the editor and on its popups, and the stylesheet for it is yours to load.
+ *
+ * @see FroalaOptions#withTheme(String)
  */
-public enum FroalaTheme {
+public final class FroalaTheme {
 
     /**
      * Follows the Vaadin theme, including its dark variant. The add-on's default. The colours come from the
      * {@code --vcf-froala-*} custom properties, which are set from Lumo and can be overridden.
      */
-    VAADIN("vaadin"),
+    public static final String VAADIN = "vaadin";
 
     /**
      * Froala's dark theme. Its stylesheet {@code froala-editor/css/themes/dark.min.css} is not loaded by the add-on.
      */
-    DARK("dark"),
+    public static final String DARK = "dark";
 
     /**
      * Froala's gray theme. Its stylesheet {@code froala-editor/css/themes/gray.min.css} is not loaded by the add-on.
      */
-    GRAY("gray"),
+    public static final String GRAY = "gray";
 
     /**
      * Froala's royal theme. Its stylesheet {@code froala-editor/css/themes/royal.min.css} is not loaded by the add-on.
      */
-    ROYAL("royal"),
+    public static final String ROYAL = "royal";
 
     /** No theme. The editor looks as Froala's own stylesheet draws it. */
-    NONE(null);
+    public static final String NONE = "";
 
-    private final String optionValue;
-
-    FroalaTheme(String optionValue) {
-        this.optionValue = optionValue;
-    }
-
-    /**
-     * Returns the value Froala's {@code theme} option expects.
-     *
-     * @return the option value, for example {@code "dark"}, or null for {@link #NONE}
-     */
-    public String getOptionValue() {
-        return optionValue;
+    private FroalaTheme() {
     }
 }

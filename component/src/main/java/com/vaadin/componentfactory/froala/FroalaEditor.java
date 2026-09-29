@@ -197,7 +197,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // The plugins for options that name none. A property of its own, so that the options on the element stay what
         // the application set, and the client needs no list of its own.
         JsonArray basics = Json.createArray();
-        FroalaPlugin.basics().forEach(plugin -> basics.set(basics.length(), plugin.getPluginName()));
+        FroalaPlugin.basics().forEach(plugin -> basics.set(basics.length(), plugin));
         element.setPropertyJson(DEFAULT_PLUGINS_PROPERTY, basics);
 
         element.addEventListener("_value-delta", event -> {

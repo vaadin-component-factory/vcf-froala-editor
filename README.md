@@ -119,7 +119,7 @@ FroalaOptions options = FroalaOptions.defaults()
   so adding one plugin takes one line:
 
   ```java
-  EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
+  Set<String> plugins = FroalaPlugin.basics();
   plugins.add(FroalaPlugin.TABLE);
   options = options.withPluginsEnabled(plugins);
   ```
@@ -127,7 +127,31 @@ FroalaOptions options = FroalaOptions.defaults()
   `FroalaPlugin.all()` enables every plugin, as in
   `options.withPluginsEnabled(FroalaPlugin.all())`. Some plugins need a server, a second
   library or a paid service, and the Javadoc of each constant says which.
-- `FroalaPlugin` covers every plugin file of the npm package.
+- `FroalaPlugin` covers every plugin file of the npm package. Its constants hold the name
+  each plugin registers itself under, which is what Froala expects. For example the file
+  `find_and_replace.min.js` registers `findReplace`, and that is what
+  `FroalaPlugin.FIND_AND_REPLACE` holds.
+- A plugin of your own goes into the same list by its registered name. The add-on only loads
+  Froala's plugin files, so your application loads the file that registers yours, for example
+  with `@JsModule`:
+
+  ```js
+  // frontend/my-plugin.js
+  import FroalaEditor from 'froala-editor';
+
+  FroalaEditor.PLUGINS.myPlugin = function (editor) {
+    return { _init() { /* ... */ } };
+  };
+  ```
+
+  ```java
+  @JsModule("./my-plugin.js")
+  public class MyView extends Div {
+      public MyView() {
+          add(new FroalaEditor(FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.LISTS, "myPlugin")));
+      }
+  }
+  ```
 - `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
   A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
   shows English tooltips, because the file is called `de`.
@@ -273,8 +297,8 @@ FroalaOptions.defaults().withTheme(FroalaTheme.NONE);
 // Froala's dark theme
 FroalaOptions.defaults().withTheme(FroalaTheme.DARK);
 
-// a theme of your own, styled through the class brand-theme
-FroalaOptions.defaults().withCustomTheme("brand");
+// a theme of your own, styled through the class brand-theme, with a stylesheet you load yourself
+FroalaOptions.defaults().withTheme("brand");
 ```
 
 ### Working with the selection

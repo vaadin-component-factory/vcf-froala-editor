@@ -15,7 +15,7 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 import com.vaadin.componentfactory.froala.FroalaPlugin;
 
@@ -29,9 +29,9 @@ final class DemoPlugins {
      * Every plugin except those that need a server, a second library or a paid service, which this demo does not
      * provide.
      */
-    static EnumSet<FroalaPlugin> full() {
-        EnumSet<FroalaPlugin> full = FroalaPlugin.all();
-        full.removeAll(EnumSet.of(FroalaPlugin.AI_ASSIST, FroalaPlugin.COLLABORATIVE, FroalaPlugin.EMBEDLY,
+    static Set<String> full() {
+        Set<String> full = FroalaPlugin.all();
+        full.removeAll(Set.of(FroalaPlugin.AI_ASSIST, FroalaPlugin.COLLABORATIVE, FroalaPlugin.EMBEDLY,
                 FroalaPlugin.FILESTACK, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT,
                 FroalaPlugin.IMAGE_MANAGER, FroalaPlugin.IMAGE_TUI, FroalaPlugin.IMPORT_FROM_WORD, FroalaPlugin.SAVE,
                 FroalaPlugin.SPELL_CHECKER, FroalaPlugin.TRIM_VIDEO));

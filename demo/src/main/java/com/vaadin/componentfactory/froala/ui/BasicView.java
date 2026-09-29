@@ -17,9 +17,9 @@ package com.vaadin.componentfactory.froala.ui;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -154,10 +154,10 @@ public class BasicView extends FroalaViewBase {
         MenuItem wordCounter = checkable(menu, "Word counter", false);
 
         AtomicReference<FroalaTextDirection> direction = new AtomicReference<>();
-        AtomicReference<FroalaTheme> theme = new AtomicReference<>();
+        AtomicReference<String> theme = new AtomicReference<>();
         Runnable apply = () -> {
             // the counters are plugins of their own, not among the basics
-            EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
+            Set<String> plugins = FroalaPlugin.basics();
             if (charCounter.isChecked()) {
                 plugins.add(FroalaPlugin.CHAR_COUNTER);
             }
@@ -181,13 +181,22 @@ public class BasicView extends FroalaViewBase {
                     apply.run();
                 });
 
-        List<FroalaTheme> themes = new ArrayList<>();
-        themes.add(null);
-        themes.addAll(List.of(FroalaTheme.values()));
-        choice(themeMenu, themes, null, value -> value == null ? "The add-on's default" : value.name(), value -> {
+        List<String> themes = Arrays.asList(null, FroalaTheme.VAADIN, FroalaTheme.DARK, FroalaTheme.GRAY,
+                FroalaTheme.ROYAL, FroalaTheme.NONE);
+        choice(themeMenu, themes, null, BasicView::themeLabel, value -> {
             theme.set(value);
             apply.run();
         });
+    }
+
+    private static String themeLabel(String theme) {
+        if (theme == null) {
+            return "The add-on's default";
+        }
+        if (theme.isEmpty()) {
+            return "None";
+        }
+        return theme;
     }
 
     private static MenuItem checkable(SubMenu menu, String text, boolean checked) {

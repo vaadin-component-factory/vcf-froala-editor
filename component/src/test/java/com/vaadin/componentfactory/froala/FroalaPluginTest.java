@@ -15,7 +15,11 @@
  */
 package com.vaadin.componentfactory.froala;
 
-import java.util.EnumSet;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,12 +34,10 @@ class FroalaPluginTest {
 
     @Test
     void basics_areExactlyTheAgreedList() {
-        assertEquals(
-                EnumSet.of(FroalaPlugin.ALIGN, FroalaPlugin.COLORS, FroalaPlugin.FIND_AND_REPLACE,
-                        FroalaPlugin.FONT_FAMILY, FroalaPlugin.FONT_SIZE, FroalaPlugin.HELP, FroalaPlugin.LINE_HEIGHT,
-                        FroalaPlugin.LINK, FroalaPlugin.LINK_TO_ANCHOR, FroalaPlugin.LISTS,
-                        FroalaPlugin.PARAGRAPH_FORMAT, FroalaPlugin.QUOTE, FroalaPlugin.URL, FroalaPlugin.WORD_PASTE),
-                FroalaPlugin.basics());
+        assertEquals(Set.of(FroalaPlugin.ALIGN, FroalaPlugin.COLORS, FroalaPlugin.FIND_AND_REPLACE,
+                FroalaPlugin.FONT_FAMILY, FroalaPlugin.FONT_SIZE, FroalaPlugin.HELP, FroalaPlugin.LINE_HEIGHT,
+                FroalaPlugin.LINK, FroalaPlugin.LINK_TO_ANCHOR, FroalaPlugin.LISTS, FroalaPlugin.PARAGRAPH_FORMAT,
+                FroalaPlugin.QUOTE, FroalaPlugin.URL, FroalaPlugin.WORD_PASTE), FroalaPlugin.basics());
     }
 
     @Test
@@ -46,6 +48,24 @@ class FroalaPluginTest {
         FroalaPlugin.all().clear();
 
         assertFalse(FroalaPlugin.basics().contains(FroalaPlugin.TABLE));
-        assertEquals(EnumSet.allOf(FroalaPlugin.class), FroalaPlugin.all());
+        assertFalse(FroalaPlugin.all().isEmpty());
+    }
+
+    @Test
+    void all_holdsEveryConstant() {
+        assertEquals(constants(), FroalaPlugin.all());
+    }
+
+    private static Set<String> constants() {
+        return Arrays.stream(FroalaPlugin.class.getFields()).filter(field -> Modifier.isStatic(field.getModifiers()))
+                .map(FroalaPluginTest::value).collect(Collectors.toSet());
+    }
+
+    private static String value(Field field) {
+        try {
+            return (String) field.get(null);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
     }
 }

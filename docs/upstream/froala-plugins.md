@@ -180,7 +180,7 @@ unwired.
 
 Ships as `js/plugins/edit_in_popup.min.js` but registers
 `MODULES.editInPopup`, not a plugin. `pluginsEnabled` has no say over it, which
-is why `FroalaPlugin` has 48 constants for 49 files.
+is why `FroalaPlugin` has no constant for it.
 
 ## How to redo any of this
 

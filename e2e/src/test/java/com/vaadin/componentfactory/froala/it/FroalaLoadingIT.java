@@ -16,11 +16,9 @@
 package com.vaadin.componentfactory.froala.it;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.microsoft.playwright.Route;
 import org.junit.jupiter.api.Test;
@@ -99,14 +97,23 @@ class FroalaLoadingIT extends SpringPlaywrightIT {
     void restrictedPlugins_downloadOnlyTheirOwnFiles() {
         waitForEditor("editor");
 
-        // A production chunk is named after its source file with a hash appended, such as align.min-BowZ32Ae.js
-        List<String> scripts = downloadedScripts();
-        List<String> pluginFiles = Arrays.stream(FroalaPlugin.values()).map(FroalaPlugin::getFileName)
-                .filter(file -> scripts.stream().anyMatch(script -> script.startsWith(file + ".min-"))).toList();
+        // A production chunk is named after its source file with a hash appended, such as align.min-BowZ32Ae.js. Of
+        // Froala's files only the plugin files end in .min, the language files do not (de-jy2OPth8.js).
+        List<String> pluginFiles = downloadedScripts().stream().filter(script -> script.contains(".min-"))
+                .map(script -> script.substring(0, script.indexOf(".min-"))).toList();
 
         assertEquals(List.of("align"), pluginFiles, "plugin files downloaded");
         assertEquals(List.of("align"), pluginsEnabled("editor"));
         assertTrue(hasPluginInstance("editor", "align"));
+    }
+
+    @Test
+    void ownPlugin_isBuilt() {
+        // the loader has no file for it and must pass the name on to Froala untouched
+        waitForEditor("own");
+
+        assertEquals(List.of("ownPlugin"), pluginsEnabled("own"));
+        assertTrue(hasPluginInstance("own", "ownPlugin"));
     }
 
     @Test
@@ -141,8 +148,7 @@ class FroalaLoadingIT extends SpringPlaywrightIT {
         openAllPluginsView();
         waitForEditor("all");
 
-        List<String> missing = Arrays.stream(FroalaPlugin.values()).map(FroalaPlugin::getPluginName)
-                .filter(plugin -> !hasPluginInstance("all", plugin)).toList();
+        List<String> missing = FroalaPlugin.all().stream().filter(plugin -> !hasPluginInstance("all", plugin)).toList();
 
         assertEquals(List.of(), missing, "plugins Froala did not build");
     }
@@ -152,16 +158,14 @@ class FroalaLoadingIT extends SpringPlaywrightIT {
         openAllPluginsView();
         // the first editor has registered the plugins basics() leaves out on the page by now
         waitForEditor("all");
-        String table = FroalaPlugin.TABLE.getPluginName();
+        String table = FroalaPlugin.TABLE;
         assertTrue(pluginsEnabled("all").contains(table), "all() enables what basics() leaves out");
 
         page.locator("#add-defaults").click();
         assertThat(page.locator("#add-defaults")).isDisabled();
         waitForEditor("defaults");
 
-        Set<String> basics = FroalaPlugin.basics().stream().map(FroalaPlugin::getPluginName)
-                .collect(Collectors.toSet());
-        assertEquals(basics, Set.copyOf(pluginsEnabled("defaults")));
+        assertEquals(FroalaPlugin.basics(), Set.copyOf(pluginsEnabled("defaults")));
         assertFalse(hasPluginInstance("defaults", table));
     }
 }

@@ -107,7 +107,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         // THM-5
         waitForEditors();
 
-        assertEquals(null, page.evaluate("() => document.querySelector('#plain').editor.opts.theme"));
+        assertEquals("", page.evaluate("() => document.querySelector('#plain').editor.opts.theme"));
         assertEquals(0, page.locator("#plain .vaadin-theme").count());
     }
 

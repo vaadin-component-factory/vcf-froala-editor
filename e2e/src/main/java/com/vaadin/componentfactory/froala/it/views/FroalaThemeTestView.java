@@ -15,7 +15,7 @@
  */
 package com.vaadin.componentfactory.froala.it.views;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaEditorVariant;
@@ -40,10 +40,16 @@ public class FroalaThemeTestView extends VerticalLayout {
      * The plugins of Froala's packaged bundle, whose stylesheet the theme is generated from, so that the tests see
      * everything the theme covers. That is every plugin except track changes, video trimming and the third-party ones.
      */
-    private static final FroalaOptions WITH_BUNDLED_PLUGINS = FroalaOptions.defaults()
-            .withPluginsEnabled(EnumSet.complementOf(EnumSet.of(FroalaPlugin.TRACK_CHANGES, FroalaPlugin.TRIM_VIDEO,
-                    FroalaPlugin.EMBEDLY, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT,
-                    FroalaPlugin.IMAGE_TUI, FroalaPlugin.SPELL_CHECKER)));
+    private static final FroalaOptions WITH_BUNDLED_PLUGINS = FroalaOptions.defaults().withPluginsEnabled(bundled());
+
+    private static Set<String> bundled() {
+        Set<String> plugins = FroalaPlugin.all();
+        plugins.removeAll(Set.of(FroalaPlugin.TRACK_CHANGES, FroalaPlugin.TRIM_VIDEO, FroalaPlugin.EMBEDLY,
+                FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT, FroalaPlugin.IMAGE_TUI,
+                FroalaPlugin.SPELL_CHECKER));
+
+        return plugins;
+    }
 
     public FroalaThemeTestView() {
         FroalaEditor themed = new FroalaEditor("Default theme", WITH_BUNDLED_PLUGINS);

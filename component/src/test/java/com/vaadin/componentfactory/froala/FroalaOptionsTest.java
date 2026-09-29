@@ -20,7 +20,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,7 +65,7 @@ class FroalaOptionsTest {
         assertEquals("{\"spellcheck\":false}", FroalaOptions.defaults().withSpellcheck(false).toString());
         // THM-6
         assertEquals("{\"theme\":\"dark\"}", FroalaOptions.defaults().withTheme(FroalaTheme.DARK).toString());
-        assertEquals("{\"theme\":\"brand\"}", FroalaOptions.defaults().withCustomTheme("brand").toString());
+        assertEquals("{\"theme\":\"brand\"}", FroalaOptions.defaults().withTheme("brand").toString());
     }
 
     @Test
@@ -131,9 +130,10 @@ class FroalaOptionsTest {
     }
 
     @Test
-    void themeNone_isAnExplicitNull() {
-        // THM-5. The add-on's own default only applies to a missing key, so "no theme" has to be sent as null.
-        assertEquals("{\"theme\":null}", FroalaOptions.defaults().withTheme(FroalaTheme.NONE).toString());
+    void themeNone_isAnEmptyString() {
+        // THM-5. The add-on's own default only applies to a missing key, so "no theme" has to be sent as a value that
+        // Froala reads as none.
+        assertEquals("{\"theme\":\"\"}", FroalaOptions.defaults().withTheme(FroalaTheme.NONE).toString());
     }
 
     @Test
@@ -151,22 +151,14 @@ class FroalaOptionsTest {
 
     @Test
     void pluginsEnabled_usesTheRegistryNameNotTheFileName() {
-        // This is the trap the enum exists for. The file is font_family.min.js, but pluginsEnabled only understands
+        // This is the trap the constants exist for. The file is font_family.min.js, but pluginsEnabled only understands
         // fontFamily. Passing the file name switches the plugin off instead of on, silently.
         assertEquals("{\"pluginsEnabled\":[\"fontFamily\",\"findReplace\",\"track_changes\"]}", FroalaOptions.defaults()
                 .withPluginsEnabled(FroalaPlugin.FONT_FAMILY, FroalaPlugin.FIND_AND_REPLACE, FroalaPlugin.TRACK_CHANGES)
                 .toString());
 
-        assertEquals("{\"pluginsEnabled\":[\"align\"]}",
-                FroalaOptions.defaults().withPluginsEnabled(List.of(FroalaPlugin.ALIGN)).toString());
-    }
-
-    @Test
-    void everyPlugin_carriesBothNames() {
-        for (FroalaPlugin plugin : FroalaPlugin.values()) {
-            assertFalse(plugin.getFileName().isBlank(), plugin + " has no file name");
-            assertFalse(plugin.getPluginName().isBlank(), plugin + " has no plugin name");
-        }
+        assertEquals("{\"pluginsEnabled\":[\"align\",\"myPlugin\"]}",
+                FroalaOptions.defaults().withPluginsEnabled(List.of(FroalaPlugin.ALIGN, "myPlugin")).toString());
     }
 
     @Test
@@ -185,7 +177,7 @@ class FroalaOptionsTest {
         // present and null overrides it with nothing.
         assertEquals("{}", FroalaOptions.defaults().withLanguage("de").withLanguage(null).toString());
         assertEquals("{}", FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.ALIGN)
-                .withPluginsEnabled((List<FroalaPlugin>) null).toString());
+                .withPluginsEnabled((List<String>) null).toString());
     }
 
     @Test

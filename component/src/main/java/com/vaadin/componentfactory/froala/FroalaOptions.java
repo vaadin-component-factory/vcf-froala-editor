@@ -169,28 +169,20 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets the look of the editor. Froala's {@code theme}. Without it the add-on uses {@link FroalaTheme#VAADIN}.
+     * Sets the look of the editor. Froala's {@code theme}. Without it the add-on uses {@link FroalaTheme#VAADIN}. A
+     * theme of your own is its name. Froala puts the class {@code <theme>-theme} on the editor and on its popups, and
+     * the stylesheet for it is yours to load.
      *
-     * @param theme the theme, or null for the add-on's default
+     * <pre>
+     * options.withTheme(FroalaTheme.NONE);
+     * options.withTheme("brand"); // the class brand-theme
+     * </pre>
+     *
+     * @param theme a {@link FroalaTheme} or the name of your own, {@link FroalaTheme#NONE} for no theme, or null for
+     *            the add-on's default
      * @return a new instance
      */
-    public FroalaOptions withTheme(FroalaTheme theme) {
-        if (theme == FroalaTheme.NONE) {
-            // an explicit null, so the add-on's default does not apply either
-            return with("theme", Json.createNull());
-        }
-        return with("theme", theme == null ? null : theme.getOptionValue());
-    }
-
-    /**
-     * Sets a theme of your own. Froala puts the class {@code <theme>-theme} on the editor and on its popups, and the
-     * stylesheet for it is yours to load.
-     *
-     * @param theme the theme name, for example {@code "brand"} for the class {@code brand-theme}, or null for the
-     *            add-on's default. An empty name leaves the editor without a theme, like {@link FroalaTheme#NONE}.
-     * @return a new instance
-     */
-    public FroalaOptions withCustomTheme(String theme) {
+    public FroalaOptions withTheme(String theme) {
         return with("theme", theme);
     }
 
@@ -731,7 +723,7 @@ public final class FroalaOptions implements Serializable {
      * @param plugins the plugins the editor may use, or null for {@link FroalaPlugin#basics()}
      * @return a new instance
      */
-    public FroalaOptions withPluginsEnabled(FroalaPlugin... plugins) {
+    public FroalaOptions withPluginsEnabled(String... plugins) {
         return withPluginsEnabled(plugins == null ? null : Arrays.asList(plugins));
     }
 
@@ -743,15 +735,21 @@ public final class FroalaOptions implements Serializable {
      * {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no plugin, among them {@code bold} and
      * {@code italic}, are drawn whatever this option holds.
      *
+     * <p>
+     * A plugin is the name it registers itself under. {@link FroalaPlugin} lists Froala's. A plugin of your own goes
+     * into the same list, and its file is yours to load:
+     *
+     * <pre>
+     * Set&lt;String&gt; plugins = FroalaPlugin.basics();
+     * plugins.add("myPlugin");
+     * options.withPluginsEnabled(plugins);
+     * </pre>
+     *
      * @param plugins the plugins the editor may use, or null for {@link FroalaPlugin#basics()}
      * @return a new instance
      */
-    public FroalaOptions withPluginsEnabled(Collection<FroalaPlugin> plugins) {
-        if (plugins == null) {
-            return with("pluginsEnabled", (JsonValue) null);
-        }
-
-        return with("pluginsEnabled", plugins.stream().map(FroalaPlugin::getPluginName).toList());
+    public FroalaOptions withPluginsEnabled(Collection<String> plugins) {
+        return with("pluginsEnabled", plugins);
     }
 
     // -----------------------------------------------------------------------------------------------------------

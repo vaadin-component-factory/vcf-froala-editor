@@ -15,18 +15,26 @@
  */
 package com.vaadin.componentfactory.froala;
 
-import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
- * The Froala plugins that {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} accepts. These are all plugin files
- * of froala-editor 5.4.0, the ones under {@code js/plugins/} and the five under {@code js/third_party/}. The browser
+ * The names of Froala's plugins, for {@link FroalaOptions#withPluginsEnabled(String...)}. These are all plugin files of
+ * froala-editor 5.4.0, the ones under {@code js/plugins/} and the five under {@code js/third_party/}. The browser
  * downloads a plugin's file only when an editor enables it. An editor without {@code pluginsEnabled} gets
  * {@link #basics()}. Passing a list disables every plugin not in it, and the toolbar buttons of a disabled plugin
  * disappear. See {@link FroalaOptions#withPluginsEnabled(java.util.Collection)}.
  *
  * <p>
- * A plugin's file name and its registered name differ, sometimes unpredictably ({@code find_and_replace} registers as
- * {@code findReplace}). Both are listed. See {@link #getFileName()} and {@link #getPluginName()}.
+ * Each constant holds the name the plugin registers itself under, which is what Froala's {@code pluginsEnabled}
+ * expects. It differs from the file name, sometimes unpredictably. The file {@code find_and_replace.min.js} registers
+ * {@code findReplace}.
+ *
+ * <p>
+ * The constants are plain strings, so a plugin an application registers itself goes into the same list as a plain
+ * string. The add-on only loads Froala's own plugin files. The application loads the file of its own plugin, for
+ * example with {@code @JsModule}.
  *
  * <p>
  * Six of them need a server endpoint or an account that neither Froala nor this add-on provides, and do nothing without
@@ -40,87 +48,87 @@ import java.util.EnumSet;
  * {@code edit_in_popup} ships as a plugin file but registers a module, not a plugin, so {@code pluginsEnabled} has no
  * say over it and it is not listed here.
  */
-public enum FroalaPlugin {
+public final class FroalaPlugin {
 
     /**
      * Rewrites the selection, changes its tone or translates it, from a toolbar menu, and opens a chat panel for
      * free-form requests. Requires an endpoint in Froala's {@code aiAssistEndpoint} option, which has no default. Set
      * the option with {@link FroalaEditor#setOptions(String)}.
      */
-    AI_ASSIST("ai_assist", "aiAssist"),
+    public static final String AI_ASSIST = "aiAssist";
 
     /**
      * Left, centre, right and justify alignment for the current block.
      */
-    ALIGN("align", "align"),
+    public static final String ALIGN = "align";
 
     /**
      * Counts characters below the editing area and can enforce a maximum.
      */
-    CHAR_COUNTER("char_counter", "charCounter"),
+    public static final String CHAR_COUNTER = "charCounter";
 
     /**
      * Indents and formats the HTML shown in the code view. Has no toolbar button of its own.
      */
-    CODE_BEAUTIFIER("code_beautifier", "codeBeautifier"),
+    public static final String CODE_BEAUTIFIER = "codeBeautifier";
 
     /**
      * Inserts a block of preformatted code.
      */
-    CODE_SNIPPET("code_snippet", "codeSnippet"),
+    public static final String CODE_SNIPPET = "codeSnippet";
 
     /**
      * Switches the editor between the rendered text and its HTML source.
      */
-    CODE_VIEW("code_view", "codeView"),
+    public static final String CODE_VIEW = "codeView";
 
     /**
      * Several people editing one document, with cursors and comments. Requires a collaboration server to relay the
      * changes.
      */
-    COLLABORATIVE("collaborative", "collaborative"),
+    public static final String COLLABORATIVE = "collaborative";
 
     /**
      * Text and background colour for the selection.
      */
-    COLORS("colors", "colors"),
+    public static final String COLORS = "colors";
 
     /**
      * Bundles the CryptoJS library, which the upload plugins use to sign uploads sent directly to Azure Blob Storage.
      * Has no toolbar button and no options of its own.
      */
-    CRYPTOJS("cryptojs", "cryptoJSPlugin"),
+    public static final String CRYPTOJS = "cryptoJSPlugin";
 
     /**
      * Dragging images and other embedded content to another position in the text.
      */
-    DRAGGABLE("draggable", "draggable"),
+    public static final String DRAGGABLE = "draggable";
 
     /**
      * Embeds a rich preview of a link, rendered by Embedly. Requires an Embedly account and loads Embedly's script from
      * {@code cdn.embedly.com}. Ships under {@code js/third_party/}.
      */
-    EMBEDLY("embedly", "embedly"),
+    public static final String EMBEDLY = "embedly";
 
     /**
      * An emoji picker. {@link FroalaOptions#withEmoticonsUseImage(boolean)} controls how the emoji are inserted.
      */
-    EMOTICONS("emoticons", "emoticons"),
+    public static final String EMOTICONS = "emoticons";
 
     /**
      * Writes non-ASCII characters as HTML entities when the value is read.
      */
-    ENTITIES("entities", "entities"),
+    public static final String ENTITIES = "entities";
 
     /**
      * Downloads the content as a Word document. Generated in the browser, so it requires no service.
      */
-    EXPORT_TO_WORD("export_to_word", "exportToWord"),
+    public static final String EXPORT_TO_WORD = "exportToWord";
 
     /**
      * Uploads a file and inserts a link to it. See {@link FroalaOptions#withFileUploadUrl(String)}.
      */
-    FILE("file", "file"),
+    public static final String FILE = "file";
 
     /**
      * Uploads and inserts several files at once, or inserts them by URL without uploading. Uploads go to the endpoint
@@ -128,214 +136,206 @@ public enum FroalaPlugin {
      * Deleting in its dialog removes a file from the batch waiting to be uploaded, not from a server. Set the option
      * with {@link FroalaEditor#setOptions(String)}.
      */
-    FILES_MANAGER("files_manager", "filesManager"),
+    public static final String FILES_MANAGER = "filesManager";
 
     /**
      * Inserts files through Filestack, a commercial file-handling service. Requires a Filestack account and API key,
      * set with {@link FroalaEditor#setOptions(String)}.
      */
-    FILESTACK("filestack", "filestack"),
+    public static final String FILESTACK = "filestack";
 
     /**
      * Search and replace inside the edited text.
      */
-    FIND_AND_REPLACE("find_and_replace", "findReplace"),
+    public static final String FIND_AND_REPLACE = "findReplace";
 
     /**
      * A picker that inserts Font Awesome icons. Requires the Font Awesome stylesheet on the page, which neither Froala
      * nor this add-on provides. Ships under {@code js/third_party/}.
      */
-    FONT_AWESOME("font_awesome", "fontAwesome"),
+    public static final String FONT_AWESOME = "fontAwesome";
 
     /**
      * A font picker for the selection.
      */
-    FONT_FAMILY("font_family", "fontFamily"),
+    public static final String FONT_FAMILY = "fontFamily";
 
     /**
      * A font size picker for the selection.
      */
-    FONT_SIZE("font_size", "fontSize"),
+    public static final String FONT_SIZE = "fontSize";
 
     /**
      * Editing of form fields placed in the content, including their style and attributes.
      */
-    FORMS("forms", "forms"),
+    public static final String FORMS = "forms";
 
     /**
      * A button that switches the editor to full screen.
      */
-    FULLSCREEN("fullscreen", "fullscreen"),
+    public static final String FULLSCREEN = "fullscreen";
 
     /**
      * A dialog listing the keyboard shortcuts.
      */
-    HELP("help", "help"),
+    public static final String HELP = "help";
 
     /**
      * Inserting, uploading and editing images. See {@link FroalaOptions#withImageUploadUrl(String)}.
      */
-    IMAGE("image", "image"),
+    public static final String IMAGE = "image";
 
     /**
      * Opens an inserted image in the Filerobot image editor. Requires the Filerobot library on the page
      * ({@code window.FilerobotImageEditor}). Ships under {@code js/third_party/}.
      */
-    IMAGE_FILEROBOT("imageFileRobot", "imageFilerobot"),
+    public static final String IMAGE_FILEROBOT = "imageFilerobot";
 
     /**
      * A browser for images already uploaded. Requires a server endpoint that lists them, in Froala's
      * {@code imageManagerLoadURL} option, whose default points at Froala's own demo server. Set the option with
      * {@link FroalaEditor#setOptions(String)}.
      */
-    IMAGE_MANAGER("image_manager", "imageManager"),
+    public static final String IMAGE_MANAGER = "imageManager";
 
     /**
      * Opens an inserted image in the Toast UI image editor. Requires that library on the page ({@code window.tui}).
      * Ships under {@code js/third_party/}.
      */
-    IMAGE_TUI("image_tui", "imageTUI"),
+    public static final String IMAGE_TUI = "imageTUI";
 
     /**
      * Reads a {@code .docx} file into the editor. Converts it in the browser using the third-party mammoth.js library,
      * which Froala does not bundle and expects on the page.
      */
-    IMPORT_FROM_WORD("import_from_word", "importFromWord"),
+    public static final String IMPORT_FROM_WORD = "importFromWord";
 
     /**
      * Applies a named CSS class to the selection, from a configurable list.
      */
-    INLINE_CLASS("inline_class", "inlineClass"),
+    public static final String INLINE_CLASS = "inlineClass";
 
     /**
      * Applies a named inline style to the selection, from a configurable list.
      */
-    INLINE_STYLE("inline_style", "inlineStyle"),
+    public static final String INLINE_STYLE = "inlineStyle";
 
     /**
      * Adds a click target for starting a paragraph between two blocks that cannot otherwise be separated, such as two
      * tables.
      */
-    LINE_BREAKER("line_breaker", "lineBreaker"),
+    public static final String LINE_BREAKER = "lineBreaker";
 
     /**
      * Line height for the current block.
      */
-    LINE_HEIGHT("line_height", "lineHeight"),
+    public static final String LINE_HEIGHT = "lineHeight";
 
     /**
      * Inserting and editing links.
      */
-    LINK("link", "link"),
+    public static final String LINK = "link";
 
     /**
      * Linking to an anchor inside the same document.
      */
-    LINK_TO_ANCHOR("link_to_anchor", "linkToAnchor"),
+    public static final String LINK_TO_ANCHOR = "linkToAnchor";
 
     /**
      * Ordered and unordered lists, including indentation.
      */
-    LISTS("lists", "lists"),
+    public static final String LISTS = "lists";
 
     /**
      * An additional markdown editing mode.
      */
-    MARKDOWN("markdown", "markdown"),
+    public static final String MARKDOWN = "markdown";
 
     /**
      * Inserts a page break for printing and for Word export.
      */
-    PAGE_BREAK("page_break", "pageBreak"),
+    public static final String PAGE_BREAK = "pageBreak";
 
     /**
      * Paragraph, heading and preformatted block types.
      */
-    PARAGRAPH_FORMAT("paragraph_format", "paragraphFormat"),
+    public static final String PARAGRAPH_FORMAT = "paragraphFormat";
 
     /**
      * Applies a named CSS class to the current block, from a configurable list.
      */
-    PARAGRAPH_STYLE("paragraph_style", "paragraphStyle"),
+    public static final String PARAGRAPH_STYLE = "paragraphStyle";
 
     /**
      * A button that prints the content.
      */
-    PRINT("print", "print"),
+    public static final String PRINT = "print";
 
     /**
      * A shortcut shown on an empty line for inserting an image, video, table or list.
      */
-    QUICK_INSERT("quick_insert", "quickInsert"),
+    public static final String QUICK_INSERT = "quickInsert";
 
     /**
      * Applies and removes block quotes.
      */
-    QUOTE("quote", "quote"),
+    public static final String QUOTE = "quote";
 
     /**
      * Posts the content to the endpoint in Froala's {@code saveURL} option on a timer. Requires that endpoint, which
      * has no method on {@link FroalaOptions} and is set with {@link FroalaEditor#setOptions(String)}. The timer is
      * {@link FroalaOptions#withSaveInterval(int)}.
      */
-    SAVE("save", "save"),
+    public static final String SAVE = "save";
 
     /**
      * A picker for characters that are not on the keyboard.
      */
-    SPECIAL_CHARACTERS("special_characters", "specialCharacters"),
+    public static final String SPECIAL_CHARACTERS = "specialCharacters";
 
     /**
      * Spell checking through WebSpellChecker's SCAYT service, which is a paid subscription. Loads its script from
      * {@code svc.webspellchecker.net}. Not the browser's own spell checker, which Froala's {@code spellcheck} option
      * switches and which works without this plugin. Ships under {@code js/third_party/}.
      */
-    SPELL_CHECKER("spell_checker", "spellChecker"),
+    public static final String SPELL_CHECKER = "spellChecker";
 
     /**
      * Inserting and editing tables, including cell styling.
      */
-    TABLE("table", "table"),
+    public static final String TABLE = "table";
 
     /**
      * Records insertions and deletions so they can be accepted or rejected.
      */
-    TRACK_CHANGES("track_changes", "track_changes"),
+    public static final String TRACK_CHANGES = "track_changes";
 
     /**
      * Sets a start and end point on an inserted video. Works through the files manager, and sends the video to a
      * conversion server that froala-editor 5.4.0 hard-codes as {@code http://localhost:3000/convert}.
      */
-    TRIM_VIDEO("trim_video", "trimVideoPlugin"),
+    public static final String TRIM_VIDEO = "trimVideoPlugin";
 
     /**
      * Converts a URL or an email address into a link while the user types.
      */
-    URL("url", "url"),
+    public static final String URL = "url";
 
     /**
      * Inserting and uploading videos, and embedding them from a URL. See
      * {@link FroalaOptions#withVideoUploadUrl(String)}.
      */
-    VIDEO("video", "video"),
+    public static final String VIDEO = "video";
 
     /**
      * Counts words below the editing area and can enforce a maximum.
      */
-    WORD_COUNTER("word_counter", "wordCounter"),
+    public static final String WORD_COUNTER = "wordCounter";
 
     /**
      * Removes the markup Word puts on the clipboard when such content is pasted in.
      */
-    WORD_PASTE("word_paste", "wordPaste");
-
-    private final String fileName;
-    private final String pluginName;
-
-    FroalaPlugin(String fileName, String pluginName) {
-        this.fileName = fileName;
-        this.pluginName = pluginName;
-    }
+    public static final String WORD_PASTE = "wordPaste";
 
     /**
      * Returns the plugins an editor gets when its options name none. A basic rich-text editor: text and paragraph
@@ -344,44 +344,33 @@ public enum FroalaPlugin {
      * offers Froala's sample styles. To add a plugin, change the returned set and pass it on:
      *
      * <pre>
-     * EnumSet&lt;FroalaPlugin&gt; plugins = FroalaPlugin.basics();
+     * Set&lt;String&gt; plugins = FroalaPlugin.basics();
      * plugins.add(FroalaPlugin.TABLE);
      * options.withPluginsEnabled(plugins);
      * </pre>
      *
      * @return a new set on every call, free to change
      */
-    public static EnumSet<FroalaPlugin> basics() {
-        return EnumSet.of(ALIGN, COLORS, FIND_AND_REPLACE, FONT_FAMILY, FONT_SIZE, HELP, LINE_HEIGHT, LINK,
-                LINK_TO_ANCHOR, LISTS, PARAGRAPH_FORMAT, QUOTE, URL, WORD_PASTE);
+    public static Set<String> basics() {
+        return new LinkedHashSet<>(List.of(ALIGN, COLORS, FIND_AND_REPLACE, FONT_FAMILY, FONT_SIZE, HELP, LINE_HEIGHT,
+                LINK, LINK_TO_ANCHOR, LISTS, PARAGRAPH_FORMAT, QUOTE, URL, WORD_PASTE));
     }
 
     /**
-     * Returns every plugin, like {@link EnumSet#allOf(Class)}.
+     * Returns every plugin listed here. An application's own plugins are not among them.
      *
      * @return a new set on every call, free to change
      */
-    public static EnumSet<FroalaPlugin> all() {
-        return EnumSet.allOf(FroalaPlugin.class);
+    public static Set<String> all() {
+        return new LinkedHashSet<>(List.of(AI_ASSIST, ALIGN, CHAR_COUNTER, CODE_BEAUTIFIER, CODE_SNIPPET, CODE_VIEW,
+                COLLABORATIVE, COLORS, CRYPTOJS, DRAGGABLE, EMBEDLY, EMOTICONS, ENTITIES, EXPORT_TO_WORD, FILE,
+                FILES_MANAGER, FILESTACK, FIND_AND_REPLACE, FONT_AWESOME, FONT_FAMILY, FONT_SIZE, FORMS, FULLSCREEN,
+                HELP, IMAGE, IMAGE_FILEROBOT, IMAGE_MANAGER, IMAGE_TUI, IMPORT_FROM_WORD, INLINE_CLASS, INLINE_STYLE,
+                LINE_BREAKER, LINE_HEIGHT, LINK, LINK_TO_ANCHOR, LISTS, MARKDOWN, PAGE_BREAK, PARAGRAPH_FORMAT,
+                PARAGRAPH_STYLE, PRINT, QUICK_INSERT, QUOTE, SAVE, SPECIAL_CHARACTERS, SPELL_CHECKER, TABLE,
+                TRACK_CHANGES, TRIM_VIDEO, URL, VIDEO, WORD_COUNTER, WORD_PASTE));
     }
 
-    /**
-     * Returns the plugin's file name without extension, as it appears under {@code js/plugins/} or
-     * {@code js/third_party/} in the npm package.
-     *
-     * @return the file name, for example {@code font_family}
-     */
-    public String getFileName() {
-        return fileName;
-    }
-
-    /**
-     * Returns the name the plugin registers itself under. This is the name Froala's {@code pluginsEnabled} option
-     * expects.
-     *
-     * @return the registered name, for example {@code fontFamily}
-     */
-    public String getPluginName() {
-        return pluginName;
+    private FroalaPlugin() {
     }
 }
