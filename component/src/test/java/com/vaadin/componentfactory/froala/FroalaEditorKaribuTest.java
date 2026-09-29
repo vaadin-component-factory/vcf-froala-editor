@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.dom.DomEvent;
 import com.vaadin.flow.shared.Registration;
@@ -403,6 +404,46 @@ class FroalaEditorKaribuTest {
         stale.remove();
 
         assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+    }
+
+    @Test
+    void addCommandWithPopover_sendsTheCommandAndPutsThePopoverIntoTheUi() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand command = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
+        Popover popover = new Popover();
+
+        editor.addCommand(command, popover);
+
+        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+        assertTrue(popover.isAttached());
+    }
+
+    @Test
+    void removedPopoverCommand_takesThePopoverOutAgain() {
+        FroalaEditor editor = attachedEditor();
+        Popover popover = new Popover();
+        Registration registration = editor.addCommand(new FroalaCommand("first", "First", VaadinIcon.STAR.create()),
+                popover);
+
+        registration.remove();
+
+        assertEquals("[]", commandsOn(editor));
+        assertNull(popover.getTarget());
+        assertFalse(popover.isAttached());
+    }
+
+    @Test
+    void staleRegistration_leavesTheLaterCommandsPopoverAlone() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand command = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
+        Registration stale = editor.addCommand(command, new Popover());
+        stale.remove();
+        Popover later = new Popover();
+        editor.addCommand(command, later);
+
+        stale.remove();
+
+        assertTrue(later.isAttached());
     }
 
     @Test

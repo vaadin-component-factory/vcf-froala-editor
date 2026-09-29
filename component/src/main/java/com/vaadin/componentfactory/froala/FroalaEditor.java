@@ -30,6 +30,7 @@ import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.HasHelper;
@@ -41,6 +42,7 @@ import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.shared.HasThemeVariant;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
@@ -239,6 +241,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                 added.listener().onComponentEvent(new CommandEvent(this, true, added.command()));
             }
         }).addEventData("event.detail.name");
+
+        // A re-attach builds a new element in the browser, which knows none of the popovers yet
+        addAttachListener(event -> commands.values().forEach(this::sendPopover));
 
         // A re-attach builds a new element in the browser, which starts out knowing nothing of a selection and so never
         // reports that the old one is gone. Listeners that were told "some" hear "none" from here instead.
@@ -488,20 +493,80 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     public Registration addCommand(FroalaCommand command, ComponentEventListener<CommandEvent> listener) {
         Objects.requireNonNull(command, "command must not be null");
         Objects.requireNonNull(listener, "listener must not be null");
-        if (commands.containsKey(command.name())) {
-            throw new IllegalArgumentException("This editor already has a command named '" + command.name() + "'");
+
+        return addCommand(new AddedCommand(command, listener, null));
+    }
+
+    /**
+     * Adds a command of the application's own to this editor, whose toolbar button opens the given popover next to it.
+     * The popover is a plain one, built by the application:
+     *
+     * <pre>
+     * Popover popover = new Popover(new Paragraph("My own popup"));
+     * editor.addCommand(new FroalaCommand("myPopup", "My popup", VaadinIcon.INFO_CIRCLE.create()), popover);
+     * </pre>
+     *
+     * <p>
+     * The popover opens and closes on a click on the button, as its own settings say. The command's shortcut opens it
+     * too. The editor never closes it, so how it closes is up to the popover's configuration. Example: a popover with
+     * {@code setCloseOnOutsideClick(false)} and {@code setCloseOnEsc(false)} stays open until its button is clicked
+     * again, also while the editor is built again.
+     *
+     * <p>
+     * The editor takes the popover as its own. It becomes the popover's {@link Popover#setTarget(Component) target} on
+     * the server and puts the popover into the UI, so the application neither adds it to a layout nor sets a target of
+     * its own. In the browser the popover's target is the command's toolbar button. In an editor whose toolbar does not
+     * list the command there is no button, so the popover never opens there, not even by the shortcut.
+     *
+     * <p>
+     * Everything else is as in {@link #addCommand(FroalaCommand, ComponentEventListener)}.
+     *
+     * @param command the command, not null
+     * @param popover opens at the command's toolbar button in this editor, not null
+     * @return a handle that removes the command from this editor again, and takes the popover out of the UI
+     * @throws IllegalArgumentException if this editor already has a command of the same name
+     */
+    public Registration addCommand(FroalaCommand command, Popover popover) {
+        Objects.requireNonNull(command, "command must not be null");
+        Objects.requireNonNull(popover, "popover must not be null");
+
+        AddedCommand added = new AddedCommand(command, event -> {
+        }, popover);
+        Registration registration = addCommand(added);
+        popover.setTarget(this);
+        sendPopover(added);
+        return registration;
+    }
+
+    private Registration addCommand(AddedCommand added) {
+        String name = added.command().name();
+        if (commands.containsKey(name)) {
+            throw new IllegalArgumentException("This editor already has a command named '" + name + "'");
         }
 
-        AddedCommand added = new AddedCommand(command, listener);
-        commands.put(command.name(), added);
+        commands.put(name, added);
         sendCommands();
 
         return () -> {
             // a stale handle must not remove a later command of the same name
-            if (commands.remove(command.name(), added)) {
+            if (commands.remove(name, added)) {
                 sendCommands();
+                if (added.popover() != null) {
+                    added.popover().setTarget(null);
+                    getElement().callJsFunction("_setCommandPopover", name, null);
+                }
             }
         };
+    }
+
+    /**
+     * Tells the client which popover belongs to the command. Froala replaces the command's button on every build, so
+     * the client points the popover at the new one each time.
+     */
+    private void sendPopover(AddedCommand added) {
+        if (added.popover() != null) {
+            getElement().callJsFunction("_setCommandPopover", added.command().name(), added.popover().getElement());
+        }
     }
 
     /** Tells the client about the commands, which builds the editor again once it is running. */
@@ -653,8 +718,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         return getElement().getProperty("intervalPeriod", DEFAULT_INTERVAL_PERIOD);
     }
 
-    /** A command together with the listener it was added with. */
-    private record AddedCommand(FroalaCommand command,
-            ComponentEventListener<CommandEvent> listener) implements Serializable {
+    /** A command together with the listener it was added with, and its popover or null for none. */
+    private record AddedCommand(FroalaCommand command, ComponentEventListener<CommandEvent> listener,
+            Popover popover) implements Serializable {
     }
 }

@@ -405,6 +405,35 @@ list takes it in by itself. Options that set `shortcutsEnabled` must name the co
 editor.setOptions("{\"shortcutsEnabled\": [\"bold\", \"italic\", \"insertTemplate\"]}");
 ```
 
+#### A popover at the button
+
+Instead of a listener, a command can take a plain Vaadin `Popover`. A click on the command's
+toolbar button opens the popover next to the button, and the command's shortcut opens it too:
+
+```java
+Popover popover = new Popover(new Paragraph("My own popup"));
+editor.addCommand(new FroalaCommand("myPopup", "My popup", VaadinIcon.INFO_CIRCLE.create()), popover);
+```
+
+The editor puts the popover into the UI and points it at the button, which Froala replaces on
+every rebuild. So don't add the popover to a layout and don't set a target of your own:
+
+```java
+layout.add(popover);         // not needed, the editor has put it into the UI already
+popover.setTarget(someButton); // takes the popover away from the command's button
+```
+
+The editor never closes the popover itself, so it closes as its own settings say. A popover
+that should stay open until its button is clicked again turns the other ways off:
+
+```java
+popover.setCloseOnOutsideClick(false);
+popover.setCloseOnEsc(false);
+```
+
+This works for toolbar buttons only. An editor whose toolbar does not list the command has no
+button, so the popover never opens there, not even by the shortcut.
+
 ### Uploads
 
 Without an upload URL Froala uploads nothing. It inserts a `blob:` URL that is valid only in

@@ -104,6 +104,9 @@ class FroalaEditorElement extends SlotStylesMixin(
   // a focus() that arrived before the editor was initialized, applied from its `initialized` event
   _pendingFocus = false;
 
+  // the popovers of the own commands, by command name, see _setCommandPopover
+  _commandPopovers = {};
+
   // what the server was last told about the selection, so that only a switch between "none" and "some" is reported
   _hasSelection = false;
 
@@ -255,6 +258,12 @@ class FroalaEditorElement extends SlotStylesMixin(
     clearTimeout(this._throttleHandle);
     delete this._valueChangeHandleForInterval;
     delete this._throttleHandle;
+
+    // Vaadin's overlay closes an open popover once its target has no size, which a removed button has. Without a
+    // target it stays where it is, until the next build points it at the new button.
+    Object.values(this._commandPopovers).forEach((popover) => {
+      popover.target = null;
+    });
 
     if (this.editor) {
       // The clean up has to happen even if destroy throws. A leftover `this.editor` would make _initEditor skip
@@ -408,6 +417,28 @@ class FroalaEditorElement extends SlotStylesMixin(
 
           this._mirrorDirection();
 
+          this._targetCommandPopovers();
+
+          // For a command without a toolbar button Froala runs the shortcut without the editor, see registerCommands.
+          // Returning false stops Froala from running it itself. Put in front of Froala's own handlers, because the
+          // toolbar's handler returns false for a command with a button, and no later handler would see it.
+          this.editor.events.on(
+            'shortcut',
+            fromCurrentEditor((event, name) => {
+              if (this._hasCommand(name)) {
+                event.preventDefault();
+                this.editor.commands.exec(name);
+                // Froala runs a toolbar button's command without clicking the button, so the popover does not see it
+                const popover = this._commandPopovers[name];
+                if (popover?.target) {
+                  popover.opened = true;
+                }
+                return false;
+              }
+            }),
+            true
+          );
+
           // anything touching editor modules has to wait for this event, so re-apply what the server may
           // already have set while Froala was still building
           this.updateReadonlyMode();
@@ -445,15 +476,6 @@ class FroalaEditorElement extends SlotStylesMixin(
         focus: fromCurrentEditor(() => {
           this.dispatchEvent(new CustomEvent('focus'));
         }),
-        // For a command without a toolbar button Froala runs the shortcut without the editor, see registerCommands.
-        // Returning false stops Froala from running it itself.
-        shortcut: fromCurrentEditor((event, name) => {
-          if (this._hasCommand(name)) {
-            event.preventDefault();
-            this.editor.commands.exec(name);
-            return false;
-          }
-        }),
         contentChanged: fromCurrentEditor(() => {
           if (this.valueChangeMode === 'change') {
             this.onValueChangeThrottled();
@@ -465,6 +487,30 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   _hasCommand(name) {
     return (this.commands ?? []).some((command) => command.name === name);
+  }
+
+  /** Sets the popover of an own command, or removes it for null. Called by the server. */
+  _setCommandPopover(name, popover) {
+    if (popover) {
+      this._commandPopovers[name] = popover;
+    } else {
+      delete this._commandPopovers[name];
+    }
+
+    if (this._editorInitialized) {
+      this._targetCommandPopovers();
+    }
+  }
+
+  /**
+   * Points each command's popover at the command's toolbar button, or at nothing without one. Froala replaces its
+   * buttons on every build. The popover opens and closes on a click on its target by itself, and it stays open while
+   * its target changes.
+   */
+  _targetCommandPopovers() {
+    for (const [name, popover] of Object.entries(this._commandPopovers)) {
+      popover.target = this.editor.$tb?.get(0)?.querySelector(`.fr-command[data-cmd="${name}"]`) ?? null;
+    }
   }
 
   /** Tells the server that one of its commands was triggered in this editor. */

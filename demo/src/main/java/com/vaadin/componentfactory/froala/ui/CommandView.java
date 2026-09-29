@@ -55,16 +55,11 @@ public class CommandView extends VerticalLayout {
         editor.addCommand(new FroalaCommand("showDialog", "Show dialog", VaadinIcon.MODAL.create())
                 .withShortcut(Key.KEY_L, KeyModifier.SHIFT), event -> dialog.open());
 
-        // The toolbar button is Froala's, not a Flow component, so setTarget cannot point at it. The popover gets it as
-        // its target in the browser instead, looked up by the command name Froala puts on the button.
-        Popover popover = new Popover(new Paragraph("A popover next to the button that opened it."));
-        popover.setOpenOnClick(false);
+        // the editor puts the popover into the UI and opens it at the button
         editor.addCommand(new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create()),
-                event -> popover.getElement().executeJs(
-                        "this.target = $0.querySelector('.fr-toolbar [data-cmd=\"showPopover\"]'); this.opened = true;",
-                        editor.getElement()));
+                new Popover(new Paragraph("A popover next to the button that opened it.")));
 
         add(new Paragraph("The last three buttons are commands of the application's own, each with a Vaadin icon. "
-                + "Their listeners run on the server. Ctrl+Shift+L opens the dialog as well."), editor, popover);
+                + "Ctrl+Shift+L opens the dialog as well."), editor);
     }
 }
