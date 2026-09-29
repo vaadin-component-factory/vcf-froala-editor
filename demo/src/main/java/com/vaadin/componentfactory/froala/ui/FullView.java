@@ -15,8 +15,11 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
+import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
@@ -38,5 +41,10 @@ public class FullView extends FroalaViewBase {
                         + "image picked from disk does not reach a server."));
 
         getViewer().setMinHeight("250px");
+    }
+
+    @Override
+    protected Component createToolbar(FroalaEditor editor, FroalaViewer viewer) {
+        return new DemoToolbar(editor, DemoPlugins.full(), FroalaToolbar.froalaDefault());
     }
 }
