@@ -71,7 +71,10 @@ class FroalaCommandToggleIT extends SpringPlaywrightIT {
                 + " probe.style.color = 'var(--vcf-froala-accent-color)';" + " icon.after(probe);"
                 + " const color = getComputedStyle(probe).color;" + " probe.remove();" + " return color;" + " }");
         assertNotEquals(boldFill, accent);
-        assertEquals(accent, icon.evaluate(iconFill));
+        // once the transition is over
+        page.waitForFunction("accent => getComputedStyle(document.querySelector("
+                + "\"#first .fr-toolbar button[data-cmd='review'] vaadin-icon\").shadowRoot.querySelector('svg')).fill"
+                + " === accent", accent);
     }
 
     @Test
