@@ -52,6 +52,8 @@ are in `docs/adr/`.
 - **Tests & long-running ops:** run new/changed tests first; only run the full
   suite once those pass. Don't wrap waits in `until … done` sleep loops (they can
   stall) — poll periodically and check whether a background job has died.
+  A change that only touches `demo/` needs `mvn -pl demo verify`, not the full gate: the
+  demo has no tests and `e2e/` does not depend on it (maintainer, 2026-09-28).
 - **Never self-dispatch after a question:** if you ask the user something, wait
   for the answer before acting.
 
@@ -78,6 +80,9 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
 - Base package: `com.vaadin.componentfactory.froala`
 - Build/verify gate: `mvn clean verify`. `-Pproduction` additionally builds the demo's
   production bundle.
+- The frontend build uses Vaadin's own Node.js in `~/.vaadin` (`require.home.node=true` in the
+  root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
+  `-Drequire.home.node=false`, e.g. `mvn clean verify -Drequire.home.node=false`.
 
 Spring Boot 3.5.15 is not "the latest 3.5.x" — it is the version
 `com.vaadin:vaadin-spring:24.10.9` is built against. Derive it from the Vaadin
