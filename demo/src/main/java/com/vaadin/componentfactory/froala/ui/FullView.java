@@ -29,12 +29,14 @@ public class FullView extends FroalaViewBase {
     public FullView() {
         getEditor().setHeight("500px");
         getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
-                .withToolbarButtons(FroalaToolbar.froalaDefault().withAllButtonsVisible()));
+                .withToolbarButtons(FroalaToolbar.froalaDefault()));
 
         addComponentAtIndex(indexOf(getToolbar()) + 1,
                 new Paragraph("Every Froala plugin except those that need a server, a second library or a paid "
                         + "service, such as the AI assistant, collaboration or the image manager. The toolbar is "
                         + "Froala's own, with all buttons visible. No upload URL is set, so a file or an "
                         + "image picked from disk does not reach a server."));
+
+        getViewer().setMinHeight("250px");
     }
 }
