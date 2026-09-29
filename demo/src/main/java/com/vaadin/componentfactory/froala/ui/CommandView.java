@@ -22,27 +22,49 @@ import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
 @Route("command")
-@Menu(title = "Own command", order = 7)
+@Menu(title = "Own commands", order = 7)
 public class CommandView extends VerticalLayout {
 
     public CommandView() {
-        FroalaEditor editor = new FroalaEditor("Letter", FroalaOptions.defaults()
-                .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC, "insertGreeting")));
-        editor.setValue("<p>Thank you for your order.</p>");
+        FroalaEditor editor = new FroalaEditor("Letter",
+                FroalaOptions.defaults()
+                        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC,
+                                FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.VERTICAL_SEPARATOR,
+                                "selectAllText", "showDialog", "showPopover")));
+        editor.setValue("<p>Thank you for your order. It will be shipped <b>tomorrow</b>.</p>");
         editor.setWidthFull();
 
-        FroalaCommand insertGreeting = new FroalaCommand("insertGreeting", "Insert greeting",
-                VaadinIcon.COMMENT.create()).withShortcut(Key.KEY_G, KeyModifier.SHIFT);
-        editor.addCommand(insertGreeting, event -> editor.replaceSelectionContent("<p>Dear customer,</p>"));
+        // Froala's own selectAll command, run in the browser. `this.editor` is the Froala instance the add-on keeps
+        // on its element, which is not API of the add-on.
+        editor.addCommand(new FroalaCommand("selectAllText", "Select all text", VaadinIcon.ALIGN_JUSTIFY.create()),
+                event -> editor.getElement().executeJs("this.editor.commands.selectAll()"));
 
-        add(new Paragraph("The speech bubble button is a command of the application's own. Its listener runs on the "
-                + "server and inserts a greeting at the caret. Ctrl+Shift+G does the same."), editor);
+        Dialog dialog = new Dialog(new Paragraph("Opened by an own command of the editor."));
+        dialog.setHeaderTitle("Own command");
+        dialog.getFooter().add(new Button("Close", event -> dialog.close()));
+        editor.addCommand(new FroalaCommand("showDialog", "Show dialog", VaadinIcon.MODAL.create())
+                .withShortcut(Key.KEY_L, KeyModifier.SHIFT), event -> dialog.open());
+
+        // The toolbar button is Froala's, not a Flow component, so setTarget cannot point at it. The popover gets it as
+        // its target in the browser instead, looked up by the command name Froala puts on the button.
+        Popover popover = new Popover(new Paragraph("A popover next to the button that opened it."));
+        popover.setOpenOnClick(false);
+        editor.addCommand(new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create()),
+                event -> popover.getElement().executeJs(
+                        "this.target = $0.querySelector('.fr-toolbar [data-cmd=\"showPopover\"]'); this.opened = true;",
+                        editor.getElement()));
+
+        add(new Paragraph("The last three buttons are commands of the application's own, each with a Vaadin icon. "
+                + "Their listeners run on the server. Ctrl+Shift+L opens the dialog as well."), editor, popover);
     }
 }
