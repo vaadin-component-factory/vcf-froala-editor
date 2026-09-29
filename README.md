@@ -27,6 +27,9 @@ editor.addValueChangeListener(event -> save(event.getValue()));
 
 The value is the editor's HTML as a `String`.
 
+Label, helper text and error message work as in Vaadin's other fields. They are linked to
+Froala's editable area with `aria-labelledby` and `aria-describedby`.
+
 ### License key
 
 ```java

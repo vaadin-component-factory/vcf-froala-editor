@@ -282,6 +282,11 @@ class FroalaEditorElement extends SlotStylesMixin(
         initialized: fromCurrentEditor(() => {
           this._editorInitialized = true;
 
+          // FieldMixin points the target at the label, helper text and error message with aria-labelledby and
+          // aria-describedby, and keeps it up to date. Set here on every build, because each build brings a new
+          // editable area and the target has to move to it.
+          this.ariaTarget = this.editor.el;
+
           // anything touching editor modules has to wait for this event, so re-apply what the server may
           // already have set while Froala was still building
           this.updateReadonlyMode();

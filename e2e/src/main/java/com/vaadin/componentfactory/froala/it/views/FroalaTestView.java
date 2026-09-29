@@ -16,6 +16,7 @@
 package com.vaadin.componentfactory.froala.it.views;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
+import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.button.Button;
@@ -45,6 +46,8 @@ public class FroalaTestView extends VerticalLayout {
 
     public static final String LABEL = "Editor under test";
     public static final String HELPER_TEXT = "Helper text under test";
+    public static final String OTHER_LABEL = "Relabelled editor";
+    public static final String ERROR_MESSAGE = "Error message under test";
     public static final String INITIAL_VALUE = "<p>seeded by the server</p>";
     public static final String INITIAL_TEXT = "seeded by the server";
 
@@ -154,8 +157,28 @@ public class FroalaTestView extends VerticalLayout {
         });
         reattachAndInsert.setId("reattach-and-insert");
 
+        // Label, helper text and error message all change in one round trip, so a test sees one consistent state
+        Button otherFieldTexts = new Button("Other field texts");
+        otherFieldTexts.addClickListener(event -> {
+            editor.setLabel(OTHER_LABEL);
+            editor.setHelperText(null);
+            editor.setErrorMessage(ERROR_MESSAGE);
+            editor.setInvalid(true);
+            otherFieldTexts.setEnabled(false);
+        });
+        otherFieldTexts.setId("other-field-texts");
+
+        // setOptions on an attached editor throws the client editor away and builds a new one
+        Button rebuild = new Button("Rebuild");
+        rebuild.addClickListener(event -> {
+            editor.setOptions(FroalaOptions.defaults());
+            rebuild.setEnabled(false);
+        });
+        rebuild.setId("rebuild");
+
         add(focus, focusLog, selectionLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue,
-                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, editor, viewer);
+                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, otherFieldTexts, rebuild, editor,
+                viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

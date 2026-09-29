@@ -15,7 +15,10 @@
  */
 package com.vaadin.componentfactory.froala.it;
 
+import java.util.List;
+
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.TimeoutError;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -223,6 +226,57 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     void labelAndHelperText_areRendered() {
         assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.LABEL);
         assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.HELPER_TEXT);
+    }
+
+    @Test
+    void fieldTexts_areLinkedToTheEditableArea() {
+        assertReferencedTexts("aria-labelledby", FroalaTestView.LABEL);
+        assertReferencedTexts("aria-describedby", FroalaTestView.HELPER_TEXT);
+
+        page.locator("#other-field-texts").click();
+        assertThat(page.locator("#other-field-texts")).isDisabled();
+
+        assertReferencedTexts("aria-labelledby", FroalaTestView.OTHER_LABEL);
+        assertReferencedTexts("aria-describedby", FroalaTestView.ERROR_MESSAGE);
+    }
+
+    @Test
+    void changedFieldTexts_stayLinkedAfterARebuild() {
+        page.locator("#other-field-texts").click();
+        assertThat(page.locator("#other-field-texts")).isDisabled();
+        editableArea().waitFor();
+        editableArea().evaluate("el => el.classList.add('before-rebuild')");
+
+        page.locator("#rebuild").click();
+        assertThat(page.locator("#rebuild")).isDisabled();
+        // the old editable area is gone and a new one is built
+        assertThat(page.locator("#editor .before-rebuild")).hasCount(0);
+
+        assertReferencedTexts("aria-labelledby", FroalaTestView.OTHER_LABEL);
+        assertReferencedTexts("aria-describedby", FroalaTestView.ERROR_MESSAGE);
+    }
+
+    /**
+     * Waits until the editable area points at exactly the given texts with the given ARIA attribute. The references
+     * follow the slotted texts asynchronously, so a single read right after a round trip would be a race. Playwright
+     * has no assertion for ids resolved to texts, so the last read after a timeout gives the failure message.
+     */
+    private void assertReferencedTexts(String attribute, String... expected) {
+        List<String> texts = List.of(expected);
+        try {
+            page.waitForCondition(() -> texts.equals(textsReferencedBy(attribute)));
+        } catch (TimeoutError e) {
+            assertEquals(texts, textsReferencedBy(attribute));
+        }
+    }
+
+    /** The texts of the elements the editable area points at with the given ARIA attribute, in attribute order. */
+    @SuppressWarnings("unchecked")
+    private List<String> textsReferencedBy(String attribute) {
+        editableArea().waitFor();
+        return (List<String>) editableArea().evaluate("(el, attr) => (el.getAttribute(attr) ?? '').split(' ')"
+                + ".filter(id => id).map(id => document.getElementById(id)?.textContent.trim() ?? '<missing ' + id + '>')",
+                attribute);
     }
 
     @Test
