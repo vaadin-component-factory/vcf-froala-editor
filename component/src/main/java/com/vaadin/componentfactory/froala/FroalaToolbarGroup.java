@@ -29,7 +29,9 @@ import elemental.json.JsonObject;
  * to the group rather than to a button. Immutable. Every {@code with…} method returns a new instance.
  *
  * <pre>
- * FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline").withButtonsVisible(2);
+ * FroalaToolbarGroup
+ *         .named(FroalaToolbarGroup.MORE_TEXT, FroalaButton.BOLD, FroalaButton.ITALIC, FroalaButton.UNDERLINE)
+ *         .withButtonsVisible(2);
  * </pre>
  *
  * <p>
@@ -70,7 +72,8 @@ public final class FroalaToolbarGroup implements Serializable {
             MORE_MISC);
 
     /** Separator entries. Froala draws them as lines and does not count them towards {@code buttonsVisible}. */
-    private static final Set<String> SEPARATORS = Set.of("|", "-");
+    private static final Set<String> SEPARATORS = Set.of(FroalaButton.VERTICAL_SEPARATOR,
+            FroalaButton.HORIZONTAL_SEPARATOR);
 
     private final String name;
     private final List<String> buttons;
@@ -85,9 +88,10 @@ public final class FroalaToolbarGroup implements Serializable {
     }
 
     /**
-     * Creates a group of the given buttons. A button name is a registered command name. {@code "|"} draws a vertical
-     * separator and {@code "-"} a horizontal one. Neither is moved into the overflow panel. A name Froala does not know
-     * is dropped silently, but still counts towards {@link #withButtonsVisible(int)}.
+     * Creates a group of the given buttons. A button name is a registered command name, such as those of
+     * {@link FroalaButton}. {@link FroalaButton#VERTICAL_SEPARATOR} draws a vertical separator and
+     * {@link FroalaButton#HORIZONTAL_SEPARATOR} a horizontal one. Neither is moved into the overflow panel. A name
+     * Froala does not know is dropped silently, but still counts towards {@link #withButtonsVisible(int)}.
      *
      * @param name the group's name, which is also its overflow button's command name. See the class documentation.
      * @param buttons command names in the order they should appear, none of them null

@@ -44,8 +44,8 @@ class FroalaToolbarIT extends SpringPlaywrightIT {
     @Test
     void froalaDefault_isFroalasOwnDefaultToolbar() {
         // Our copy of Froala's list. A Froala update that changes its default toolbar fails here.
-        page.waitForFunction("() => window.froalaDefaultToolbar !== undefined");
-        String froalas = (String) page.evaluate("() => JSON.stringify(window.froalaDefaultToolbar)");
+        page.waitForFunction("() => window.FroalaEditorClass !== undefined");
+        String froalas = (String) page.evaluate("() => JSON.stringify(window.FroalaEditorClass.TOOLBAR_BUTTONS)");
         String ours = (String) page.evaluate("json => JSON.stringify(JSON.parse(json))",
                 FroalaToolbar.froalaDefault().toString());
 

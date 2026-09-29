@@ -25,11 +25,11 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 /**
  * Fixture view for the toolbar presets. The editor has the basic toolbar and no plugin options, so it gets the basic
- * plugins. The module puts Froala's own default toolbar on the page for comparison.
+ * plugins. The module puts Froala's constructor on the page, so its own default toolbar can be compared.
  */
 @Route(FroalaToolbarTestView.ROUTE)
 @AnonymousAllowed
-@JsModule("./froala-default-toolbar.js")
+@JsModule("./froala-editor-class.js")
 public class FroalaToolbarTestView extends Div {
 
     public static final String ROUTE = "it/froala-toolbar";

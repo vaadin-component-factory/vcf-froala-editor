@@ -48,33 +48,36 @@ import elemental.json.JsonValue;
  *
  * <pre>
  * FroalaToolbar toolbar = FroalaToolbar.ofGroups(
- *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline"),
- *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, "undo", "redo").withAlign(FroalaToolbarAlign.RIGHT));
+ *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, FroalaButton.BOLD, FroalaButton.ITALIC),
+ *         FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, FroalaButton.UNDO, FroalaButton.REDO)
+ *                 .withAlign(FroalaToolbarAlign.RIGHT));
  *
  * FroalaEditor editor = new FroalaEditor(FroalaOptions.defaults().withToolbarButtons(toolbar));
  * </pre>
  *
  * <p>
- * A button name is a registered command name, for example {@code "bold"}, {@code "paragraphFormat"},
- * {@code "insertImage"} or {@code "fullscreen"}. They are listed under {@code toolbarButtons} in
- * <a href="https://froala.com/wysiwyg-editor/docs/options/">Froala's option documentation</a>. A name Froala does not
- * know is dropped silently.
+ * A button name is a registered command name. {@link FroalaButton} has a constant for each of Froala's. A command the
+ * application registers itself is passed as a plain string. A name Froala does not know is dropped silently.
  */
 public final class FroalaToolbar implements Serializable {
 
     /** Froala's default toolbar with only the buttons of {@link FroalaPlugin#basics()} and of no plugin at all. */
-    private static final FroalaToolbar BASICS = new FroalaToolbar(null, List.of(
-            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough",
-                    "subscript", "superscript", "fontFamily", "fontSize", "textColor", "backgroundColor",
-                    "clearFormatting"),
-            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, "alignLeft", "alignCenter", "formatOLSimple",
-                    "alignRight", "alignJustify", "formatOL", "formatUL", "paragraphFormat", "lineHeight", "outdent",
-                    "indent", "quote"),
-            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_RICH, "insertAnchor", "insertLink", "insertHR")
-                    .withButtonsVisible(4),
-            FroalaToolbarGroup
-                    .named(FroalaToolbarGroup.MORE_MISC, "undo", "redo", "selectAll", "help", "findReplaceButton")
-                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2)));
+    private static final FroalaToolbar BASICS = new FroalaToolbar(null,
+            List.of(FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, FroalaButton.BOLD, FroalaButton.ITALIC,
+                    FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.SUBSCRIPT,
+                    FroalaButton.SUPERSCRIPT, FroalaButton.FONT_FAMILY, FroalaButton.FONT_SIZE, FroalaButton.TEXT_COLOR,
+                    FroalaButton.BACKGROUND_COLOR, FroalaButton.CLEAR_FORMATTING),
+                    FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, FroalaButton.ALIGN_LEFT,
+                            FroalaButton.ALIGN_CENTER, FroalaButton.FORMAT_OL_SIMPLE, FroalaButton.ALIGN_RIGHT,
+                            FroalaButton.ALIGN_JUSTIFY, FroalaButton.FORMAT_OL, FroalaButton.FORMAT_UL,
+                            FroalaButton.PARAGRAPH_FORMAT, FroalaButton.LINE_HEIGHT, FroalaButton.OUTDENT,
+                            FroalaButton.INDENT, FroalaButton.QUOTE),
+                    FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_RICH, FroalaButton.INSERT_ANCHOR,
+                            FroalaButton.INSERT_LINK, FroalaButton.INSERT_HR).withButtonsVisible(4),
+                    FroalaToolbarGroup
+                            .named(FroalaToolbarGroup.MORE_MISC, FroalaButton.UNDO, FroalaButton.REDO,
+                                    FroalaButton.SELECT_ALL, FroalaButton.HELP, FroalaButton.FIND_REPLACE_BUTTON)
+                            .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2)));
 
     /**
      * Froala's {@code TOOLBAR_BUTTONS} in 5.4.0. Built without {@link #ofGroups(Collection)}, whose check would reject
@@ -82,28 +85,36 @@ public final class FroalaToolbar implements Serializable {
      * that is not one of the four the check knows.
      */
     private static final FroalaToolbar FROALA_DEFAULT = new FroalaToolbar(null, List.of(
-            FroalaToolbarGroup.named("versionControl", "versionControl", "autoSaveStatus").withButtonsVisible(2),
-            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough",
-                    "subscript", "superscript", "fontFamily", "fontSize", "textColor", "backgroundColor", "inlineClass",
-                    "inlineStyle", "clearFormatting"),
-            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, "alignLeft", "alignCenter", "formatOLSimple",
-                    "alignRight", "alignJustify", "formatOL", "formatUL", "paragraphFormat", "paragraphStyle",
-                    "lineHeight", "outdent", "indent", "quote"),
-            FroalaToolbarGroup.named("exportImport", "import_from_word", "export_to_word"),
-            FroalaToolbarGroup
-                    .named(FroalaToolbarGroup.MORE_RICH, "collabPanel", "aiChatAssistant", "aiAssist", "aiShortCuts",
-                            "collabAddComment", "trackChanges", "markdown", "insertAnchor", "insertLink", "insertFiles",
-                            "insertImage", "insertVideo", "pageBreak", "insertTable", "emoticons", "fontAwesome",
-                            "specialCharacters", "embedly", "insertFile", "insertHR", "openFilePicker", "codeSnippet")
-                    .withButtonsVisible(4),
-            FroalaToolbarGroup
-                    .named(FroalaToolbarGroup.MORE_MISC, "undo", "redo", "fullscreen", "print", "getPDF",
-                            "spellChecker", "selectAll", "html", "help", "findReplaceButton")
-                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2),
-            FroalaToolbarGroup.named("collab", "collabMode", "collabPresence").withAlign(FroalaToolbarAlign.RIGHT)
+            FroalaToolbarGroup.named("versionControl", FroalaButton.VERSION_CONTROL, FroalaButton.AUTO_SAVE_STATUS)
                     .withButtonsVisible(2),
-            FroalaToolbarGroup.named("trackChanges", "showChanges", "applyAll", "removeAll", "applyLast", "removeLast")
-                    .withButtonsVisible(0)));
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, FroalaButton.BOLD, FroalaButton.ITALIC,
+                    FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.SUBSCRIPT,
+                    FroalaButton.SUPERSCRIPT, FroalaButton.FONT_FAMILY, FroalaButton.FONT_SIZE, FroalaButton.TEXT_COLOR,
+                    FroalaButton.BACKGROUND_COLOR, FroalaButton.INLINE_CLASS, FroalaButton.INLINE_STYLE,
+                    FroalaButton.CLEAR_FORMATTING),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_PARAGRAPH, FroalaButton.ALIGN_LEFT,
+                    FroalaButton.ALIGN_CENTER, FroalaButton.FORMAT_OL_SIMPLE, FroalaButton.ALIGN_RIGHT,
+                    FroalaButton.ALIGN_JUSTIFY, FroalaButton.FORMAT_OL, FroalaButton.FORMAT_UL,
+                    FroalaButton.PARAGRAPH_FORMAT, FroalaButton.PARAGRAPH_STYLE, FroalaButton.LINE_HEIGHT,
+                    FroalaButton.OUTDENT, FroalaButton.INDENT, FroalaButton.QUOTE),
+            FroalaToolbarGroup.named("exportImport", FroalaButton.IMPORT_FROM_WORD, FroalaButton.EXPORT_TO_WORD),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_RICH, FroalaButton.COLLAB_PANEL,
+                    FroalaButton.AI_CHAT_ASSISTANT, FroalaButton.AI_ASSIST, FroalaButton.AI_SHORT_CUTS,
+                    FroalaButton.COLLAB_ADD_COMMENT, FroalaButton.TRACK_CHANGES, FroalaButton.MARKDOWN,
+                    FroalaButton.INSERT_ANCHOR, FroalaButton.INSERT_LINK, FroalaButton.INSERT_FILES,
+                    FroalaButton.INSERT_IMAGE, FroalaButton.INSERT_VIDEO, FroalaButton.PAGE_BREAK,
+                    FroalaButton.INSERT_TABLE, FroalaButton.EMOTICONS, FroalaButton.FONT_AWESOME,
+                    FroalaButton.SPECIAL_CHARACTERS, FroalaButton.EMBEDLY, FroalaButton.INSERT_FILE,
+                    FroalaButton.INSERT_HR, FroalaButton.OPEN_FILE_PICKER, FroalaButton.CODE_SNIPPET)
+                    .withButtonsVisible(4),
+            FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, FroalaButton.UNDO, FroalaButton.REDO,
+                    FroalaButton.FULLSCREEN, FroalaButton.PRINT, FroalaButton.GET_PDF, FroalaButton.SPELL_CHECKER,
+                    FroalaButton.SELECT_ALL, FroalaButton.HTML, FroalaButton.HELP, FroalaButton.FIND_REPLACE_BUTTON)
+                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2),
+            FroalaToolbarGroup.named("collab", FroalaButton.COLLAB_MODE, FroalaButton.COLLAB_PRESENCE)
+                    .withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(2),
+            FroalaToolbarGroup.named("trackChanges", FroalaButton.SHOW_CHANGES, FroalaButton.APPLY_ALL,
+                    FroalaButton.REMOVE_ALL, FroalaButton.APPLY_LAST, FroalaButton.REMOVE_LAST).withButtonsVisible(0)));
 
     /** Set in the flat form, null in the grouped one. Exactly one of the two fields is set. */
     private final List<String> buttons;

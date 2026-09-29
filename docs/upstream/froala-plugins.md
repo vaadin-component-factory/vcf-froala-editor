@@ -36,7 +36,9 @@ bundle:
 - **46 plugins loaded.**
 - **37 modules** (`FroalaEditor.MODULES`) — not plugins, `pluginsEnabled` has no
   say over them.
-- **183 commands** (`FroalaEditor.COMMANDS`).
+- **183 commands** (`FroalaEditor.COMMANDS`). With the two standalone plugin files and
+  the five under `js/third_party/` loaded as well, there are 200 (2026-09-29). See
+  `froala-options.md` for which of them are buttons.
 - **107 of those 183 commands declare no plugin at all.**
 - **32 of the 46 plugins are named by at least one command.** The other 14 have
   no toolbar button of their own.
@@ -116,8 +118,9 @@ the counter.
 
 Worth knowing when looking for a button:
 
-- `export_to_word` registers the command `export`, not `exportToWord`.
-- `import_from_word` registers `import`, not `importFromWord`.
+- `export_to_word` registers the command `export_to_word`, not `exportToWord`
+  (corrected 2026-09-29, this line said `export` before).
+- `import_from_word` registers `import_from_word`, not `importFromWord`.
 - `find_and_replace` registers as plugin `findReplace`; its command is
   `findReplace` too.
 - `trim_video` registers no command.

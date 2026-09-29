@@ -19,6 +19,7 @@ import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -27,9 +28,10 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
  * Fixture view with an editor that enables every {@link FroalaPlugin}. It registers on the page the plugins that
  * {@link FroalaPlugin#basics()} leaves out. The button adds an editor that enables none explicitly, once the first one
  * is built, to show whether its default depends on what another editor loaded. The button disables itself, so a test
- * can wait for the round trip.
+ * can wait for the round trip. The module puts Froala's constructor on the page, so the tests can read its commands.
  */
 @Route(FroalaAllPluginsTestView.ROUTE)
+@JsModule("./froala-editor-class.js")
 @AnonymousAllowed
 public class FroalaAllPluginsTestView extends Div {
 

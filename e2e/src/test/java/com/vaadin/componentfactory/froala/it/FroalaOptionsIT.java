@@ -89,6 +89,16 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void buttonListOptions_reachFroalasOwnOptionObject() {
+        // One of the popup lists stands for all of them. They share the code path, a list sent as a JSON array.
+        editableArea().waitFor();
+
+        Object buttons = page.evaluate("() => document.querySelector('#editor').editor.opts.imageEditButtons");
+
+        assertEquals(FroalaOptionsTestView.IMAGE_EDIT_BUTTONS, buttons);
+    }
+
+    @Test
     void saveInterval_isOffUnlessTheOptionsSetIt() {
         // The add-on switches Froala's save plugin off by default. The value reaches the server through the value
         // change listener, and without a saveURL the plugin only runs a save per edit that fails.

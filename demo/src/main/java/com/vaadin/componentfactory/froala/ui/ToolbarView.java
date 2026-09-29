@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.vaadin.componentfactory.froala.FroalaButton;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
@@ -66,17 +67,23 @@ public class ToolbarView extends VerticalLayout {
 
     static {
         PALETTE.put(FroalaToolbarGroup.MORE_TEXT,
-                List.of("bold", "italic", "underline", "strikeThrough", "subscript", "superscript", "fontFamily",
-                        "fontSize", "textColor", "backgroundColor", "inlineClass", "inlineStyle", "clearFormatting"));
+                List.of(FroalaButton.BOLD, FroalaButton.ITALIC, FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH,
+                        FroalaButton.SUBSCRIPT, FroalaButton.SUPERSCRIPT, FroalaButton.FONT_FAMILY,
+                        FroalaButton.FONT_SIZE, FroalaButton.TEXT_COLOR, FroalaButton.BACKGROUND_COLOR,
+                        FroalaButton.INLINE_CLASS, FroalaButton.INLINE_STYLE, FroalaButton.CLEAR_FORMATTING));
         PALETTE.put(FroalaToolbarGroup.MORE_PARAGRAPH,
-                List.of("alignLeft", "alignCenter", "alignRight", "alignJustify", "formatOL", "formatUL",
-                        "paragraphFormat", "paragraphStyle", "lineHeight", "outdent", "indent", "quote"));
-        PALETTE.put(FroalaToolbarGroup.MORE_RICH,
-                List.of("insertLink", "insertImage", "insertVideo", "insertTable", "insertFile", "emoticons",
-                        "fontAwesome", "specialCharacters", "insertHR", "insertAnchor", "pageBreak", "codeSnippet",
-                        "markdown"));
+                List.of(FroalaButton.ALIGN_LEFT, FroalaButton.ALIGN_CENTER, FroalaButton.ALIGN_RIGHT,
+                        FroalaButton.ALIGN_JUSTIFY, FroalaButton.FORMAT_OL, FroalaButton.FORMAT_UL,
+                        FroalaButton.PARAGRAPH_FORMAT, FroalaButton.PARAGRAPH_STYLE, FroalaButton.LINE_HEIGHT,
+                        FroalaButton.OUTDENT, FroalaButton.INDENT, FroalaButton.QUOTE));
+        PALETTE.put(FroalaToolbarGroup.MORE_RICH, List.of(FroalaButton.INSERT_LINK, FroalaButton.INSERT_IMAGE,
+                FroalaButton.INSERT_VIDEO, FroalaButton.INSERT_TABLE, FroalaButton.INSERT_FILE, FroalaButton.EMOTICONS,
+                FroalaButton.FONT_AWESOME, FroalaButton.SPECIAL_CHARACTERS, FroalaButton.INSERT_HR,
+                FroalaButton.INSERT_ANCHOR, FroalaButton.PAGE_BREAK, FroalaButton.CODE_SNIPPET, FroalaButton.MARKDOWN));
         PALETTE.put(FroalaToolbarGroup.MORE_MISC,
-                List.of("undo", "redo", "fullscreen", "print", "selectAll", "html", "help", "findReplaceButton"));
+                List.of(FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.FULLSCREEN, FroalaButton.PRINT,
+                        FroalaButton.SELECT_ALL, FroalaButton.HTML, FroalaButton.HELP,
+                        FroalaButton.FIND_REPLACE_BUTTON));
     }
 
     private final RadioButtonGroup<String> shape = new RadioButtonGroup<>();
@@ -97,10 +104,11 @@ public class ToolbarView extends VerticalLayout {
         shape.addValueChangeListener(_unused -> showFormForShape());
 
         flatButtons.setItems(PALETTE.values().stream().flatMap(List::stream).toList());
-        flatButtons.setValue("bold", "italic", "underline", "insertLink", "undo", "redo");
+        flatButtons.setValue(FroalaButton.BOLD, FroalaButton.ITALIC, FroalaButton.UNDERLINE, FroalaButton.INSERT_LINK,
+                FroalaButton.UNDO, FroalaButton.REDO);
         flatButtons.setWidthFull();
         flatButtons.setHelperText("In the palette's order, not the order you pick them. The API also takes \"|\" and "
-                + "\"-\" as separators; they are left out here because a multi-select cannot say where they go.");
+                + "\"-\" as separators. They are left out here because a multi-select cannot say where they go.");
 
         groupedForm.setPadding(false);
         groupedForm.setWidthFull();

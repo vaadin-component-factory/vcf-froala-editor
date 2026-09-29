@@ -353,6 +353,325 @@ public final class FroalaOptions implements Serializable {
     }
 
     // -----------------------------------------------------------------------------------------------------------
+    // Button lists of popups and plugins
+    // -----------------------------------------------------------------------------------------------------------
+
+    /**
+     * Sets the toolbar buttons that stay usable while the code view shows the HTML source. Froala's
+     * {@code codeViewKeepActiveButtons}. Needs {@link FroalaPlugin#CODE_VIEW}. Default {@code fullscreen}.
+     *
+     * @param codeViewKeepActiveButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withCodeViewKeepActiveButtons(Collection<String> codeViewKeepActiveButtons) {
+        return with("codeViewKeepActiveButtons", codeViewKeepActiveButtons);
+    }
+
+    /**
+     * Sets the buttons of the small popup Froala shows on a text selection. Froala leaves out {@code aiImproveWriting}
+     * until {@code aiSupplementalTermsAccepted} is set, and {@code collabAddComment} without a {@code collabConfig}.
+     * Froala's {@code selectionActionButtons}. Default {@code aiImproveWriting}, {@code collabAddComment}.
+     *
+     * @param selectionActionButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withSelectionActionButtons(Collection<String> selectionActionButtons) {
+        return with("selectionActionButtons", selectionActionButtons);
+    }
+
+    /**
+     * Sets the buttons offered next to an empty line. These take the names of {@link FroalaQuickInsertButton}, not
+     * command names. Froala's {@code quickInsertButtons}. Needs {@link FroalaPlugin#QUICK_INSERT}. Default
+     * {@code image}, {@code video}, {@code embedly}, {@code table}, {@code ul}, {@code ol}, {@code hr}.
+     *
+     * @param quickInsertButtons names from {@link FroalaQuickInsertButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withQuickInsertButtons(Collection<String> quickInsertButtons) {
+        return with("quickInsertButtons", quickInsertButtons);
+    }
+
+    /**
+     * Sets the buttons above the swatches of the text and background color popup. Froala's {@code colorsButtons}. Needs
+     * {@link FroalaPlugin#COLORS}. Default {@code colorsBack}, {@code |}, {@code -}.
+     *
+     * @param colorsButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withColorsButtons(Collection<String> colorsButtons) {
+        return with("colorsButtons", colorsButtons);
+    }
+
+    /**
+     * Sets the buttons above the emoticons popup. Froala's {@code emoticonsButtons}. Needs
+     * {@link FroalaPlugin#EMOTICONS}. Default {@code emoticonsBack}, {@code |}.
+     *
+     * @param emoticonsButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withEmoticonsButtons(Collection<String> emoticonsButtons) {
+        return with("emoticonsButtons", emoticonsButtons);
+    }
+
+    /**
+     * Sets the buttons above the special characters popup. Froala's {@code specialCharButtons}. Needs
+     * {@link FroalaPlugin#SPECIAL_CHARACTERS}. Default {@code specialCharBack}, {@code |}.
+     *
+     * @param specialCharButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withSpecialCharButtons(Collection<String> specialCharButtons) {
+        return with("specialCharButtons", specialCharButtons);
+    }
+
+    /**
+     * Sets the buttons above the Font Awesome icon popup. Froala's {@code faButtons}. Needs
+     * {@link FroalaPlugin#FONT_AWESOME}. Default {@code fontAwesomeBack}, {@code |}.
+     *
+     * @param faButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFaButtons(Collection<String> faButtons) {
+        return with("faButtons", faButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on a link. Froala's {@code linkEditButtons}. Needs
+     * {@link FroalaPlugin#LINK}. Default {@code linkOpen}, {@code linkStyle}, {@code linkEdit}, {@code linkRemove}.
+     *
+     * @param linkEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withLinkEditButtons(Collection<String> linkEditButtons) {
+        return with("linkEditButtons", linkEditButtons);
+    }
+
+    /**
+     * Sets the buttons above the insert link popup. Froala's {@code linkInsertButtons}. Needs
+     * {@link FroalaPlugin#LINK}. Default {@code linkBack}, {@code |}, {@code linkList}.
+     *
+     * @param linkInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withLinkInsertButtons(Collection<String> linkInsertButtons) {
+        return with("linkInsertButtons", linkInsertButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on an anchor. Froala's {@code anchorEditButtons}. Needs
+     * {@link FroalaPlugin#LINK_TO_ANCHOR}. Default {@code anchorEdit}, {@code anchorRemove}.
+     *
+     * @param anchorEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withAnchorEditButtons(Collection<String> anchorEditButtons) {
+        return with("anchorEditButtons", anchorEditButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on an image. Froala's {@code imageEditButtons}. Needs
+     * {@link FroalaPlugin#IMAGE}. Default {@code imageReplace}, {@code imageAlign}, {@code imageCaption},
+     * {@code imageRemove}, {@code imageLink}, {@code linkOpen}, {@code linkEdit}, {@code linkRemove}, {@code -},
+     * {@code imageDisplay}, {@code imageStyle}, {@code imageAlt}, {@code imageSize}, {@code filestackIcon},
+     * {@code imageFilerobot}, {@code imageTUI}. Of these, {@code filestackIcon}, {@code imageFilerobot} and
+     * {@code imageTUI} are added by their own plugins and appear only while those are enabled.
+     *
+     * @param imageEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withImageEditButtons(Collection<String> imageEditButtons) {
+        return with("imageEditButtons", imageEditButtons);
+    }
+
+    /**
+     * Sets the tabs of the insert image popup. Froala's {@code imageInsertButtons}. Needs {@link FroalaPlugin#IMAGE}.
+     * Default {@code imageBack}, {@code |}, {@code imageUpload}, {@code imageByURL}, {@code imageManager},
+     * {@code openFilePickerImage}. Of these, {@code imageManager} and {@code openFilePickerImage} are added by their
+     * own plugins and appear only while those are enabled.
+     *
+     * @param imageInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withImageInsertButtons(Collection<String> imageInsertButtons) {
+        return with("imageInsertButtons", imageInsertButtons);
+    }
+
+    /**
+     * Sets the buttons above the alternative text popup of an image. Froala's {@code imageAltButtons}. Needs
+     * {@link FroalaPlugin#IMAGE}. Default {@code imageBack}, {@code |}.
+     *
+     * @param imageAltButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withImageAltButtons(Collection<String> imageAltButtons) {
+        return with("imageAltButtons", imageAltButtons);
+    }
+
+    /**
+     * Sets the buttons above the size popup of an image. Froala's {@code imageSizeButtons}. Needs
+     * {@link FroalaPlugin#IMAGE}. Default {@code imageBack}, {@code |}.
+     *
+     * @param imageSizeButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withImageSizeButtons(Collection<String> imageSizeButtons) {
+        return with("imageSizeButtons", imageSizeButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on a video. Froala's {@code videoEditButtons}. Needs
+     * {@link FroalaPlugin#VIDEO}. Default {@code videoReplace}, {@code videoRemove}, {@code videoDisplay},
+     * {@code videoAlign}, {@code videoSize}, {@code autoplay}.
+     *
+     * @param videoEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withVideoEditButtons(Collection<String> videoEditButtons) {
+        return with("videoEditButtons", videoEditButtons);
+    }
+
+    /**
+     * Sets the tabs of the insert video popup. Froala's {@code videoInsertButtons}. Needs {@link FroalaPlugin#VIDEO}.
+     * Default {@code videoBack}, {@code |}, {@code videoByURL}, {@code videoEmbed}, {@code videoUpload},
+     * {@code openFilePickerVideo}. Of these, {@code openFilePickerVideo} is added by {@link FroalaPlugin#FILESTACK} and
+     * appears only while it is enabled.
+     *
+     * @param videoInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withVideoInsertButtons(Collection<String> videoInsertButtons) {
+        return with("videoInsertButtons", videoInsertButtons);
+    }
+
+    /**
+     * Sets the buttons above the size popup of a video. Froala's {@code videoSizeButtons}. Needs
+     * {@link FroalaPlugin#VIDEO}. Default {@code videoBack}, {@code |}.
+     *
+     * @param videoSizeButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withVideoSizeButtons(Collection<String> videoSizeButtons) {
+        return with("videoSizeButtons", videoSizeButtons);
+    }
+
+    /**
+     * Sets the buttons above the upload file popup. Froala's {@code fileInsertButtons}. Needs
+     * {@link FroalaPlugin#FILE}. Default {@code fileBack}, {@code |}, {@code openFilePickerFile}. Of these,
+     * {@code openFilePickerFile} is added by {@link FroalaPlugin#FILESTACK} and appears only while it is enabled.
+     *
+     * @param fileInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFileInsertButtons(Collection<String> fileInsertButtons) {
+        return with("fileInsertButtons", fileInsertButtons);
+    }
+
+    /**
+     * Sets the tabs of the files manager popup. Froala's {@code filesInsertButtons}. Needs
+     * {@link FroalaPlugin#FILES_MANAGER}. Default {@code imageBack}, {@code |}, {@code filesUpload},
+     * {@code filesByURL}, {@code filesEmbed}, {@code openFilePicker}. Of these, {@code openFilePicker} is added by
+     * {@link FroalaPlugin#FILESTACK} and appears only while it is enabled.
+     *
+     * @param filesInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFilesInsertButtons(Collection<String> filesInsertButtons) {
+        return with("filesInsertButtons", filesInsertButtons);
+    }
+
+    /**
+     * Sets the buttons at the right end of the files manager popup. Froala's {@code filesInsertButtons2}. Needs
+     * {@link FroalaPlugin#FILES_MANAGER}. Default {@code deleteAll}, {@code insertAll}, {@code cancel},
+     * {@code minimize}.
+     *
+     * @param filesInsertButtons2 names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFilesInsertButtons2(Collection<String> filesInsertButtons2) {
+        return with("filesInsertButtons2", filesInsertButtons2);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on selected table cells. Froala's {@code tableEditButtons}. Needs
+     * {@link FroalaPlugin#TABLE}. Default {@code tableHeader}, {@code tableFooter}, {@code tableRemove},
+     * {@code tableRows}, {@code tableColumns}, {@code tableProperties}, {@code -}, {@code tableCells},
+     * {@code tableCellProperties}, {@code tableCellVerticalAlign}, {@code tableCellHorizontalAlign},
+     * {@code tableCellStyle}.
+     *
+     * @param tableEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withTableEditButtons(Collection<String> tableEditButtons) {
+        return with("tableEditButtons", tableEditButtons);
+    }
+
+    /**
+     * Sets the buttons above the insert table popup. Froala's {@code tableInsertButtons}. Needs
+     * {@link FroalaPlugin#TABLE}. Default {@code tableBack}, {@code |}.
+     *
+     * @param tableInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withTableInsertButtons(Collection<String> tableInsertButtons) {
+        return with("tableInsertButtons", tableInsertButtons);
+    }
+
+    /**
+     * Sets the buttons above the cell background color popup. Froala's {@code tableColorsButtons}. Needs
+     * {@link FroalaPlugin#TABLE}. Default {@code tableBack}, {@code |}.
+     *
+     * @param tableColorsButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withTableColorsButtons(Collection<String> tableColorsButtons) {
+        return with("tableColorsButtons", tableColorsButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on embedded content. Froala's {@code embedlyEditButtons}. Needs
+     * {@link FroalaPlugin#EMBEDLY}. Default {@code embedlyRemove}.
+     *
+     * @param embedlyEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withEmbedlyEditButtons(Collection<String> embedlyEditButtons) {
+        return with("embedlyEditButtons", embedlyEditButtons);
+    }
+
+    /**
+     * Sets the buttons above the embed URL popup. Froala's {@code embedlyInsertButtons}. Needs
+     * {@link FroalaPlugin#EMBEDLY}. Default {@code embedlyBack}, {@code |}.
+     *
+     * @param embedlyInsertButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withEmbedlyInsertButtons(Collection<String> embedlyInsertButtons) {
+        return with("embedlyInsertButtons", embedlyInsertButtons);
+    }
+
+    /**
+     * Sets the buttons of the popup that opens on a button of a form in the content. Froala's {@code formEditButtons}.
+     * Needs {@link FroalaPlugin#FORMS}. Default {@code inputStyle}, {@code inputEdit}.
+     *
+     * @param formEditButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFormEditButtons(Collection<String> formEditButtons) {
+        return with("formEditButtons", formEditButtons);
+    }
+
+    /**
+     * Sets the buttons above the popup that edits the text of a form button. Froala's {@code formUpdateButtons}. Needs
+     * {@link FroalaPlugin#FORMS}. Default {@code inputBack}, {@code |}.
+     *
+     * @param formUpdateButtons names from {@link FroalaButton}, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withFormUpdateButtons(Collection<String> formUpdateButtons) {
+        return with("formUpdateButtons", formUpdateButtons);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------
     // Counters
     // -----------------------------------------------------------------------------------------------------------
 

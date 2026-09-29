@@ -15,6 +15,9 @@
  */
 package com.vaadin.componentfactory.froala.it.views;
 
+import java.util.List;
+
+import com.vaadin.componentfactory.froala.FroalaButton;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
@@ -43,9 +46,12 @@ public class FroalaOptionsTestView extends VerticalLayout {
     public static final String INITIAL_VALUE = "<p>seeded by the server</p>";
     public static final String PLACEHOLDER = "options placeholder under test";
 
+    /** A popup's button list, which is not Froala's default for it. */
+    public static final List<String> IMAGE_EDIT_BUTTONS = List.of(FroalaButton.IMAGE_REMOVE);
+
     /** Not Froala's own default toolbar, so no default can pass for a configured one. */
     public static final FroalaOptions INITIAL_OPTIONS = FroalaOptions.defaults().withPlaceholderText(PLACEHOLDER)
-            .withToolbarButtons(FroalaToolbar.of("bold", "italic"));
+            .withToolbarButtons(FroalaToolbar.of("bold", "italic")).withImageEditButtons(IMAGE_EDIT_BUTTONS);
 
     /** Not 0, the add-on's default, so a test can tell an explicit value from the default. */
     public static final int OTHER_SAVE_INTERVAL = 5000;

@@ -90,6 +90,10 @@ Limits of options:
   plugin is off. The value reaches the server through the value change listener.
 - `setLicenseKey` wins over the `key` option while it holds a key. `setValueChangeTimeout`
   wins over `typingTimer` once it has been called.
+- Froala's `toolbarButtonsEnabledOnEditorOff` has no `with…` method, because it has no effect
+  in 5.4.0. It should keep the buttons it names usable while the editor is read-only or
+  disabled. Measured, Froala marks the whole toolbar disabled with or without it. With
+  `{"toolbarButtonsEnabledOnEditorOff": ["selectAll"]}` the select-all button is disabled as well.
 - `events` and `aiAssistRequest` cannot be set from Java, because they take JavaScript
   functions and options are sent as JSON. `setOptions` throws on `events`. `aiAssistRequest` is
   accepted, but has no effect. Froala events reach the server only through the
@@ -137,14 +141,25 @@ FroalaOptions options = FroalaOptions.defaults()
 ### Toolbar
 
 `withToolbarButtons` takes a `FroalaToolbar`, either flat or grouped.
-`withToolbarButtonsMd`, `…Sm` and `…Xs` do the same for narrower screens.
+`withToolbarButtonsMd`, `…Sm` and `…Xs` do the same for narrower screens. A button is named
+by its command. `FroalaButton` has a constant for each of Froala's buttons, and its Javadoc
+names the plugin each one needs.
 
 ```java
-FroalaToolbar flat = FroalaToolbar.of("bold", "italic", "|", "undo", "redo");
+FroalaToolbar flat = FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC, FroalaButton.VERTICAL_SEPARATOR,
+        FroalaButton.UNDO, FroalaButton.REDO);
 
 FroalaToolbar grouped = FroalaToolbar.ofGroups(
-        FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, "bold", "italic", "underline", "strikeThrough"),
-        FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, "undo", "redo").withAlign(FroalaToolbarAlign.RIGHT));
+        FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_TEXT, FroalaButton.BOLD, FroalaButton.ITALIC),
+        FroalaToolbarGroup.named(FroalaToolbarGroup.MORE_MISC, FroalaButton.UNDO, FroalaButton.REDO)
+                .withAlign(FroalaToolbarAlign.RIGHT));
+```
+
+The constants are plain strings. A command your application registers with Froala goes into
+the same list as a string:
+
+```java
+FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC, "myCommand");
 ```
 
 Froala draws the button that opens a group's overflow panel only for its own group names,
@@ -154,10 +169,12 @@ the number of buttons, or use one of the `MORE_…` names:
 
 ```java
 // throws: four buttons, three shown by default, and no button to open the rest
-FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen"));
+FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools",
+        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.PRINT, FroalaButton.FULLSCREEN));
 
 // works: all four are shown
-FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools", "undo", "redo", "print", "fullscreen").withButtonsVisible(4));
+FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools",
+        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.PRINT, FroalaButton.FULLSCREEN).withButtonsVisible(4));
 ```
 
 Two ready-made toolbars cover the common cases. `FroalaToolbar.froalaDefault()` is Froala's
@@ -179,7 +196,7 @@ Changing a single group needs a grouped toolbar. A flat one shows every button a
 changing one of its groups throws:
 
 ```java
-FroalaToolbar.of("bold", "italic").withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH); // IllegalStateException
+FroalaToolbar.of(FroalaButton.BOLD).withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH); // IllegalStateException
 ```
 
 Setting a toolbar also replaces Froala's narrower variants, which show fewer buttons per group.
@@ -191,6 +208,27 @@ the insert buttons on phones as Froala does:
 FroalaOptions options = FroalaOptions.defaults()
         .withToolbarButtons(FroalaToolbar.froalaDefault())
         .withToolbarButtonsXs(FroalaToolbar.froalaDefault().withButtonsVisible(FroalaToolbarGroup.MORE_RICH, 0));
+```
+
+### Popup buttons
+
+The popups have button lists of their own, such as the one that opens on an image or on a
+link. Each has a `with…Buttons` method on `FroalaOptions` named after Froala's option, and its
+Javadoc lists Froala's default. The list replaces the default, so name every button the popup
+should keep:
+
+```java
+// the image popup with replace, align, remove, alternative text and size only
+FroalaOptions options = FroalaOptions.defaults().withImageEditButtons(List.of(
+        FroalaButton.IMAGE_REPLACE, FroalaButton.IMAGE_ALIGN, FroalaButton.IMAGE_REMOVE,
+        FroalaButton.HORIZONTAL_SEPARATOR, FroalaButton.IMAGE_ALT, FroalaButton.IMAGE_SIZE));
+```
+
+`withQuickInsertButtons` is the exception. The quick insert plugin names its buttons itself, so
+they come from `FroalaQuickInsertButton` rather than `FroalaButton`:
+
+```java
+FroalaOptions.defaults().withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE, FroalaQuickInsertButton.UL));
 ```
 
 ### Theme

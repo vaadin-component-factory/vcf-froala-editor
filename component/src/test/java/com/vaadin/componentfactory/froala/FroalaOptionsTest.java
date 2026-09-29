@@ -94,6 +94,33 @@ class FroalaOptionsTest {
     }
 
     @Test
+    void buttonListOptions_useFroalasOwnNames() {
+        List<String> list = List.of(FroalaButton.BOLD);
+        FroalaOptions options = FroalaOptions.defaults().withCodeViewKeepActiveButtons(list)
+                .withSelectionActionButtons(list).withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE))
+                .withColorsButtons(list).withEmoticonsButtons(list).withSpecialCharButtons(list).withFaButtons(list)
+                .withLinkEditButtons(list).withLinkInsertButtons(list).withAnchorEditButtons(list)
+                .withImageEditButtons(list).withImageInsertButtons(list).withImageAltButtons(list)
+                .withImageSizeButtons(list).withVideoEditButtons(list).withVideoInsertButtons(list)
+                .withVideoSizeButtons(list).withFileInsertButtons(list).withFilesInsertButtons(list)
+                .withFilesInsertButtons2(list).withTableEditButtons(list).withTableInsertButtons(list)
+                .withTableColorsButtons(list).withEmbedlyEditButtons(list).withEmbedlyInsertButtons(list)
+                .withFormEditButtons(list).withFormUpdateButtons(list);
+
+        List<String> keys = List.of(options.toJson().keys());
+        assertEquals(List.of("codeViewKeepActiveButtons", "selectionActionButtons", "quickInsertButtons",
+                "colorsButtons", "emoticonsButtons", "specialCharButtons", "faButtons", "linkEditButtons",
+                "linkInsertButtons", "anchorEditButtons", "imageEditButtons", "imageInsertButtons", "imageAltButtons",
+                "imageSizeButtons", "videoEditButtons", "videoInsertButtons", "videoSizeButtons", "fileInsertButtons",
+                "filesInsertButtons", "filesInsertButtons2", "tableEditButtons", "tableInsertButtons",
+                "tableColorsButtons", "embedlyEditButtons", "embedlyInsertButtons", "formEditButtons",
+                "formUpdateButtons"), keys);
+        assertEquals("[\"table\"]", options.toJson().get("quickInsertButtons").toJson());
+        keys.stream().filter(key -> !key.equals("quickInsertButtons"))
+                .forEach(key -> assertEquals("[\"bold\"]", options.toJson().get(key).toJson(), key));
+    }
+
+    @Test
     void emptyList_isSentAsAnEmptyArray() {
         // Not the same as null. An empty htmlAllowedStyleProps removes every style attribute. Null keeps Froala's
         // default.
