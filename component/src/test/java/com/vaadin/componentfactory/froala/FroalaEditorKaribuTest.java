@@ -15,17 +15,24 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.github.mvysny.kaributesting.v10.ElementUtilsKt;
 import com.github.mvysny.kaributesting.v10.MockVaadin;
+import elemental.json.Json;
+import elemental.json.JsonObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.dom.DomEvent;
+import com.vaadin.flow.shared.Registration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -314,6 +321,111 @@ class FroalaEditorKaribuTest {
                 () -> editor.setOptions("{\"events\": {\"initialized\": \"nope\"}}"));
 
         assertTrue(thrown.getMessage().contains("callbacks"));
+    }
+
+    @Test
+    void addCommand_sendsTheCommandAndRemoveTakesItBack() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand first = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
+        FroalaCommand second = new FroalaCommand("second", "Second", VaadinIcon.STAR.create());
+
+        Registration registration = editor.addCommand(first, event -> {
+        });
+        editor.addCommand(second, event -> {
+        });
+        assertEquals("[" + first.toJson().toJson() + "," + second.toJson().toJson() + "]", commandsOn(editor));
+
+        registration.remove();
+        assertEquals("[" + second.toJson().toJson() + "]", commandsOn(editor));
+    }
+
+    @Test
+    void addCommand_beforeAttach_reachesTheElement() {
+        FroalaEditor editor = new FroalaEditor();
+        FroalaCommand command = new FroalaCommand("early", "Early", VaadinIcon.STAR.create());
+
+        editor.addCommand(command, event -> {
+        });
+        layout.add(editor);
+
+        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+    }
+
+    @Test
+    void commandEvent_reachesTheListenerOfThatCommandOnly() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand first = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
+        List<String> seen = new ArrayList<>();
+        editor.addCommand(first, event -> seen.add("first " + event.getCommand().name() + " " + event.isFromClient()));
+        editor.addCommand(new FroalaCommand("second", "Second", VaadinIcon.STAR.create()), event -> seen.add("second"));
+
+        fireCommand(editor, "first");
+        // a name this editor has no listener for, such as one removed while the click was on its way
+        fireCommand(editor, "unknown");
+
+        assertEquals(List.of("first first true"), seen);
+    }
+
+    @Test
+    void removedCommand_noLongerReachesItsListener() {
+        FroalaEditor editor = attachedEditor();
+        List<String> seen = new ArrayList<>();
+        Registration registration = editor.addCommand(new FroalaCommand("first", "First", VaadinIcon.STAR.create()),
+                event -> seen.add("first"));
+
+        registration.remove();
+        fireCommand(editor, "first");
+
+        assertEquals(List.of(), seen);
+    }
+
+    @Test
+    void sameNameTwice_isRejected() {
+        FroalaEditor editor = attachedEditor();
+        editor.addCommand(new FroalaCommand("first", "First", VaadinIcon.STAR.create()), event -> {
+        });
+
+        assertThrows(IllegalArgumentException.class,
+                () -> editor.addCommand(new FroalaCommand("first", "Other", VaadinIcon.STAR.create()), event -> {
+                }));
+    }
+
+    @Test
+    void staleRegistration_leavesALaterCommandOfTheSameNameAlone() {
+        FroalaEditor editor = attachedEditor();
+        FroalaCommand command = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
+        Registration stale = editor.addCommand(command, event -> {
+        });
+        stale.remove();
+        editor.addCommand(command, event -> {
+        });
+
+        stale.remove();
+
+        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+    }
+
+    @Test
+    void addCommand_sendsTheUiLocaleAsItIsNow() {
+        FroalaEditor editor = attachedEditor();
+        UI.getCurrent().setLocale(Locale.forLanguageTag("fi"));
+
+        editor.addCommand(new FroalaCommand("first", "First", VaadinIcon.STAR.create()), event -> {
+        });
+
+        assertEquals("[\"fi\"]", localeLanguagesOn(editor));
+    }
+
+    /** Fires the event the client sends when one of the editor's commands was triggered in the browser. */
+    private void fireCommand(FroalaEditor editor, String name) {
+        JsonObject data = Json.createObject();
+        data.put("event.detail.name", name);
+        ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), "_command", data));
+    }
+
+    /** The commands as they sit on the element, which is what the client registers with Froala. */
+    private String commandsOn(FroalaEditor editor) {
+        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("commands")).toJson();
     }
 
     /** The options as they sit on the element, which is what the client will read them from. */

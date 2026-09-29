@@ -11,15 +11,72 @@ import { inputFieldShared } from '@vaadin/vaadin-lumo-styles/mixins/input-field-
 import { SlotStylesMixin } from '@vaadin/component-base/src/slot-styles-mixin.js';
 import { diff_match_patch } from 'diff-match-patch';
 
+// Froala draws an icon from a template string, filling in each [NAME] from the icon's definition. An own command's
+// icon is a <vaadin-icon> with the attributes the server sent, already escaped by registerCommands.
+FroalaEditor.DefineIconTemplate('vcfVaadinIcon', '<vaadin-icon [ATTRS]></vaadin-icon>');
+
+// Froala puts titles and icons into its HTML unescaped. Brackets included, because the icon template would read
+// them as a placeholder.
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"'[\]]/g, (character) => `&#${character.charCodeAt(0)};`);
+}
+
+// The plugin name an own command is tied to. Froala shows a command's button only in editors whose pluginsEnabled
+// holds the command's plugin, which is how a command registered for the whole page appears only in the editors that
+// added it. Froala skips a plugin name it has no plugin for, so the name needs nothing behind it.
+function commandPlugin(name) {
+  return `vcfCommand_${name}`;
+}
+
+/**
+ * Registers the given own commands with Froala. Froala keeps commands, icons and shortcuts for the whole page, so the
+ * editor built last decides a name's title, icon and shortcut in all editors.
+ */
+function registerCommands(commands) {
+  for (const { name, title, icon, shortcut } of commands) {
+    const attributes = Object.entries(icon)
+      .map(([attribute, value]) => `${attribute}="${escapeHtml(value)}"`)
+      .join(' ');
+    FroalaEditor.DefineIcon(name, { template: 'vcfVaadinIcon', ATTRS: attributes });
+
+    FroalaEditor.RegisterCommand(name, {
+      title: escapeHtml(title),
+      icon: name,
+      plugin: commandPlugin(name),
+      // The command changes nothing in the editor itself. What the server does afterwards arrives as a change of its
+      // own.
+      undo: false,
+      refreshAfterCallback: false,
+      callback() {
+        // Froala calls this with the editor as `this` from a button and from commands.exec. A shortcut goes through
+        // the toolbar's button if there is one. Without one Froala calls this without an editor, which is why the
+        // shortcut event below goes through commands.exec instead.
+        this?.el?.closest('vcf-froala-editor')?._runCommand(name);
+      },
+    });
+
+    // Froala's key for a shortcut in SHORTCUTS_MAP, see RegisterShortcut
+    const key = shortcut && `${shortcut.shift ? '^' : ''}${shortcut.alt ? '@' : ''}${shortcut.keyCode}`;
+    // keys an earlier definition of the name bound, so that the last definition is the only one
+    Object.keys(FroalaEditor.SHORTCUTS_MAP)
+      .filter((other) => other !== key && FroalaEditor.SHORTCUTS_MAP[other].cmd === name)
+      .forEach((other) => delete FroalaEditor.SHORTCUTS_MAP[other]);
+    // RegisterShortcut adds the name to the default shortcutsEnabled on every call, so only when something changes
+    if (shortcut && FroalaEditor.SHORTCUTS_MAP[key]?.cmd !== name) {
+      FroalaEditor.RegisterShortcut(shortcut.keyCode, name, null, shortcut.letter, shortcut.shift, shortcut.alt);
+    }
+  }
+}
+
 class FroalaEditorElement extends SlotStylesMixin(
   FieldMixin(ThemableMixin(ElementMixin(FocusMixin(DisabledMixin(PolylitMixin(LitElement))))))
 ) {
   // Set by the server before the editor initializes, and passed to Froala as its `key` option.
   licenseKey = null;
 
-  // The options the current editor was built with, as JSON. Compared against `options` in updated(), so that the
-  // update which builds the editor does not rebuild it right away.
-  _appliedOptions = null;
+  // The options and commands the current editor was built with, as JSON. Compared against the current ones in
+  // updated(), so that the update which builds the editor does not rebuild it right away.
+  _appliedConfig = null;
 
   // Froala builds asynchronously, so its modules (edit, html, ...) must not be touched before its `initialized`
   // event has fired. `this.editor` being assigned is not enough.
@@ -81,6 +138,11 @@ class FroalaEditorElement extends SlotStylesMixin(
     // The language file names that fit the UI's locale, best first, for options without a language. Declared for the
     // same reason as `options`.
     localeLanguages: {
+      type: Array,
+    },
+
+    // The application's own commands, as FroalaCommand sends them. Declared for the same reason as `options`.
+    commands: {
       type: Array,
     },
   };
@@ -209,7 +271,7 @@ class FroalaEditorElement extends SlotStylesMixin(
 
     this._editorInitialized = false;
     this._editorGeneration++;
-    this._appliedOptions = null;
+    this._appliedConfig = null;
   }
 
   /**
@@ -245,8 +307,9 @@ class FroalaEditorElement extends SlotStylesMixin(
   }
 
   /**
-   * Applies a changed set of options by throwing the editor away and building a new one. Froala has no API to change
-   * an option on a running instance. Its own answer is to destroy and initialize again.
+   * Applies changed options or commands by throwing the editor away and building a new one. Froala has no API to
+   * change an option on a running instance, and builds its toolbar and popups only once. Its own answer is to destroy
+   * and initialize again.
    *
    * What the user typed is flushed first and seeds the new editor. Everything else Froala holds is gone (caret,
    * selection, scroll position, undo history). A detach and re-attach makes the same trade.
@@ -302,8 +365,15 @@ class FroalaEditorElement extends SlotStylesMixin(
     //
     // pluginsEnabled is always named explicitly, because Froala's own default is every plugin registered on the page,
     // and that depends on what other editors happened to load.
-    const options = { saveInterval: 0, theme: 'vaadin', ...this.options, pluginsEnabled };
-    this._appliedOptions = JSON.stringify(this.options ?? null);
+    const commands = this.commands ?? [];
+    registerCommands(commands);
+    const options = {
+      saveInterval: 0,
+      theme: 'vaadin',
+      ...this.options,
+      pluginsEnabled: [...pluginsEnabled, ...commands.map(({ name }) => commandPlugin(name))],
+    };
+    this._appliedConfig = this._config();
 
     if (language) {
       options.language = language;
@@ -321,7 +391,7 @@ class FroalaEditorElement extends SlotStylesMixin(
       (handler) =>
       (...args) => {
         if (generation === this._editorGeneration) {
-          handler(...args);
+          return handler(...args);
         }
       };
 
@@ -375,6 +445,15 @@ class FroalaEditorElement extends SlotStylesMixin(
         focus: fromCurrentEditor(() => {
           this.dispatchEvent(new CustomEvent('focus'));
         }),
+        // For a command without a toolbar button Froala runs the shortcut without the editor, see registerCommands.
+        // Returning false stops Froala from running it itself.
+        shortcut: fromCurrentEditor((event, name) => {
+          if (this._hasCommand(name)) {
+            event.preventDefault();
+            this.editor.commands.exec(name);
+            return false;
+          }
+        }),
         contentChanged: fromCurrentEditor(() => {
           if (this.valueChangeMode === 'change') {
             this.onValueChangeThrottled();
@@ -382,6 +461,22 @@ class FroalaEditorElement extends SlotStylesMixin(
         }),
       },
     });
+  }
+
+  _hasCommand(name) {
+    return (this.commands ?? []).some((command) => command.name === name);
+  }
+
+  /** Tells the server that one of its commands was triggered in this editor. */
+  _runCommand(name) {
+    if (this._hasCommand(name)) {
+      this.dispatchEvent(new CustomEvent('_command', { detail: { name } }));
+    }
+  }
+
+  /** What an editor is built from and has to be built again for when it changes, as JSON. */
+  _config() {
+    return JSON.stringify([this.options ?? null, this.commands ?? []]);
   }
 
   _reportSelection() {
@@ -590,9 +685,9 @@ class FroalaEditorElement extends SlotStylesMixin(
       this.updateReadonlyMode();
     }
 
-    // Compared by content, not by `changedProperties.has`. On the update that builds the editor the options are
-    // already in it, and a rebuild would be for nothing.
-    if (this.editor && JSON.stringify(this.options ?? null) !== this._appliedOptions) {
+    // Compared by content, not by `changedProperties.has`. On the update that builds the editor the options and
+    // commands are already in it, and a rebuild would be for nothing.
+    if (this.editor && this._config() !== this._appliedConfig) {
       this._rebuildEditor();
     }
   }

@@ -15,9 +15,12 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.io.Serializable;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 import elemental.json.Json;
@@ -83,6 +86,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     private static final String OPTIONS_PROPERTY = "options";
     private static final String DEFAULT_PLUGINS_PROPERTY = "defaultPluginsEnabled";
     private static final String LOCALE_LANGUAGES_PROPERTY = "localeLanguages";
+    private static final String COMMANDS_PROPERTY = "commands";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
@@ -98,6 +102,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /** What the listeners were last told about the selection, see the detach listener in the constructor. */
     private boolean hasSelection;
+
+    /** The commands added with {@link #addCommand}, by name, in the order they were added. */
+    private final Map<String, AddedCommand> commands = new LinkedHashMap<>();
 
     /**
      * Creates a new instance with the given label.
@@ -224,6 +231,14 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         element.addEventListener("_value-resync",
                 event -> setModelValue(event.getEventData().get("event.detail.value").asString(), true))
                 .addEventData("event.detail.value");
+
+        element.addEventListener("_command", event -> {
+            AddedCommand added = commands.get(event.getEventData().get("event.detail.name").asString());
+            // null for a command removed while the click was on its way
+            if (added != null) {
+                added.listener().onComponentEvent(new CommandEvent(this, true, added.command()));
+            }
+        }).addEventData("event.detail.name");
 
         // A re-attach builds a new element in the browser, which starts out knowing nothing of a selection and so never
         // reports that the old one is gone. Listeners that were told "some" hear "none" from here instead.
@@ -439,6 +454,67 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * Adds a command of the application's own to this editor and runs the listener whenever the user triggers it in
+     * this editor, by a button or by its shortcut. Where the command's button appears is decided by its name, in the
+     * toolbar or in a popup's button list:
+     *
+     * <pre>
+     * FroalaCommand insertTemplate = new FroalaCommand("insertTemplate", "Insert template",
+     *         VaadinIcon.FILE_TEXT.create());
+     * editor.setOptions(FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.of("bold", "insertTemplate")));
+     * editor.addCommand(insertTemplate, event -&gt; editor.replaceSelectionContent("&lt;p&gt;Dear ...&lt;/p&gt;"));
+     * </pre>
+     *
+     * <p>
+     * Froala builds its toolbar and popups once, when the editor is built. Adding or removing a command on an attached
+     * editor therefore builds it again, with the same losses as {@link #setOptions(FroalaOptions)}. Several calls
+     * within one server round trip cause one rebuild.
+     *
+     * <p>
+     * Froala keeps a command's title, icon and shortcut for the whole page, not per editor. Two editors that add a
+     * command of the same name with a different title, icon or shortcut show the definition of the editor built last in
+     * both. A command name that is also one of Froala's own, e.g. {@code bold}, replaces Froala's command in every
+     * editor on the page, and a shortcut replaces one of Froala's with the same keys.
+     *
+     * <p>
+     * A shortcut works only while the command is listed in the {@code shortcutsEnabled} option. Froala lists it there
+     * by default, but options that set {@code shortcutsEnabled} themselves have to name the command.
+     *
+     * @param command the command, not null
+     * @param listener runs when the user triggers the command in this editor, not null
+     * @return a handle that removes the command from this editor again
+     * @throws IllegalArgumentException if this editor already has a command of the same name
+     */
+    public Registration addCommand(FroalaCommand command, ComponentEventListener<CommandEvent> listener) {
+        Objects.requireNonNull(command, "command must not be null");
+        Objects.requireNonNull(listener, "listener must not be null");
+        if (commands.containsKey(command.name())) {
+            throw new IllegalArgumentException("This editor already has a command named '" + command.name() + "'");
+        }
+
+        AddedCommand added = new AddedCommand(command, listener);
+        commands.put(command.name(), added);
+        sendCommands();
+
+        return () -> {
+            // a stale handle must not remove a later command of the same name
+            if (commands.remove(command.name(), added)) {
+                sendCommands();
+            }
+        };
+    }
+
+    /** Tells the client about the commands, which builds the editor again once it is running. */
+    private void sendCommands() {
+        // that build reads the locale as it is now, like one caused by setOptions
+        sendLocaleLanguages();
+
+        JsonArray json = Json.createArray();
+        commands.values().forEach(added -> json.set(json.length(), added.command().toJson()));
+        getElement().setPropertyJson(COMMANDS_PROPERTY, json);
+    }
+
+    /**
      * Adds a listener that learns when something gets selected in the editor and when the selection is gone again --
      * collapsed to a caret, or moved outside the editor. Useful to enable an action that works on the selection, such
      * as one calling {@link #replaceSelectionContent(String)}, only while there is one.
@@ -575,5 +651,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public int getIntervalPeriod() {
         return getElement().getProperty("intervalPeriod", DEFAULT_INTERVAL_PERIOD);
+    }
+
+    /** A command together with the listener it was added with. */
+    private record AddedCommand(FroalaCommand command,
+            ComponentEventListener<CommandEvent> listener) implements Serializable {
     }
 }

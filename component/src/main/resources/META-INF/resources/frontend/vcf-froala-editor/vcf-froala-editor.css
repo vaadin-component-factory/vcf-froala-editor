@@ -16,3 +16,12 @@ vcf-froala-viewer {
 
   background-color: var(--vcf-froala-viewer-bg-color, inherit);
 }
+
+/* The icon of an own command, see FroalaCommand. Sized and spaced like Froala's own svg icons. */
+.fr-toolbar .fr-command.fr-btn vaadin-icon,
+.fr-popup .fr-command.fr-btn vaadin-icon {
+  display: block;
+  margin: 8px 7px;
+  width: 24px;
+  height: 24px;
+}

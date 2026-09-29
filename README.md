@@ -199,7 +199,7 @@ FroalaOptions options = FroalaOptions.defaults()
       }
   }
   ```
-- `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
+****- `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
   A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
   shows English tooltips, because the file is called `de`.
 - Without `withLanguage` the editor takes the language of the UI's locale, `UI.getLocale()`.
@@ -340,6 +340,69 @@ they come from `FroalaQuickInsertButton` rather than `FroalaButton`:
 
 ```java
 FroalaOptions.defaults().withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE, FroalaQuickInsertButton.UL));
+```
+
+### Own commands
+
+A `FroalaCommand` is an action of your own with a name, a title, an icon and optionally a
+keyboard shortcut. `addCommand` adds it to an editor and runs the listener on the server
+whenever the user triggers it in that editor. The command's name decides where its button
+appears, in the toolbar or in a popup's button list, like any of Froala's commands:
+
+```java
+FroalaCommand insertTemplate = new FroalaCommand("insertTemplate", "Insert template", VaadinIcon.FILE_TEXT.create())
+        .withShortcut(Key.KEY_T, KeyModifier.SHIFT); // Ctrl+Shift+T, or Cmd+Shift+T on a Mac
+
+editor.setOptions(FroalaOptions.defaults()
+        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, "insertTemplate"))
+        .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, "insertTemplate")));
+Registration registration = editor.addCommand(insertTemplate,
+        event -> editor.replaceSelectionContent("<p>Dear customer,</p>"));
+
+registration.remove(); // the command and its buttons are gone from this editor
+```
+
+The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
+`SvgIcon` with a URL or a `FontIcon`. An `SvgIcon` with a `DownloadHandler` shows nothing,
+because it has no URL until it is attached. A shortcut is always Ctrl, or Cmd on a Mac, plus a
+letter or digit. Shift and Alt can be added. Other keys and modifiers throw, and so does a
+second command of the same name on one editor:
+
+```java
+insertTemplate.withShortcut(Key.F2);                          // IllegalArgumentException, not a letter or digit
+insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL);  // IllegalArgumentException, Ctrl is always there
+editor.addCommand(insertTemplate, event -> {});
+editor.addCommand(insertTemplate, event -> {});               // IllegalArgumentException, the name is taken
+```
+
+Adding or removing a command on an attached editor builds the editor again, as `setOptions`
+does. The value is kept, but caret, selection and undo history are lost. Several calls within
+one server round trip cause one rebuild.
+
+Froala keeps a command's title, icon and shortcut for the whole page, not per editor. The
+listener, the buttons and the shortcut still belong to the editors that added the command.
+What is shared:
+
+- Two editors that add the same name with a different title, icon or shortcut both show the
+  definition of the editor built last.
+- A name of one of Froala's own commands, such as `bold`, replaces Froala's command in every
+  editor on the page. A shortcut with the keys of one of Froala's, such as Ctrl+B, replaces
+  that one as well.
+
+```java
+first.addCommand(new FroalaCommand("sign", "Sign", VaadinIcon.PENCIL.create()), event -> sign(first));
+second.addCommand(new FroalaCommand("sign", "Sign off", VaadinIcon.CHECK.create()), event -> sign(second));
+// both editors show the one built last, say "Sign off" with the check mark, and each runs its own listener
+
+editor.addCommand(new FroalaCommand("bold", "Bold", VaadinIcon.BOLD.create()), event -> {});
+// Froala's bold is gone from every editor on the page
+```
+
+A shortcut only works while the command is in the `shortcutsEnabled` option. Froala's default
+list takes it in by itself. Options that set `shortcutsEnabled` must name the command too:
+
+```java
+editor.setOptions("{\"shortcutsEnabled\": [\"bold\", \"italic\", \"insertTemplate\"]}");
 ```
 
 ### Uploads

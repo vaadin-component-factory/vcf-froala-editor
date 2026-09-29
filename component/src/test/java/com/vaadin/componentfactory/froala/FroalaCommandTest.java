@@ -1,0 +1,80 @@
+/*
+ * Copyright 2026 Vaadin Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.vaadin.componentfactory.froala;
+
+import org.junit.jupiter.api.Test;
+
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.KeyModifier;
+import com.vaadin.flow.component.icon.FontIcon;
+import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class FroalaCommandTest {
+
+    @Test
+    void vaadinIcon_isSentAsItsIconAttribute() {
+        FroalaCommand command = new FroalaCommand("insertTemplate", "Insert template", VaadinIcon.FILE_TEXT.create());
+
+        assertEquals(
+                "{\"name\":\"insertTemplate\",\"title\":\"Insert template\",\"icon\":{\"icon\":\"vaadin:file-text\"}}",
+                command.toJson().toJson());
+    }
+
+    @Test
+    void iconProperties_areSentAsTheAttributesVaadinIconReadsThemFrom() {
+        FroalaCommand svg = new FroalaCommand("a", "A", new SvgIcon("icons/sprite.svg", "star"));
+        FroalaCommand font = new FroalaCommand("b", "B", new FontIcon("fa", "fa-star"));
+
+        assertEquals("{\"src\":\"icons/sprite.svg\",\"symbol\":\"star\"}", svg.toJson().getObject("icon").toJson());
+        assertEquals("{\"icon-class\":\"fa fa-star\"}", font.toJson().getObject("icon").toJson());
+    }
+
+    @Test
+    void shortcut_isSentAsFroalasKeyCodeAndLetter() {
+        FroalaCommand letter = new FroalaCommand("a", "A", VaadinIcon.STAR.create()).withShortcut(Key.KEY_T,
+                KeyModifier.SHIFT);
+        FroalaCommand digit = new FroalaCommand("b", "B", VaadinIcon.STAR.create()).withShortcut(Key.DIGIT_4,
+                KeyModifier.ALT);
+
+        assertEquals("{\"keyCode\":84,\"letter\":\"T\",\"shift\":true,\"alt\":false}",
+                letter.toJson().getObject("shortcut").toJson());
+        assertEquals("{\"keyCode\":52,\"letter\":\"4\",\"shift\":false,\"alt\":true}",
+                digit.toJson().getObject("shortcut").toJson());
+    }
+
+    @Test
+    void shortcut_takesOnlyWhatFroalaCanBind() {
+        FroalaCommand command = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
+
+        // Froala binds Ctrl or Cmd plus a key, so Ctrl is implied and Meta cannot be asked for
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.CONTROL));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.META));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.F2));
+    }
+
+    @Test
+    void name_mustBeUsableAsAFroalaCommandName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FroalaCommand("insert template", "A", VaadinIcon.STAR.create()));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FroalaCommand("x\" onclick=\"alert(1)", "A", VaadinIcon.STAR.create()));
+        assertThrows(NullPointerException.class, () -> new FroalaCommand("a", "A", null));
+    }
+}
