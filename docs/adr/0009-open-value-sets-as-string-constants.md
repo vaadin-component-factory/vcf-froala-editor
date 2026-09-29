@@ -23,6 +23,8 @@ it and the compiler can then catch a typo. These are `FroalaTextDirection`, `Fro
 - `FroalaPlugin` holds only the registered name. The file name is known to the client-side
   loader alone, which maps registered names to files and passes any other name on untouched.
 - `FroalaTheme.NONE` is the empty string. Froala adds the theme class only when `opts.theme` is
-  truthy, and an empty string still overrides the add-on's default `vaadin`.
+  truthy, and an empty string still overrides the add-on's default `vaadin`. The name stays `NONE`
+  (maintainer, 2026-09-29). `FROALA_DEFAULT` was rejected because it names an origin among
+  constants that name a look, and a plain `DEFAULT` would be mistaken for the add-on's default.
 - `basics()` and `all()` return a new `Set<String>`. `all()` lists the constants by hand, and a
   unit test checks it against the class's fields.
