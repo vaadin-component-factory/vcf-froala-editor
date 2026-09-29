@@ -25,6 +25,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import com.vaadin.componentfactory.froala.it.views.FroalaCommandToggleTestView;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** A toggle command's button shows the state the server holds for that editor. */
@@ -50,6 +52,26 @@ class FroalaCommandToggleIT extends SpringPlaywrightIT {
         toolbarButton("first").click();
         assertThat(page.locator("#log")).hasText("first=true first=false");
         assertPressed("first", false);
+    }
+
+    @Test
+    void icon_takesTheColoursOfFroalasIcons() {
+        Locator icon = toolbarButton("first").locator("vaadin-icon");
+        // the svg sits in the icon's shadow root, which Froala's rules for its own icons do not reach
+        String iconFill = "icon => getComputedStyle(icon.shadowRoot.querySelector('svg')).fill";
+        String boldFill = (String) page.locator("#first .fr-toolbar button[data-cmd='bold'] svg path").first()
+                .evaluate("path => getComputedStyle(path).fill");
+        assertEquals(boldFill, icon.evaluate(iconFill));
+
+        toolbarButton("first").click();
+        assertThat(page.locator("#log")).hasText("first=true");
+        assertPressed("first", true);
+
+        String accent = (String) icon.evaluate("icon => {" + " const probe = document.createElement('span');"
+                + " probe.style.color = 'var(--vcf-froala-accent-color)';" + " icon.after(probe);"
+                + " const color = getComputedStyle(probe).color;" + " probe.remove();" + " return color;" + " }");
+        assertNotEquals(boldFill, accent);
+        assertEquals(accent, icon.evaluate(iconFill));
     }
 
     @Test

@@ -189,3 +189,14 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
     );
   }
 }
+
+/* The icon of an own command is a <vaadin-icon>, which draws its svg in its shadow root, where the rules for Froala's
+   `svg path` do not reach. It takes its fill from the element, so the element gets the colours Froala's icons get,
+   the accent colour while a toggle is active. */
+.vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn vaadin-icon {
+  fill: color-mix(in srgb, var(--vcf-froala-neutral-color) 80%, var(--vcf-froala-background-color));
+}
+
+.vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn.fr-active:not(.fr-dropdown) vaadin-icon {
+  fill: var(--vcf-froala-accent-color);
+}
