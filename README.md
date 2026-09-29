@@ -158,6 +158,17 @@ FroalaOptions options = FroalaOptions.defaults()
 - `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
   A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
   shows English tooltips, because the file is called `de`.
+- `withDirection` takes effect only without a language. Every Froala language file names its
+  own direction, and Froala lets it win. For example
+  `withLanguage("ar").withDirection(FroalaTextDirection.LTR)` builds a right-to-left editor.
+  For right-to-left text with English tooltips, set `withDirection(FroalaTextDirection.RTL)`
+  and no language.
+- The component's `dir` follows the direction Froala builds the editor with, so the label,
+  helper text and error message sit on the same side as the text. For example
+  `withLanguage("de")` gives `dir="ltr"` even on a right-to-left page. That direction wins
+  over a `dir` you set on the component yourself. With neither a language nor a direction,
+  Froala's default `AUTO` applies. It sets nothing and gives back the `dir` the component had
+  before, yours or the page's.
 - Track changes marks insertions and deletions in the HTML. That markup reaches the server
   with the value unless the changes are accepted or rejected first. For example a deletion
   stays in the value as a `<span data-tracking-deleted="true">`. Froala also adds the plugin's

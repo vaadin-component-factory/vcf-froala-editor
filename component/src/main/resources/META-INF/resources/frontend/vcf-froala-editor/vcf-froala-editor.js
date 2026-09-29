@@ -50,6 +50,11 @@ class FroalaEditorElement extends SlotStylesMixin(
   // what the server was last told about the selection, so that only a switch between "none" and "some" is reported
   _hasSelection = false;
 
+  // whether the host's `dir` is one this element set from the editor's direction, and the `dir` it had before, which
+  // may be null. See _mirrorDirection.
+  _dirFromEditor = false;
+  _dirBeforeEditor = null;
+
   static properties = {
     // `disabled` comes from DisabledMixin, which also keeps aria-disabled in sync. Do not redeclare it here.
     // `focused` is an attribute that FocusMixin toggles directly. Declaring it as a reflected property would let
@@ -202,6 +207,38 @@ class FroalaEditorElement extends SlotStylesMixin(
   }
 
   /**
+   * Puts the direction the editor was built with onto the host, so the label, helper text and error message sit on the
+   * same side as the text. Read from Froala rather than from the options, because a language file such as `ar` brings
+   * its own direction, which Froala writes into `opts.direction` while it builds.
+   *
+   * Froala's default `auto` names no direction. Then the host gets back the `dir` it had before this element set one,
+   * a `dir` the application set or none at all. With none, DirMixin goes back to the document's direction. A `dir`
+   * equal to the document's is taken to be DirMixin's copy, not the application's, so it is not kept as stale.
+   *
+   * ponytail: two cases are left out. While the editor's direction equals the document's, the host stays subscribed
+   * to DirMixin, so a later change of the document's direction reaches it. And a `dir` the server changes on a running
+   * editor is only looked at on the next build.
+   */
+  _mirrorDirection() {
+    const direction = this.editor.opts.direction;
+    if (direction === 'rtl' || direction === 'ltr') {
+      if (!this._dirFromEditor) {
+        const dir = this.getAttribute('dir');
+        this._dirBeforeEditor = dir === document.documentElement.getAttribute('dir') ? null : dir;
+        this._dirFromEditor = true;
+      }
+      this.setAttribute('dir', direction);
+    } else if (this._dirFromEditor) {
+      if (this._dirBeforeEditor === null) {
+        this.removeAttribute('dir');
+      } else {
+        this.setAttribute('dir', this._dirBeforeEditor);
+      }
+      this._dirFromEditor = false;
+    }
+  }
+
+  /**
    * Applies a changed set of options by throwing the editor away and building a new one. Froala has no API to change
    * an option on a running instance. Its own answer is to destroy and initialize again.
    *
@@ -286,6 +323,8 @@ class FroalaEditorElement extends SlotStylesMixin(
           // aria-describedby, and keeps it up to date. Set here on every build, because each build brings a new
           // editable area and the target has to move to it.
           this.ariaTarget = this.editor.el;
+
+          this._mirrorDirection();
 
           // anything touching editor modules has to wait for this event, so re-apply what the server may
           // already have set while Froala was still building

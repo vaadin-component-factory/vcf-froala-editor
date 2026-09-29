@@ -161,6 +161,17 @@ public final class FroalaOptions implements Serializable {
     /**
      * Sets the reading direction of the edited text. Froala's {@code direction}.
      *
+     * <p>
+     * This takes effect only without a language. Every Froala language file names its own direction, and Froala lets it
+     * win over this option. So {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
+     * {@code withLanguage("de").withDirection(RTL)} a left-to-right one. For right-to-left text with English tooltips,
+     * set this option and no language.
+     *
+     * <p>
+     * The component's own {@code dir} follows the direction the editor is built with, so the label, helper text and
+     * error message sit on the same side as the text. {@link FroalaTextDirection#AUTO} leaves the component's
+     * {@code dir} as it was before.
+     *
      * @param direction text direction, or null to leave Froala's default
      * @return a new instance
      */
