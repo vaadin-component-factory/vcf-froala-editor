@@ -77,7 +77,7 @@ public class BasicView extends FroalaViewBase {
         addComponentAtIndex(indexOf(getToolbar()) + 1, new Paragraph(
                 "An editor without plugin options gets FroalaPlugin.basics(): text and paragraph formats, "
                         + "lists, quotes, links and find and replace. Nothing that inserts images, tables or other "
-                        + "content. The toolbar is FroalaToolbar.basics() with all buttons visible."));
+                        + "content. The toolbar is FroalaToolbar.basics()."));
 
         getViewer().setMinHeight("250px");
     }
