@@ -20,6 +20,7 @@ import com.vaadin.componentfactory.froala.FroalaCommand;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
+import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
 import com.vaadin.flow.component.button.Button;
@@ -40,7 +41,7 @@ public class CommandView extends VerticalLayout {
                 FroalaOptions.defaults()
                         .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC,
                                 FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.VERTICAL_SEPARATOR,
-                                "selectAllText", "showDialog", "showPopover")));
+                                "selectAllText", "showDialog", "showPopover", "showViewer")));
         editor.setValue("<p>Thank you for your order. It will be shipped <b>tomorrow</b>.</p>");
         editor.setWidthFull();
 
@@ -63,7 +64,19 @@ public class CommandView extends VerticalLayout {
         editor.addCommand(showPopover, popover);
         popover.addOpenedChangeListener(event -> editor.setCommandActive(showPopover, event.isOpened()));
 
-        add(new Paragraph("The last three buttons are commands of the application's own, each with a Vaadin icon. "
-                + "Ctrl+Shift+L opens the dialog as well."), editor);
+        // A toggle whose listener switches the state and shows or hides the viewer with it.
+        FroalaViewer viewer = new FroalaViewer();
+        viewer.setContent(editor.getValue());
+        viewer.setVisible(false);
+        editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
+        FroalaCommand showViewer = new FroalaCommand("showViewer", "Show viewer", VaadinIcon.EYE.create()).withToggle();
+        editor.addCommand(showViewer, event -> {
+            boolean active = !editor.isCommandActive(showViewer);
+            editor.setCommandActive(showViewer, active);
+            viewer.setVisible(active);
+        });
+
+        add(new Paragraph("The last four buttons are commands of the application's own, each with a Vaadin icon. "
+                + "Ctrl+Shift+L opens the dialog as well."), editor, viewer);
     }
 }
