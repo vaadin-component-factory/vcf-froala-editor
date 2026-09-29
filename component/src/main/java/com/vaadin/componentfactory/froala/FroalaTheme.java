@@ -48,7 +48,10 @@ public final class FroalaTheme {
      */
     public static final String ROYAL = "royal";
 
-    /** No theme. The editor looks as Froala's own stylesheet draws it. */
+    /**
+     * No theme. The editor looks as Froala draws it without one, which is Froala's own default. Sent as the empty
+     * string, because null would bring back the add-on's default.
+     */
     public static final String NONE = "";
 
     private FroalaTheme() {
