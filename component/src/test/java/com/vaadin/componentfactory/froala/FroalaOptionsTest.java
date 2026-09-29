@@ -70,6 +70,40 @@ class FroalaOptionsTest {
     }
 
     @Test
+    void htmlCleaningAndPasteOptions_useFroalasOwnNames() {
+        List<String> list = List.of("a", "b");
+        FroalaOptions options = FroalaOptions.defaults().withHtmlAllowedTags(list).withHtmlRemoveTags(list)
+                .withHtmlAllowedAttrs(list).withHtmlAllowedStyleProps(list).withHtmlAllowedEmptyTags(list)
+                .withHtmlDoNotWrapTags(list).withHtmlIgnoreCssProperties(list).withHtmlAllowComments(false)
+                .withHtmlExecuteScripts(false).withHtmlSimpleAmpersand(true).withHtmlUntouched(true)
+                .withUseClasses(false).withPastePlain(true).withPasteDeniedTags(list).withPasteDeniedAttrs(list)
+                .withPasteAllowedStyleProps(list).withPasteAllowLocalImages(true).withWordPasteModal(false)
+                .withWordPasteKeepFormatting(false).withWordDeniedTags(list).withWordDeniedAttrs(list)
+                .withWordAllowedStyleProps(list);
+
+        String ab = "[\"a\",\"b\"]";
+        assertEquals("{\"htmlAllowedTags\":" + ab + ",\"htmlRemoveTags\":" + ab + ",\"htmlAllowedAttrs\":" + ab
+                + ",\"htmlAllowedStyleProps\":" + ab + ",\"htmlAllowedEmptyTags\":" + ab + ",\"htmlDoNotWrapTags\":"
+                + ab + ",\"htmlIgnoreCSSProperties\":" + ab
+                + ",\"htmlAllowComments\":false,\"htmlExecuteScripts\":false,\"htmlSimpleAmpersand\":true,"
+                + "\"htmlUntouched\":true,\"useClasses\":false,\"pastePlain\":true,\"pasteDeniedTags\":" + ab
+                + ",\"pasteDeniedAttrs\":" + ab + ",\"pasteAllowedStyleProps\":" + ab
+                + ",\"pasteAllowLocalImages\":true,\"wordPasteModal\":false,"
+                + "\"wordPasteKeepFormatting\":false,\"wordDeniedTags\":" + ab + ",\"wordDeniedAttrs\":" + ab
+                + ",\"wordAllowedStyleProps\":" + ab + "}", options.toString());
+    }
+
+    @Test
+    void emptyList_isSentAsAnEmptyArray() {
+        // Not the same as null. An empty htmlAllowedStyleProps removes every style attribute. Null keeps Froala's
+        // default.
+        assertEquals("{\"htmlAllowedStyleProps\":[]}",
+                FroalaOptions.defaults().withHtmlAllowedStyleProps(List.of()).toString());
+        assertEquals("{}", FroalaOptions.defaults().withHtmlAllowedStyleProps(List.of()).withHtmlAllowedStyleProps(null)
+                .toString());
+    }
+
+    @Test
     void themeNone_isAnExplicitNull() {
         // THM-5. The add-on's own default only applies to a missing key, so "no theme" has to be sent as null.
         assertEquals("{\"theme\":null}", FroalaOptions.defaults().withTheme(FroalaTheme.NONE).toString());

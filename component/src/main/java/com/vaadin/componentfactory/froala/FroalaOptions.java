@@ -109,6 +109,17 @@ public final class FroalaOptions implements Serializable {
         return with(option, Json.create(value));
     }
 
+    private FroalaOptions with(String option, Collection<String> values) {
+        if (values == null) {
+            return with(option, (JsonValue) null);
+        }
+
+        JsonArray array = Json.createArray();
+        values.forEach(value -> array.set(array.length(), value));
+
+        return with(option, array);
+    }
+
     /** Elemental has no copy operation, so a copy is a fresh object with every entry put into it again. */
     private static JsonObject copyOf(JsonObject source) {
         JsonObject copy = Json.createObject();
@@ -421,10 +432,299 @@ public final class FroalaOptions implements Serializable {
             return with("pluginsEnabled", (JsonValue) null);
         }
 
-        JsonArray names = Json.createArray();
-        plugins.forEach(plugin -> names.set(names.length(), plugin.getPluginName()));
+        return with("pluginsEnabled", plugins.stream().map(FroalaPlugin::getPluginName).toList());
+    }
 
-        return with("pluginsEnabled", names);
+    // -----------------------------------------------------------------------------------------------------------
+    // HTML cleaning
+    // -----------------------------------------------------------------------------------------------------------
+
+    /**
+     * Sets the tags the editor keeps. Froala's {@code htmlAllowedTags}, which by default allows about a hundred tags,
+     * {@code script} and {@code iframe} among them. A tag not in the list is unwrapped, so its content stays and only
+     * the tag goes. Froala cleans whatever HTML it is given this way, when the value is set and when text is pasted.
+     *
+     * <p>
+     * Each entry is a regular expression matched against the whole tag name, ignoring case. {@code "h[1-6]"} allows all
+     * six headings and {@code ".*"} every tag.
+     *
+     * <p>
+     * If the page has DOMPurify loaded as {@code window.DOMPurify}, Froala also hands this list and
+     * {@link #withHtmlAllowedAttrs(Collection)} to it. DOMPurify reads each entry as a plain name, so a pattern such as
+     * {@code "h[1-6]"} then removes the tags it was meant to allow. The add-on does not load DOMPurify.
+     *
+     * <p>
+     * This cleaning runs in the browser and protects nothing on the server. See {@link FroalaEditor} on treating the
+     * value as untrusted input.
+     *
+     * @param htmlAllowedTags tag name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlAllowedTags(Collection<String> htmlAllowedTags) {
+        return with("htmlAllowedTags", htmlAllowedTags);
+    }
+
+    /**
+     * Sets the tags the editor removes together with their content. Froala's {@code htmlRemoveTags}, which is
+     * {@code script} and {@code style} by default. The entries are patterns like those of
+     * {@link #withHtmlAllowedTags(Collection)}.
+     *
+     * @param htmlRemoveTags tag name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlRemoveTags(Collection<String> htmlRemoveTags) {
+        return with("htmlRemoveTags", htmlRemoveTags);
+    }
+
+    /**
+     * Sets the attributes the editor keeps. Froala's {@code htmlAllowedAttrs}, which by default allows about 120
+     * attributes, among them {@code style}, {@code class} and every {@code data-} attribute. Any other attribute is
+     * removed. The entries are patterns like those of {@link #withHtmlAllowedTags(Collection)}, so {@code "data-.*"}
+     * allows every data attribute. Froala keeps its own {@code fr-} and {@code data-fr-} attributes whatever this
+     * holds.
+     *
+     * @param htmlAllowedAttrs attribute name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlAllowedAttrs(Collection<String> htmlAllowedAttrs) {
+        return with("htmlAllowedAttrs", htmlAllowedAttrs);
+    }
+
+    /**
+     * Sets the CSS properties the editor keeps in a {@code style} attribute. Froala's {@code htmlAllowedStyleProps},
+     * which is {@code ".*"} by default and keeps every property. The others are removed from the attribute. The entries
+     * are patterns like those of {@link #withHtmlAllowedTags(Collection)}, so {@code "border-.*"} keeps every border
+     * property.
+     *
+     * <p>
+     * A style attribute left with no allowed property is removed. An empty list therefore removes every style
+     * attribute.
+     *
+     * @param htmlAllowedStyleProps CSS property name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlAllowedStyleProps(Collection<String> htmlAllowedStyleProps) {
+        return with("htmlAllowedStyleProps", htmlAllowedStyleProps);
+    }
+
+    /**
+     * Sets the elements the editor keeps although they are empty. Froala's {@code htmlAllowedEmptyTags}, by default
+     * {@code textarea}, {@code a}, {@code iframe}, {@code object}, {@code video}, {@code style}, {@code script},
+     * {@code .fa}, {@code .fr-emoticon}, {@code .fr-inner}, {@code path}, {@code line} and {@code hr}. Froala removes
+     * any other empty element.
+     *
+     * <p>
+     * Each entry is a tag name, not a pattern. Froala's own list also holds CSS selectors such as {@code .fa}, but only
+     * some of its checks honour a selector, so a tag name is the reliable choice.
+     *
+     * @param htmlAllowedEmptyTags tag names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlAllowedEmptyTags(Collection<String> htmlAllowedEmptyTags) {
+        return with("htmlAllowedEmptyTags", htmlAllowedEmptyTags);
+    }
+
+    /**
+     * Sets the tags the editor does not wrap in a paragraph when they stand at the top level. Froala's
+     * {@code htmlDoNotWrapTags}, which is {@code script} and {@code style} by default. Each entry is a tag name, not a
+     * pattern.
+     *
+     * @param htmlDoNotWrapTags tag names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlDoNotWrapTags(Collection<String> htmlDoNotWrapTags) {
+        return with("htmlDoNotWrapTags", htmlDoNotWrapTags);
+    }
+
+    /**
+     * Sets the CSS properties that are not copied from the page's stylesheets into the content. Froala's
+     * {@code htmlIgnoreCSSProperties}, empty by default. It only has an effect while {@link #withUseClasses(boolean)}
+     * is off, since only then does Froala copy the styles of the classes into {@code style} attributes. The entries are
+     * patterns like those of {@link #withHtmlAllowedTags(Collection)}.
+     *
+     * @param htmlIgnoreCssProperties CSS property name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlIgnoreCssProperties(Collection<String> htmlIgnoreCssProperties) {
+        return with("htmlIgnoreCSSProperties", htmlIgnoreCssProperties);
+    }
+
+    /**
+     * Decides whether the value keeps the classes of the content or their styles. Froala's {@code useClasses}, on by
+     * default. Off, Froala copies the CSS rules of the page's stylesheets that apply to an element into its
+     * {@code style} attribute, so the value looks the same where those stylesheets are missing.
+     *
+     * @param useClasses whether the value keeps classes instead of copying their styles
+     * @return a new instance
+     */
+    public FroalaOptions withUseClasses(boolean useClasses) {
+        return with("useClasses", useClasses);
+    }
+
+    /**
+     * Keeps or removes HTML comments. Froala's {@code htmlAllowComments}, on by default.
+     *
+     * @param htmlAllowComments whether comments stay in the content
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlAllowComments(boolean htmlAllowComments) {
+        return with("htmlAllowComments", htmlAllowComments);
+    }
+
+    /**
+     * Decides whether scripts in the content run when it is set. Froala's {@code htmlExecuteScripts}, on by default. A
+     * script only gets that far if {@link #withHtmlRemoveTags(Collection)} no longer removes {@code script}, which it
+     * does by default.
+     *
+     * @param htmlExecuteScripts whether scripts in the content run
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlExecuteScripts(boolean htmlExecuteScripts) {
+        return with("htmlExecuteScripts", htmlExecuteScripts);
+    }
+
+    /**
+     * Writes a plain {@code &} into the value instead of {@code &amp;}. Froala's {@code htmlSimpleAmpersand}, off by
+     * default. An ampersand in the text then reaches the server as a bare {@code &}.
+     *
+     * @param htmlSimpleAmpersand whether the value holds {@code &} instead of {@code &amp;}
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlSimpleAmpersand(boolean htmlSimpleAmpersand) {
+        return with("htmlSimpleAmpersand", htmlSimpleAmpersand);
+    }
+
+    /**
+     * Stops Froala from restructuring the content. Froala's {@code htmlUntouched}, off by default. With it on, Froala
+     * no longer removes empty tags, fixes lists and tables, turns old tags into their HTML5 form or normalizes spaces.
+     * The allowed and removed tags and attributes still apply.
+     *
+     * @param htmlUntouched whether Froala leaves the structure of the content as it is
+     * @return a new instance
+     */
+    public FroalaOptions withHtmlUntouched(boolean htmlUntouched) {
+        return with("htmlUntouched", htmlUntouched);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------
+    // Paste
+    // -----------------------------------------------------------------------------------------------------------
+
+    /**
+     * Pastes text without its formatting. Froala's {@code pastePlain}, off by default. Lists and tables stay. Headings,
+     * quotes and preformatted blocks become plain paragraphs, and fonts, colors and other formatting are removed.
+     *
+     * @param pastePlain whether pasted text loses its formatting
+     * @return a new instance
+     */
+    public FroalaOptions withPastePlain(boolean pastePlain) {
+        return with("pastePlain", pastePlain);
+    }
+
+    /**
+     * Sets tags that pasted text loses, on top of those {@link #withHtmlAllowedTags(Collection)} leaves out. Froala's
+     * {@code pasteDeniedTags}, which is {@code colgroup}, {@code col} and {@code meta} by default. A denied tag is
+     * unwrapped, so its content stays. Each entry is a tag name exactly as it appears in the allowed list.
+     *
+     * @param pasteDeniedTags tag names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withPasteDeniedTags(Collection<String> pasteDeniedTags) {
+        return with("pasteDeniedTags", pasteDeniedTags);
+    }
+
+    /**
+     * Sets attributes that pasted text loses, on top of those {@link #withHtmlAllowedAttrs(Collection)} leaves out.
+     * Froala's {@code pasteDeniedAttrs}, which is {@code class} and {@code id} by default. Each entry is an attribute
+     * name exactly as it appears in the allowed list.
+     *
+     * @param pasteDeniedAttrs attribute names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withPasteDeniedAttrs(Collection<String> pasteDeniedAttrs) {
+        return with("pasteDeniedAttrs", pasteDeniedAttrs);
+    }
+
+    /**
+     * Sets the CSS properties pasted text keeps. Froala's {@code pasteAllowedStyleProps}, which is {@code ".*"} by
+     * default. It takes the place of {@link #withHtmlAllowedStyleProps(Collection)} while text is pasted, and works the
+     * same way.
+     *
+     * @param pasteAllowedStyleProps CSS property name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withPasteAllowedStyleProps(Collection<String> pasteAllowedStyleProps) {
+        return with("pasteAllowedStyleProps", pasteAllowedStyleProps);
+    }
+
+    /**
+     * Keeps pasted images whose source is a local {@code file://} path. Froala's {@code pasteAllowLocalImages}, off by
+     * default, which removes them. Such an image shows only on the computer it was pasted on.
+     *
+     * @param pasteAllowLocalImages whether pasted images with a local path are kept
+     * @return a new instance
+     */
+    public FroalaOptions withPasteAllowLocalImages(boolean pasteAllowLocalImages) {
+        return with("pasteAllowLocalImages", pasteAllowLocalImages);
+    }
+
+    /**
+     * Asks the user whether text pasted from Word keeps its formatting. Froala's {@code wordPasteModal}, on by default.
+     * The dialog offers "Keep" and "Clean". Without it, {@link #withWordPasteKeepFormatting(boolean)} decides. Needs
+     * {@link FroalaPlugin#WORD_PASTE}, like the other {@code withWord…} options.
+     *
+     * @param wordPasteModal whether a dialog asks what to do with text pasted from Word
+     * @return a new instance
+     */
+    public FroalaOptions withWordPasteModal(boolean wordPasteModal) {
+        return with("wordPasteModal", wordPasteModal);
+    }
+
+    /**
+     * Decides what happens to text pasted from Word when {@link #withWordPasteModal(boolean)} is off. Froala's
+     * {@code wordPasteKeepFormatting}, on by default. On keeps the CSS properties of
+     * {@link #withWordAllowedStyleProps(Collection)}. Off keeps only {@code list-style-type} and {@code margin-left},
+     * which is what "Clean" in the dialog does.
+     *
+     * @param wordPasteKeepFormatting whether text pasted from Word keeps its formatting
+     * @return a new instance
+     */
+    public FroalaOptions withWordPasteKeepFormatting(boolean wordPasteKeepFormatting) {
+        return with("wordPasteKeepFormatting", wordPasteKeepFormatting);
+    }
+
+    /**
+     * Sets the tags text pasted from Word loses. Froala's {@code wordDeniedTags}, empty by default. Works like
+     * {@link #withPasteDeniedTags(Collection)}.
+     *
+     * @param wordDeniedTags tag names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withWordDeniedTags(Collection<String> wordDeniedTags) {
+        return with("wordDeniedTags", wordDeniedTags);
+    }
+
+    /**
+     * Sets the attributes text pasted from Word loses. Froala's {@code wordDeniedAttrs}, empty by default. Works like
+     * {@link #withPasteDeniedAttrs(Collection)}.
+     *
+     * @param wordDeniedAttrs attribute names, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withWordDeniedAttrs(Collection<String> wordDeniedAttrs) {
+        return with("wordDeniedAttrs", wordDeniedAttrs);
+    }
+
+    /**
+     * Sets the CSS properties text pasted from Word keeps when its formatting is kept. Froala's
+     * {@code wordAllowedStyleProps}, which by default keeps fonts, colors, sizes, spacing, borders and text decoration.
+     * Works like {@link #withPasteAllowedStyleProps(Collection)}.
+     *
+     * @param wordAllowedStyleProps CSS property name patterns, or null to leave Froala's default
+     * @return a new instance
+     */
+    public FroalaOptions withWordAllowedStyleProps(Collection<String> wordAllowedStyleProps) {
+        return with("wordAllowedStyleProps", wordAllowedStyleProps);
     }
 
     // -----------------------------------------------------------------------------------------------------------

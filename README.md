@@ -68,7 +68,7 @@ FroalaOptions options = FroalaOptions.defaults()
 editor.setOptions(options);
 
 // raw JSON, for options without a with… method
-editor.setOptions("{\"pastePlain\": true}");
+editor.setOptions("{\"tabSpaces\": 4}");
 
 // an elemental.json.JsonObject you already have
 editor.setOptions(jsonObject);
@@ -270,6 +270,35 @@ Nothing is sanitized on the server, neither the value `FroalaEditor` receives no
 `FroalaViewer.setContent` displays. Froala's own cleaning runs in the browser and does not
 protect a value that reaches the server any other way. Treat the value as untrusted input,
 and sanitize it before storing or displaying it.
+
+Froala's cleaning in the browser is still worth setting, because it decides what the user can
+put into the editor at all. `FroalaOptions` has a `withHtml…` method for each of Froala's
+`html…` options. The lists hold regular expressions, matched against the whole name and ignoring
+case. The two exceptions are `withHtmlAllowedEmptyTags` and `withHtmlDoNotWrapTags`, which take
+plain tag names. A tag that is not allowed is unwrapped and its text stays. A tag in
+`withHtmlRemoveTags` goes together with its content.
+
+```java
+FroalaOptions options = FroalaOptions.defaults()
+        .withHtmlAllowedTags(List.of("p", "br", "strong", "em", "u", "a", "ul", "ol", "li", "h[1-6]"))
+        .withHtmlRemoveTags(List.of("script", "style", "iframe")) // gone with their content
+        .withHtmlAllowedAttrs(List.of("href", "target", "rel"))
+        .withHtmlAllowedStyleProps(List.of()); // an empty list removes every style attribute
+```
+
+Pasted text gets its own options on top of these. `withPastePlain(true)` keeps lists and
+tables and turns everything else into plain paragraphs. `withPasteDeniedTags`,
+`withPasteDeniedAttrs` and `withPasteAllowedStyleProps` narrow what a paste keeps. The two denied lists take exact names,
+not patterns. Text from Word
+goes through `FroalaPlugin.WORD_PASTE`, which asks the user whether to keep the formatting. The
+`withWord…` methods change that.
+
+```java
+FroalaOptions options = FroalaOptions.defaults()
+        .withPasteDeniedAttrs(List.of("class", "id", "style"))
+        .withWordPasteModal(false)
+        .withWordPasteKeepFormatting(false); // Word text is cleaned without asking
+```
 
 ## Known issues
 
