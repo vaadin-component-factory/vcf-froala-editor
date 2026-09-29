@@ -15,13 +15,14 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.EnumSet;
+
 /**
  * The Froala plugins that {@link FroalaOptions#withPluginsEnabled(FroalaPlugin...)} accepts. These are all plugin files
  * of froala-editor 5.4.0, the ones under {@code js/plugins/} and the five under {@code js/third_party/}. The browser
- * downloads a plugin's file only when an editor enables it. An editor without {@code pluginsEnabled} gets the plugins
- * of Froala's packaged bundle, which leaves out {@link #TRACK_CHANGES}, {@link #TRIM_VIDEO} and the five third-party
- * ones. Passing a list disables every plugin not in it, and the toolbar buttons of a disabled plugin disappear. See
- * {@link FroalaOptions#withPluginsEnabled(java.util.Collection)}.
+ * downloads a plugin's file only when an editor enables it. An editor without {@code pluginsEnabled} gets
+ * {@link #basics()}. Passing a list disables every plugin not in it, and the toolbar buttons of a disabled plugin
+ * disappear. See {@link FroalaOptions#withPluginsEnabled(java.util.Collection)}.
  *
  * <p>
  * A plugin's file name and its registered name differ, sometimes unpredictably ({@code find_and_replace} registers as
@@ -302,7 +303,8 @@ public enum FroalaPlugin {
     TRACK_CHANGES("track_changes", "track_changes"),
 
     /**
-     * Sets a start and end point on an inserted video. Works through the files manager.
+     * Sets a start and end point on an inserted video. Works through the files manager, and sends the video to a
+     * conversion server that froala-editor 5.4.0 hard-codes as {@code http://localhost:3000/convert}.
      */
     TRIM_VIDEO("trim_video", "trimVideoPlugin"),
 
@@ -333,6 +335,34 @@ public enum FroalaPlugin {
     FroalaPlugin(String fileName, String pluginName) {
         this.fileName = fileName;
         this.pluginName = pluginName;
+    }
+
+    /**
+     * Returns the plugins an editor gets when its options name none. A basic rich-text editor: text and paragraph
+     * formats, lists, quotes, links, find and replace, the keyboard shortcut dialog, links typed as URLs, and cleaning
+     * of text pasted from Word. Nothing that inserts other content, such as images or tables, and no menu that only
+     * offers Froala's sample styles. To add a plugin, change the returned set and pass it on:
+     *
+     * <pre>
+     * EnumSet&lt;FroalaPlugin&gt; plugins = FroalaPlugin.basics();
+     * plugins.add(FroalaPlugin.TABLE);
+     * options.withPluginsEnabled(plugins);
+     * </pre>
+     *
+     * @return a new set on every call, free to change
+     */
+    public static EnumSet<FroalaPlugin> basics() {
+        return EnumSet.of(ALIGN, COLORS, FIND_AND_REPLACE, FONT_FAMILY, FONT_SIZE, HELP, LINE_HEIGHT, LINK,
+                LINK_TO_ANCHOR, LISTS, PARAGRAPH_FORMAT, QUOTE, URL, WORD_PASTE);
+    }
+
+    /**
+     * Returns every plugin, like {@link EnumSet#allOf(Class)}.
+     *
+     * @return a new set on every call, free to change
+     */
+    public static EnumSet<FroalaPlugin> all() {
+        return EnumSet.allOf(FroalaPlugin.class);
     }
 
     /**

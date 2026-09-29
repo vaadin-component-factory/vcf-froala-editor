@@ -7,9 +7,9 @@ import FroalaEditor from 'froala-editor';
 import 'froala-editor/js/plugins/edit_in_popup.min.js';
 
 // The plugin files of Froala's packaged bundle, by the name each plugin registers itself under, which is what
-// pluginsEnabled holds. An editor without pluginsEnabled gets these, as it did with the packaged bundle. Each specifier
-// is a string literal, because the bundler cannot follow a variable into a package. That is also what makes each file
-// a chunk of its own, downloaded only when an editor enables it. Their CSS is part of the packaged stylesheet above.
+// pluginsEnabled holds. Each specifier is a string literal, because the bundler cannot follow a variable into a
+// package. That is also what makes each file a chunk of its own, downloaded only when an editor enables it. Their CSS
+// is part of the packaged stylesheet above, which is why they are kept apart from the others.
 const BUNDLED_PLUGIN_FILES = {
   aiAssist: () => import('froala-editor/js/plugins/ai_assist.min.js'),
   align: () => import('froala-editor/js/plugins/align.min.js'),
@@ -135,23 +135,17 @@ const LANGUAGE_FILES = {
 };
 
 const PLUGIN_FILES = { ...BUNDLED_PLUGIN_FILES, ...OTHER_PLUGIN_FILES };
-const DEFAULT_PLUGINS = Object.keys(BUNDLED_PLUGIN_FILES);
 
 /**
- * Loads the plugin and language files the given options need and resolves once they are registered, which has to
- * happen before the editor is built. Froala reads its plugin registry and its languages only then.
- *
- * Resolves to the plugins the editor is to be built with. They are always named explicitly, because Froala's own
- * default is every plugin registered on the page, and that depends on what other editors happened to load.
+ * Loads the files of the given plugins and language and resolves once they are registered, which has to happen before
+ * the editor is built. Froala reads its plugin registry and its languages only then.
  *
  * A name without a file of ours, or a file that fails to load, does not stop the editor. Froala skips a plugin it does
  * not know and stays English without its language file, as it would with the packaged bundle.
  */
-async function loadFroalaFiles(options) {
-  const pluginsEnabled = options?.pluginsEnabled ?? DEFAULT_PLUGINS;
+async function loadFroalaFiles(pluginsEnabled, language) {
   const loads = pluginsEnabled.filter((name) => Object.hasOwn(PLUGIN_FILES, name)).map((name) => PLUGIN_FILES[name]());
 
-  const language = options?.language;
   if (Object.hasOwn(LANGUAGE_FILES, language ?? '')) {
     loads.push(LANGUAGE_FILES[language]());
   }
@@ -160,8 +154,6 @@ async function loadFroalaFiles(options) {
   results
     .filter((result) => result.status === 'rejected')
     .forEach((result) => console.error('vcf-froala-editor: a Froala file failed to load', result.reason));
-
-  return pluginsEnabled;
 }
 
 export { FroalaEditor, loadFroalaFiles };

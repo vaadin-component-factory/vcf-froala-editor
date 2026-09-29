@@ -48,6 +48,7 @@ public class ToolbarCheckView extends VerticalLayout {
 
         CASES.put("2 — flat list of buttons", """
                 {
+                  "pluginsEnabled": ["link", "image"],
                   "toolbarButtons": ["bold", "italic", "underline", "|", "insertLink", "insertImage"]
                 }""");
 
@@ -58,6 +59,7 @@ public class ToolbarCheckView extends VerticalLayout {
 
         CASES.put("4 — groups, Froala's own names, overflow", """
                 {
+                  "pluginsEnabled": ["colors", "codeView", "fullscreen"],
                   "toolbarButtons": {
                     "moreText": {
                       "buttons": ["bold", "italic", "underline", "strikeThrough", "textColor"],
@@ -73,6 +75,7 @@ public class ToolbarCheckView extends VerticalLayout {
 
         CASES.put("5 — groups, free names, overflow", """
                 {
+                  "pluginsEnabled": ["colors", "codeView", "fullscreen"],
                   "toolbarButtons": {
                     "myTextGroup": {
                       "buttons": ["bold", "italic", "underline", "strikeThrough", "textColor"],

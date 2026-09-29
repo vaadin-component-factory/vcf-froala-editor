@@ -13,7 +13,8 @@ out to be off.
 Since #14 (2026-09-29) `froala-loader.js` imports Froala's core (`froala-editor`, which is
 `js/froala_editor.min.js`) plus the `edit_in_popup` module, and loads every other plugin and
 language file with a dynamic `import()` when an editor needs it. An editor without
-`pluginsEnabled` gets the 46 plugins of the packaged bundle, named explicitly. The
+`pluginsEnabled` gets `FroalaPlugin.basics()`, which the server sends with every editor
+(#10, 2026-09-29). The
 measurements below were taken against the packaged bundle, which the add-on imported until
 then.
 
@@ -61,7 +62,8 @@ Consequences, all confirmed in the browser:
 
 `trim_video` is only ever called from `files_manager`
 (`y.trimVideoPlugin.trimVideo(...)`), so it has no toolbar button and no
-standalone use.
+standalone use. It posts the video to `http://localhost:3000/convert`, hard-coded in
+the 5.4.0 file, so it needs a conversion server.
 
 ## How `pluginsEnabled` actually works
 

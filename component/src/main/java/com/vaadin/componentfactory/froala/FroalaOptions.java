@@ -398,7 +398,7 @@ public final class FroalaOptions implements Serializable {
     /**
      * Restricts the editor to the given plugins. Same as {@link #withPluginsEnabled(Collection)}.
      *
-     * @param plugins the plugins the editor may use, or null to leave Froala's default
+     * @param plugins the plugins the editor may use, or null for {@link FroalaPlugin#basics()}
      * @return a new instance
      */
     public FroalaOptions withPluginsEnabled(FroalaPlugin... plugins) {
@@ -406,14 +406,14 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}. Left alone, the editor gets the
-     * plugins of Froala's packaged bundle, which {@link FroalaPlugin} lists. The browser downloads only the files of
-     * the plugins an editor enables. A toolbar button is dropped silently when its command declares a plugin that is
-     * not enabled. It is then neither drawn nor counted towards a group's
+     * Restricts the editor to the given plugins. Froala's {@code pluginsEnabled}. Left alone, the editor gets
+     * {@link FroalaPlugin#basics()}. {@link FroalaPlugin#all()} enables every plugin. The browser downloads only the
+     * files of the plugins an editor enables. A toolbar button is dropped silently when its command declares a plugin
+     * that is not enabled. It is then neither drawn nor counted towards a group's
      * {@link FroalaToolbarGroup#withButtonsVisible(int)}. Commands that declare no plugin, among them {@code bold} and
      * {@code italic}, are drawn whatever this option holds.
      *
-     * @param plugins the plugins the editor may use, or null to leave Froala's default
+     * @param plugins the plugins the editor may use, or null for {@link FroalaPlugin#basics()}
      * @return a new instance
      */
     public FroalaOptions withPluginsEnabled(Collection<FroalaPlugin> plugins) {

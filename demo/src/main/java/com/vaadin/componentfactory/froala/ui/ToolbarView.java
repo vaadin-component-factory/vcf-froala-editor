@@ -145,7 +145,8 @@ public class ToolbarView extends VerticalLayout {
         int position = indexOf(editor);
 
         remove(editor);
-        editor.setOptions(FroalaOptions.defaults().withToolbarButtons(toolbar));
+        // every plugin that needs no service, so that nearly every button of the palette has the plugin it needs
+        editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full()).withToolbarButtons(toolbar));
         addComponentAtIndex(position, editor);
 
         toolbarJson.setValue(toolbar.toString());

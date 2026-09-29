@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 
 import elemental.json.Json;
+import elemental.json.JsonArray;
 import elemental.json.JsonException;
 import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
@@ -79,6 +80,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     private static final String VALUE_PROPERTY = "value";
     private static final String OPTIONS_PROPERTY = "options";
+    private static final String DEFAULT_PLUGINS_PROPERTY = "defaultPluginsEnabled";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
 
@@ -191,6 +193,13 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
         Element element = getElement();
+
+        // The plugins for options that name none. A property of its own, so that the options on the element stay what
+        // the application set, and the client needs no list of its own.
+        JsonArray basics = Json.createArray();
+        FroalaPlugin.basics().forEach(plugin -> basics.set(basics.length(), plugin.getPluginName()));
+        element.setPropertyJson(DEFAULT_PLUGINS_PROPERTY, basics);
+
         element.addEventListener("_value-delta", event -> {
             String delta = event.getEventData().get("event.detail.delta").asString();
 

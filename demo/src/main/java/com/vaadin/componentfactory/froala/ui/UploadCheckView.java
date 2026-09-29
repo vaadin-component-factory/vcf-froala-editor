@@ -45,7 +45,8 @@ import com.vaadin.flow.router.Route;
 public class UploadCheckView extends VerticalLayout {
 
     private static final String INSERT_BUTTONS = """
-            "toolbarButtons": ["insertImage", "insertFile", "insertVideo", "emoticons", "|", "html"]""";
+            "pluginsEnabled": ["image", "imageManager", "file", "video", "emoticons", "codeView"],
+              "toolbarButtons": ["insertImage", "insertFile", "insertVideo", "emoticons", "|", "html"]""";
 
     private static final Map<String, String> CASES = new LinkedHashMap<>();
 

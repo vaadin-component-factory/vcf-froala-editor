@@ -24,9 +24,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 /**
- * Fixture view with an editor that enables every {@link FroalaPlugin}. It registers plugins on the page that are in no
- * Froala bundle. The button adds an editor that enables none explicitly, once the first one is built, to show whether
- * its default depends on what another editor loaded. The button disables itself, so a test can wait for the round trip.
+ * Fixture view with an editor that enables every {@link FroalaPlugin}. It registers on the page the plugins that
+ * {@link FroalaPlugin#basics()} leaves out. The button adds an editor that enables none explicitly, once the first one
+ * is built, to show whether its default depends on what another editor loaded. The button disables itself, so a test
+ * can wait for the round trip.
  */
 @Route(FroalaAllPluginsTestView.ROUTE)
 @AnonymousAllowed
@@ -35,7 +36,7 @@ public class FroalaAllPluginsTestView extends Div {
     public static final String ROUTE = "it/froala-all-plugins";
 
     public FroalaAllPluginsTestView() {
-        FroalaEditor all = new FroalaEditor(FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.values()));
+        FroalaEditor all = new FroalaEditor(FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.all()));
         all.setId("all");
 
         Button addDefaults = new Button("Add an editor with the default plugins");

@@ -120,7 +120,7 @@ class FroalaOptionsIT extends SpringPlaywrightIT {
         // Froala's default toolbar is its eight groups, so anything beyond the two configured buttons proves the
         // option was really taken away rather than merged over
         assertTrue(toolbarButtons().size() > 2, "expected Froala's own default toolbar, got " + toolbarButtons());
-        assertTrue(toolbarButtons().contains("insertImage"));
+        assertTrue(toolbarButtons().contains("insertLink"));
     }
 
     @Test

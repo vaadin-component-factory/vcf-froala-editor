@@ -15,8 +15,11 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import java.util.EnumSet;
+
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -104,11 +107,16 @@ public class OptionsView extends VerticalLayout {
     }
 
     private FroalaOptions buildOptions() {
-        FroalaOptions options = FroalaOptions.defaults().withPlaceholderText(emptyToNull(placeholderText.getValue()))
-                .withDirection(direction.getValue()).withToolbarInline(toolbarInline.getValue())
-                .withDocumentReady(documentReady.getValue()).withToolbarSticky(toolbarSticky.getValue())
-                .withToolbarBottom(toolbarBottom.getValue()).withCharCounterCount(charCounterCount.getValue())
-                .withWordCounterCount(wordCounterCount.getValue());
+        // the counters are not among the basics, and their options do nothing without their plugins
+        EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
+        plugins.add(FroalaPlugin.CHAR_COUNTER);
+        plugins.add(FroalaPlugin.WORD_COUNTER);
+
+        FroalaOptions options = FroalaOptions.defaults().withPluginsEnabled(plugins)
+                .withPlaceholderText(emptyToNull(placeholderText.getValue())).withDirection(direction.getValue())
+                .withToolbarInline(toolbarInline.getValue()).withDocumentReady(documentReady.getValue())
+                .withToolbarSticky(toolbarSticky.getValue()).withToolbarBottom(toolbarBottom.getValue())
+                .withCharCounterCount(charCounterCount.getValue()).withWordCounterCount(wordCounterCount.getValue());
 
         if (charCounterMax.getValue() != null) {
             options = options.withCharCounterMax(charCounterMax.getValue());

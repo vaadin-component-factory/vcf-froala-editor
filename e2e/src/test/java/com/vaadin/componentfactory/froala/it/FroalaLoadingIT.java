@@ -17,7 +17,6 @@ package com.vaadin.componentfactory.froala.it;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -43,11 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaLoadingIT extends SpringPlaywrightIT {
-
-    /** The plugins in no Froala bundle, which an editor only gets by naming them. */
-    private static final Set<FroalaPlugin> NOT_BUNDLED = EnumSet.of(FroalaPlugin.TRACK_CHANGES, FroalaPlugin.TRIM_VIDEO,
-            FroalaPlugin.EMBEDLY, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT, FroalaPlugin.IMAGE_TUI,
-            FroalaPlugin.SPELL_CHECKER);
 
     @Override
     protected String getView() {
@@ -154,18 +148,20 @@ class FroalaLoadingIT extends SpringPlaywrightIT {
     }
 
     @Test
-    void defaultPlugins_areTheBundlesWhateverElseThePageLoaded() {
+    void defaultPlugins_areTheBasicsWhateverElseThePageLoaded() {
         openAllPluginsView();
-        // the first editor has registered the plugins in no Froala bundle on the page by now
+        // the first editor has registered the plugins basics() leaves out on the page by now
         waitForEditor("all");
+        String table = FroalaPlugin.TABLE.getPluginName();
+        assertTrue(pluginsEnabled("all").contains(table), "all() enables what basics() leaves out");
 
         page.locator("#add-defaults").click();
         assertThat(page.locator("#add-defaults")).isDisabled();
         waitForEditor("defaults");
 
-        Set<String> bundled = EnumSet.complementOf(EnumSet.copyOf(NOT_BUNDLED)).stream()
-                .map(FroalaPlugin::getPluginName).collect(Collectors.toSet());
-        assertEquals(bundled, Set.copyOf(pluginsEnabled("defaults")));
-        assertFalse(hasPluginInstance("defaults", "track_changes"));
+        Set<String> basics = FroalaPlugin.basics().stream().map(FroalaPlugin::getPluginName)
+                .collect(Collectors.toSet());
+        assertEquals(basics, Set.copyOf(pluginsEnabled("defaults")));
+        assertFalse(hasPluginInstance("defaults", table));
     }
 }

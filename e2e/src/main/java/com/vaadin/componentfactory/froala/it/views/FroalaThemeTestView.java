@@ -15,9 +15,12 @@
  */
 package com.vaadin.componentfactory.froala.it.views;
 
+import java.util.EnumSet;
+
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaEditorVariant;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTheme;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
@@ -33,22 +36,31 @@ public class FroalaThemeTestView extends VerticalLayout {
     /** A heading, because Lumo colours headings globally and Froala's content sits in the light DOM (THM-12). */
     public static final String VALUE = "<h1>Heading</h1><p>Body text</p>";
 
+    /**
+     * The plugins of Froala's packaged bundle, whose stylesheet the theme is generated from, so that the tests see
+     * everything the theme covers. That is every plugin except track changes, video trimming and the third-party ones.
+     */
+    private static final FroalaOptions WITH_BUNDLED_PLUGINS = FroalaOptions.defaults()
+            .withPluginsEnabled(EnumSet.complementOf(EnumSet.of(FroalaPlugin.TRACK_CHANGES, FroalaPlugin.TRIM_VIDEO,
+                    FroalaPlugin.EMBEDLY, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT,
+                    FroalaPlugin.IMAGE_TUI, FroalaPlugin.SPELL_CHECKER)));
+
     public FroalaThemeTestView() {
-        FroalaEditor themed = new FroalaEditor("Default theme");
+        FroalaEditor themed = new FroalaEditor("Default theme", WITH_BUNDLED_PLUGINS);
         themed.setId("themed");
         themed.setValue(VALUE);
 
-        FroalaEditor outlined = new FroalaEditor("Outlined");
+        FroalaEditor outlined = new FroalaEditor("Outlined", WITH_BUNDLED_PLUGINS);
         outlined.setId("outlined");
         outlined.addThemeVariants(FroalaEditorVariant.OUTLINED);
         outlined.setValue(VALUE);
 
-        FroalaEditor noHover = new FroalaEditor("No hover highlight");
+        FroalaEditor noHover = new FroalaEditor("No hover highlight", WITH_BUNDLED_PLUGINS);
         noHover.setId("no-hover");
         noHover.addThemeVariants(FroalaEditorVariant.NO_HOVER_HIGHLIGHT);
         noHover.setValue(VALUE);
 
-        FroalaEditor plain = new FroalaEditor("No theme", FroalaOptions.defaults().withTheme(FroalaTheme.NONE));
+        FroalaEditor plain = new FroalaEditor("No theme", WITH_BUNDLED_PLUGINS.withTheme(FroalaTheme.NONE));
         plain.setId("plain");
         plain.setValue(VALUE);
 

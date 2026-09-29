@@ -17,6 +17,7 @@ package com.vaadin.componentfactory.froala.ui;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,6 +31,7 @@ import org.vaadin.addons.componentfactory.toolbarlayout.ToolbarLayout;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaEditorVariant;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
 import com.vaadin.componentfactory.froala.FroalaTheme;
 import com.vaadin.componentfactory.froala.FroalaViewer;
@@ -40,6 +42,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
@@ -69,6 +72,22 @@ public class BasicView extends FroalaViewBase {
 
         editor.setHeight("500px");
         viewer.setMinHeight("250px");
+        // plugins() and description() are overridden by FullView, whose overrides must not read fields of their own,
+        // because they run before the subclass is initialized
+        editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins()));
+
+        addComponentAtIndex(indexOf(getToolbar()) + 1, new Paragraph(description()));
+    }
+
+    /** The plugins the editor is built with, before the counters from the options menu. */
+    protected EnumSet<FroalaPlugin> plugins() {
+        return FroalaPlugin.basics();
+    }
+
+    /** One or two lines above the editor, saying what it shows. */
+    protected String description() {
+        return "The plugins an editor gets without options, FroalaPlugin.basics(): text and paragraph formats, lists, "
+                + "quotes, links and find and replace. Nothing that inserts images, tables or other content.";
     }
 
     @Override
@@ -126,8 +145,8 @@ public class BasicView extends FroalaViewBase {
 
     /**
      * Every item starts at its default, which is Froala's own or, for the theme, the add-on's. So the editor is built
-     * without options until one is clicked. A click then sets all of them at once. {@code setOptions} rebuilds the
-     * editor, because Froala cannot change options on a running instance.
+     * with its plugins only until one is clicked. A click then sets all of them at once. {@code setOptions} rebuilds
+     * the editor, because Froala cannot change options on a running instance.
      */
     private void addFroalaOptionsMenu(SubMenu menu, FroalaEditor editor) {
         SubMenu directionMenu = menu.addItem("Text direction").getSubMenu();
@@ -139,15 +158,26 @@ public class BasicView extends FroalaViewBase {
         MenuItem bottom = checkable(toolbarMenu, "Below the text", false);
 
         MenuItem documentReady = checkable(menu, "Document layout", false);
-        MenuItem charCounter = checkable(menu, "Character counter", true);
-        MenuItem wordCounter = checkable(menu, "Word counter", true);
+        MenuItem charCounter = checkable(menu, "Character counter", plugins().contains(FroalaPlugin.CHAR_COUNTER));
+        MenuItem wordCounter = checkable(menu, "Word counter", plugins().contains(FroalaPlugin.WORD_COUNTER));
 
         AtomicReference<FroalaTextDirection> direction = new AtomicReference<>();
         AtomicReference<FroalaTheme> theme = new AtomicReference<>();
-        Runnable apply = () -> editor.setOptions(FroalaOptions.defaults().withDirection(direction.get())
-                .withTheme(theme.get()).withToolbarSticky(sticky.isChecked()).withToolbarInline(inline.isChecked())
-                .withToolbarBottom(bottom.isChecked()).withDocumentReady(documentReady.isChecked())
-                .withCharCounterCount(charCounter.isChecked()).withWordCounterCount(wordCounter.isChecked()));
+        Runnable apply = () -> {
+            // the counters are plugins of their own, so the menu switches the plugin
+            EnumSet<FroalaPlugin> plugins = plugins();
+            plugins.removeAll(EnumSet.of(FroalaPlugin.CHAR_COUNTER, FroalaPlugin.WORD_COUNTER));
+            if (charCounter.isChecked()) {
+                plugins.add(FroalaPlugin.CHAR_COUNTER);
+            }
+            if (wordCounter.isChecked()) {
+                plugins.add(FroalaPlugin.WORD_COUNTER);
+            }
+
+            editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins).withDirection(direction.get())
+                    .withTheme(theme.get()).withToolbarSticky(sticky.isChecked()).withToolbarInline(inline.isChecked())
+                    .withToolbarBottom(bottom.isChecked()).withDocumentReady(documentReady.isChecked()));
+        };
 
         Stream.of(sticky, inline, bottom, documentReady, charCounter, wordCounter)
                 .forEach(item -> item.addClickListener(_unused -> apply.run()));

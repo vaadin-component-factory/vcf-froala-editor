@@ -97,8 +97,8 @@ Limits of options:
 
 ### Plugins and languages
 
-The browser downloads a Froala plugin or language file only when an editor needs it. An
-editor gets the plugins of Froala's packaged bundle unless you name them:
+The browser downloads a Froala plugin or language file only when an editor needs it.
+`withPluginsEnabled` names the plugins an editor gets:
 
 ```java
 FroalaOptions options = FroalaOptions.defaults()
@@ -106,16 +106,33 @@ FroalaOptions options = FroalaOptions.defaults()
         .withLanguage("de");
 ```
 
-- `FroalaPlugin` covers every plugin file of the npm package. `TRACK_CHANGES`, `TRIM_VIDEO`
-  and the five under `js/third_party/` are in no Froala bundle, so an editor only gets them
-  when you enable them. The Javadoc of each constant names what it needs, such as a library
-  on the page or a service account.
+- Without `withPluginsEnabled` an editor gets `FroalaPlugin.basics()`, a basic rich-text
+  editor. These are `ALIGN`, `COLORS`, `FIND_AND_REPLACE`, `FONT_FAMILY`, `FONT_SIZE`, `HELP`,
+  `LINE_HEIGHT`, `LINK`, `LINK_TO_ANCHOR`, `LISTS`, `PARAGRAPH_FORMAT`, `QUOTE`, `URL` and
+  `WORD_PASTE`. Anything that
+  inserts other content is off, and so are the style menus that only offer Froala's samples.
+  For example an editor without options has no table button. `basics()` returns a new set,
+  so adding one plugin takes one line:
+
+  ```java
+  EnumSet<FroalaPlugin> plugins = FroalaPlugin.basics();
+  plugins.add(FroalaPlugin.TABLE);
+  options = options.withPluginsEnabled(plugins);
+  ```
+
+  `FroalaPlugin.all()` enables every plugin, as in
+  `options.withPluginsEnabled(FroalaPlugin.all())`. Some plugins need a server, a second
+  library or a paid service, and the Javadoc of each constant says which.
+- `FroalaPlugin` covers every plugin file of the npm package.
 - `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
   A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
   shows English tooltips, because the file is called `de`.
 - Track changes marks insertions and deletions in the HTML. That markup reaches the server
   with the value unless the changes are accepted or rejected first. For example a deletion
-  stays in the value as a `<span data-tracking-deleted="true">`.
+  stays in the value as a `<span data-tracking-deleted="true">`. Froala also adds the plugin's
+  five buttons to every toolbar, including one you set yourself. For example
+  `FroalaToolbar.of("bold", "italic")` then shows `showChanges`, `applyAll`, `removeAll`,
+  `applyLast` and `removeLast` as well.
 
 ### Toolbar
 

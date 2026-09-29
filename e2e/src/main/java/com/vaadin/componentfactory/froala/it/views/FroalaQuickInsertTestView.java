@@ -16,6 +16,8 @@
 package com.vaadin.componentfactory.froala.it.views;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
+import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -36,7 +38,10 @@ public class FroalaQuickInsertTestView extends Div {
     public FroalaQuickInsertTestView() {
         getStyle().set("margin-left", "300px");
 
-        FroalaEditor empty = new FroalaEditor("Empty");
+        // quick insert is not among the basics, and it offers what these plugins insert
+        FroalaEditor empty = new FroalaEditor("Empty",
+                FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.QUICK_INSERT, FroalaPlugin.IMAGE,
+                        FroalaPlugin.VIDEO, FroalaPlugin.TABLE, FroalaPlugin.LISTS));
         empty.setId("empty-editor");
         empty.setHeight("300px");
 

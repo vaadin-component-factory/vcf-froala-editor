@@ -66,6 +66,12 @@ class FroalaEditorElement extends SlotStylesMixin(
     options: {
       type: Object,
     },
+
+    // The plugins for options without pluginsEnabled, FroalaPlugin.basics() on the server. Declared for the same
+    // reason as `options`.
+    defaultPluginsEnabled: {
+      type: Array,
+    },
   };
 
   static get styles() {
@@ -220,7 +226,8 @@ class FroalaEditorElement extends SlotStylesMixin(
     // again, and this build then gives up. See _editorGeneration.
     const generation = ++this._editorGeneration;
     const serverOptions = this.options;
-    const pluginsEnabled = await loadFroalaFiles(serverOptions);
+    const pluginsEnabled = serverOptions?.pluginsEnabled ?? this.defaultPluginsEnabled ?? [];
+    await loadFroalaFiles(pluginsEnabled, serverOptions?.language);
 
     if (generation !== this._editorGeneration || !this.isConnected) {
       return;
@@ -247,7 +254,8 @@ class FroalaEditorElement extends SlotStylesMixin(
     // The save plugin is off unless they ask for it. The value reaches the server through the value change
     // listener, and without a saveURL the plugin only runs a failing save after every edit.
     //
-    // pluginsEnabled always comes from loadFroalaFiles, which names the plugins explicitly.
+    // pluginsEnabled is always named explicitly, because Froala's own default is every plugin registered on the page,
+    // and that depends on what other editors happened to load.
     const options = { saveInterval: 0, theme: 'vaadin', ...this.options, pluginsEnabled };
     this._appliedOptions = JSON.stringify(this.options ?? null);
 
