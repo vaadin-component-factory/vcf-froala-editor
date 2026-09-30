@@ -29,6 +29,9 @@ as a Java component.
 
 Vaadin's frontend build pulls in the `froala-editor` npm package by itself.
 
+The add-on is not released yet. Until it is, build it with `mvn install` in the `component`
+directory and use the version from its `pom.xml`, currently `1.0.0-SNAPSHOT`.
+
 ## Usage
 
 ```java

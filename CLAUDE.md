@@ -117,6 +117,9 @@ Froala's stylesheet (ADR-0007):
   this pom repeats them — resolving their config through `${codechecks.config.dir}` =
   `${project.basedir}/..`. Never `${maven.multiModuleProjectDirectory}`: during a
   standalone build it points at `component/` itself and breaks the build.
+  `mvn clean install -Pdirectory` in `component/` also builds the Vaadin Directory package,
+  `target/vcf-froala-editor-<version>.zip`. It holds the jar, the sources jar, `LICENSE`,
+  `README.md` and the Directory manifest from `component/assembly/`.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and shows
   it off. Holds everything Spring-shaped (`Application`, `@Service` beans, the future
   `@ConfigurationProperties` license-key binding) and **no tests at all**.
@@ -188,6 +191,29 @@ rebuild that module before running the demo or e2e tests so they don't run again
 stale jar. The e2e module always builds with `forceProductionBuild`. No profile is
 needed, and the e2e run exercises the true optimized bundle rather than a precompiled
 one.
+
+## Release
+
+The branch `v-herd-demo` always holds the released version, because the demo server
+deploys from it with the root `Dockerfile`. A snapshot there breaks the deployment, since
+a `-SNAPSHOT` artifact is in no public repository. That is why the steps run in this order.
+
+1. Remove `-SNAPSHOT` from every version in the four poms (root, `component`, `demo`,
+   `e2e`), the parent references and the add-on dependencies included. In `README.md`, set
+   the version in the Installation snippet and drop the note that the add-on is not
+   released yet.
+2. Commit as `Release <version>` and tag it with
+   `git tag -a <version> -m "Release <version>"`.
+3. Bring `v-herd-demo` to the tagged state. Create it from main the first time, later merge
+   main into it with `git merge main -X theirs`. `git diff <version> HEAD` must come back
+   empty.
+4. The maintainer pushes main, the tag and `v-herd-demo` together, and creates the GitHub
+   release.
+5. Only then bump main to the next snapshot, usually the next patch (`1.0.0` becomes
+   `1.0.1-SNAPSHOT`), and commit as `Bump to <next>-SNAPSHOT`. Bumping earlier would carry
+   the snapshot into `v-herd-demo` with the merge.
+
+The agent prepares steps 1 to 3 and 5 only when the maintainer asks, and never pushes.
 
 ## Who owns which file
 
