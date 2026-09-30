@@ -552,6 +552,14 @@ editor.getValue();                                            // still the old v
 editor.addValueChangeListener(event -> save(event.getValue())); // gets the new one
 ```
 
+Nothing is inserted while the editor is read-only or disabled, because both lock the value
+against changes from the client:
+
+```java
+editor.setReadOnly(true);
+editor.replaceSelectionContent("<strong>[redacted]</strong>"); // inserts nothing
+```
+
 ### Viewer
 
 `FroalaViewer` displays HTML with Froala's styles, so it looks as it did in the editor:

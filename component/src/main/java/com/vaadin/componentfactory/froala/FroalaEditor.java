@@ -456,6 +456,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * means {@link #getValue()} does not include the snippet yet when this method returns. A value change listener does
      * receive it, as a change from the client.
      *
+     * <p>
+     * Nothing is inserted while the editor is read-only or disabled. Both lock the value against changes from the
+     * client, and the snippet would reach the server as such a change.
+     *
      * @param html the HTML snippet to insert, not null
      */
     public void replaceSelectionContent(String html) {
