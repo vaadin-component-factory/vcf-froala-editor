@@ -18,29 +18,18 @@ package com.vaadin.componentfactory.froala.rest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URLConnection;
-import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Serves the files in {@link UploadedFiles} under the link it returns. The demo's editors upload through the add-on's
- * upload handlers, which need no endpoint. The POST here is the endpoint the {@code /check-upload} view points Froala's
- * {@code imageUploadURL}, {@code fileUploadURL} and {@code videoUploadURL} at, for an application with an endpoint of
- * its own.
- * <p>
- * Froala posts a multipart request with the file under the parameter name {@code file} — the default of
- * {@code imageUploadParam}, {@code fileUploadParam} and {@code videoUploadParam} alike — and expects a JSON object with
- * a {@code link} member back. It then puts that link into the document, so the same application has to serve the file
- * again under it. That round trip is why an upload URL needs an endpoint behind it.
+ * upload handlers, which need no endpoint, but the link they put into the document has to be served by the application.
  * <p>
  * What is <b>not</b> optional even here: the content type and the file name a browser sees on the way back are decided
  * by this class, not by whoever uploaded. The endpoint answers on the application's own origin, so serving an uploaded
@@ -61,11 +50,6 @@ public class FroalaUploadController {
 
     public FroalaUploadController(UploadedFiles files) {
         this.files = files;
-    }
-
-    @PostMapping
-    public Map<String, String> upload(@RequestParam("file") MultipartFile uploaded) throws IOException {
-        return Map.of("link", files.store(uploaded.getBytes()));
     }
 
     @GetMapping("/{id}")
