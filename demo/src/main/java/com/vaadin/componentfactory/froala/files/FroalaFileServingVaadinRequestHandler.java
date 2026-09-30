@@ -74,19 +74,19 @@ public class FroalaFileServingVaadinRequestHandler implements VaadinServiceInitL
         }
 
         String id = path.substring(PATH.length() + 1);
-        byte[] bytes = files.get(id);
+        FroalaFileUploadService.StoredFile file = files.get(id);
 
-        if (bytes == null) {
+        if (file == null) {
             response.sendError(404, "Not found");
 
             return true;
         }
 
-        String inlineType = FroalaFileContentTypes.inlineType(bytes);
+        String inlineType = FroalaFileContentTypes.inlineType(file.bytes());
         response.setContentType(inlineType != null ? inlineType : "application/octet-stream");
-        response.setHeader("Content-Disposition", FroalaFileContentTypes.disposition(inlineType, id));
+        response.setHeader("Content-Disposition", FroalaFileContentTypes.disposition(inlineType, file.name()));
         response.setHeader("X-Content-Type-Options", "nosniff");
-        response.getOutputStream().write(bytes);
+        response.getOutputStream().write(file.bytes());
 
         return true;
     }

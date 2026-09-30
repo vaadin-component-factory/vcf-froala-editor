@@ -18,6 +18,7 @@ package com.vaadin.componentfactory.froala.files;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
@@ -30,17 +31,36 @@ import org.springframework.stereotype.Service;
 @Service
 public class FroalaFileUploadService {
 
-    private final Map<String, byte[]> files = new ConcurrentHashMap<>();
+    /** Every character outside this set is replaced in a file name, see {@link #store(byte[], String)}. */
+    private static final Pattern UNSAFE_CHARACTERS = Pattern.compile("[^A-Za-z0-9._-]");
 
-    /** Stores the bytes and returns their id, which stays valid as long as the process runs. */
-    public String store(byte[] bytes) {
+    private final Map<String, StoredFile> files = new ConcurrentHashMap<>();
+
+    /**
+     * Stores the bytes and returns their id, which stays valid as long as the process runs. The name comes from the
+     * uploading browser and goes into a response header when the file is served. So every character other than a
+     * letter, a digit, a dot, an underscore or a hyphen becomes an underscore, and {@code a"b.pdf} is kept as
+     * {@code a_b.pdf}. Without a name the file is downloaded under its id.
+     */
+    public String store(byte[] bytes, String name) {
         String id = UUID.randomUUID().toString();
-        files.put(id, bytes);
+        String safeName = name == null || name.isBlank() ? id : UNSAFE_CHARACTERS.matcher(name).replaceAll("_");
+        files.put(id, new StoredFile(safeName, bytes));
+
         return id;
     }
 
-    /** The bytes stored under the id, or null for an unknown one. */
-    public byte[] get(String id) {
+    /** The file stored under the id, or null for an unknown one. */
+    public StoredFile get(String id) {
         return files.get(id);
+    }
+
+    /**
+     * A stored file with the name it is downloaded under.
+     *
+     * @param name the name of the uploaded file with only safe characters
+     * @param bytes the content
+     */
+    public record StoredFile(String name, byte[] bytes) {
     }
 }

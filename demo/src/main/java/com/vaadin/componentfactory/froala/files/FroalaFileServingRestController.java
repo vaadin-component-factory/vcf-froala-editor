@@ -50,18 +50,18 @@ public class FroalaFileServingRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> serve(@PathVariable String id) {
-        byte[] bytes = files.get(id);
+        FroalaFileUploadService.StoredFile file = files.get(id);
 
-        if (bytes == null) {
+        if (file == null) {
             return ResponseEntity.notFound().build();
         }
 
-        String inlineType = FroalaFileContentTypes.inlineType(bytes);
+        String inlineType = FroalaFileContentTypes.inlineType(file.bytes());
 
         return ResponseEntity.ok()
                 .contentType(
                         inlineType != null ? MediaType.parseMediaType(inlineType) : MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", FroalaFileContentTypes.disposition(inlineType, id))
-                .header("X-Content-Type-Options", "nosniff").body(bytes);
+                .header("Content-Disposition", FroalaFileContentTypes.disposition(inlineType, file.name()))
+                .header("X-Content-Type-Options", "nosniff").body(file.bytes());
     }
 }

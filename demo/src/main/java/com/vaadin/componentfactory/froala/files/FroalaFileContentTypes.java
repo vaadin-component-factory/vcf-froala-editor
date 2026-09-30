@@ -48,8 +48,8 @@ final class FroalaFileContentTypes {
         return sniffed != null && INLINE_TYPES.contains(sniffed) ? sniffed : null;
     }
 
-    /** The value of the {@code Content-Disposition} header for a file served under the id. */
-    static String disposition(String inlineType, String id) {
-        return (inlineType != null ? "inline" : "attachment") + "; filename=\"" + id + "\"";
+    /** The value of the {@code Content-Disposition} header, for a name that holds only safe characters. */
+    static String disposition(String inlineType, String name) {
+        return (inlineType != null ? "inline" : "attachment") + "; filename=\"" + name + "\"";
     }
 }

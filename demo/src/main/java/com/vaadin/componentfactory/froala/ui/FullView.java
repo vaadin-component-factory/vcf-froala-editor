@@ -39,7 +39,7 @@ public class FullView extends FroalaViewBase {
 
         // the same handler as in UploadView's first tab
         FroalaUploadHandler handler = event -> FroalaFileServingVaadinRequestHandler
-                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes(), event.getFileName()));
         getEditor().setImageUploadHandler(handler);
         getEditor().setFileUploadHandler(handler);
         getEditor().setVideoUploadHandler(handler);

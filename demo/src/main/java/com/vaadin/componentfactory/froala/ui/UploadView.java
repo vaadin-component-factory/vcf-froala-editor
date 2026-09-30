@@ -43,10 +43,10 @@ public class UploadView extends VerticalLayout {
         // Both handlers store the file and return the link the editor puts into the document. Only the class that
         // serves the file under that link differs.
         FroalaUploadHandler vaadinHandler = event -> FroalaFileServingVaadinRequestHandler
-                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes(), event.getFileName()));
 
         FroalaUploadHandler springRestHandler = event -> FroalaFileServingRestController
-                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes(), event.getFileName()));
 
         TabSheet tabs = new TabSheet();
         tabs.setWidthFull();
