@@ -508,6 +508,21 @@ is disabled or read-only, and the handler runs outside the UI's lock like any Fl
 application serves the stored files itself, like `/images/<id>` above, under a link that stays
 valid across sessions. A URL of a Flow `DownloadHandler` does not, because it is bound to the UI.
 
+Spring Boot limits a multipart upload to 1 MB by default, and that limit applies to the upload
+handler as well. A larger file is refused before the handler runs, and the user sees Froala's
+"Error during file upload." Raise it to what the editor should accept. The request carries
+Froala's form fields next to the file, so give it a little more room than the file:
+
+```properties
+# images and files up to Froala's own limit of 10 MB
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=11MB
+```
+
+Froala checks its own limits in the browser before it uploads. They are 10 MB for an image or
+a file and 50 MB for a video. To accept larger files, raise `imageMaxSize`, `fileMaxSize` or
+`videoMaxSize` as well.
+
 An endpoint of your own works too, with a URL in the options. It receives a multipart POST
 with the file as `file` and answers `{"link": "…"}` with the URL it serves the file under. A
 handler takes precedence over the URL:
