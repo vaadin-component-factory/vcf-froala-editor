@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import elemental.json.Json;
 import elemental.json.JsonObject;
@@ -55,7 +56,8 @@ import com.vaadin.flow.dom.Element;
  *            it: the keyboard event's {@code keyCode}. 0 for no shortcut.
  * @param shortcutLabel the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code T} or
  *            {@code F2}. Null for no shortcut.
- * @param shortcutModifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} on top of Ctrl or Cmd, or empty
+ * @param shortcutModifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} on top of Ctrl or Cmd, or empty.
+ *            {@link KeyModifier#CONTROL} and {@link KeyModifier#META} are dropped, because Froala always adds them.
  * @param toggle whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}
  */
 public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int shortcutKeyCode, String shortcutLabel,
@@ -85,7 +87,11 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
                     + "' must start with a letter and hold only letters, digits and underscores");
         }
 
-        shortcutModifiers = shortcutModifiers == null ? Set.of() : Set.copyOf(shortcutModifiers);
+        // Froala always adds Ctrl, or Cmd on a Mac, so either one given here says nothing and is dropped
+        shortcutModifiers = shortcutModifiers == null ? Set.of()
+                : shortcutModifiers.stream()
+                        .filter(modifier -> modifier != KeyModifier.CONTROL && modifier != KeyModifier.META)
+                        .collect(Collectors.toUnmodifiableSet());
         if (shortcutKeyCode == 0 && shortcutLabel == null) {
             if (!shortcutModifiers.isEmpty()) {
                 throw new IllegalArgumentException("Shortcut modifiers need a shortcut key");
@@ -99,7 +105,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
                 throw new IllegalArgumentException("A shortcut needs a label for the button's tooltip");
             }
         }
-        // Froala's shortcuts always hold Ctrl, or Cmd on a Mac, and can add Shift and Alt to it. Nothing else.
+        // Froala's shortcuts can add Shift and Alt to Ctrl or Cmd. Nothing else.
         if (!Set.of(KeyModifier.SHIFT, KeyModifier.ALT).containsAll(shortcutModifiers)) {
             throw new IllegalArgumentException(
                     "A shortcut is Ctrl or Cmd plus a key, with Shift or Alt optionally on top."
@@ -119,8 +125,8 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
     }
 
     /**
-     * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the given key. Froala shows the shortcut
-     * in the button's tooltip.
+     * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the given key. Froala adds Ctrl or Cmd
+     * itself, and Ctrl and Cmd given as modifiers are ignored. Froala shows the shortcut in the button's tooltip.
      *
      * <p>
      * Froala finds a shortcut by the keyboard event's numeric {@code keyCode}, not by the {@link Key}. A letter, a
@@ -135,10 +141,11 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
      *
      * @param key a letter, digit or function key from F1 to F12, e.g. {@link Key#KEY_T}, {@link Key#DIGIT_4} or
      *            {@link Key#F10}
-     * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
+     * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
+     *            here are ignored.
      * @return a new command with the shortcut
      * @throws IllegalArgumentException if the key is not a letter, digit or function key from F1 to F12, or a modifier
-     *             is not Shift or Alt
+     *             is not Shift, Alt, Ctrl or Cmd
      * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
@@ -154,16 +161,18 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
 
     /**
      * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the key with the given key code, e.g.
-     * {@code withShortcut(113, "F2")} for Ctrl+F2. The key code is what Froala expects, the keyboard event's
-     * {@code keyCode}. Any key code from 1 up is accepted. Which code a key has on which keyboard layout, and whether
-     * the browser or the operating system takes a combination before the page sees it, is up to the caller.
+     * {@code withShortcut(113, "F2")} for Ctrl+F2. Froala adds Ctrl or Cmd itself, and Ctrl and Cmd given as modifiers
+     * are ignored. The key code is what Froala expects, the keyboard event's {@code keyCode}. Any key code from 1 up is
+     * accepted. Which code a key has on which keyboard layout, and whether the browser or the operating system takes a
+     * combination before the page sees it, is up to the caller.
      *
      * @param keyCode the key code, 1 or more
      * @param shortcutLabel the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code F2}
-     * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
+     * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
+     *            here are ignored.
      * @return a new command with the shortcut
      * @throws IllegalArgumentException if the key code is below 1, the label is null or blank, or a modifier is not
-     *             Shift or Alt
+     *             Shift, Alt, Ctrl or Cmd
      */
     public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
         return new FroalaCommand(name, title, icon, keyCode, shortcutLabel, Set.copyOf(Arrays.asList(modifiers)),

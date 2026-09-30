@@ -370,30 +370,32 @@ registration.remove(); // the command and its buttons are gone from this editor
 The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
 `SvgIcon` with a URL or a `FontIcon`. An `SvgIcon` with a `DownloadHandler` shows nothing,
 because it has no URL until it is attached. A shortcut is always Ctrl, or Cmd on a Mac, plus a
-key, because Froala requires it. Shift and Alt can be added. `withShortcut(Key, ...)` takes a
-letter, a digit or a function key from F1 to F12. Any other key is given by its key code. That
-is the keyboard event's `keyCode`, which is what Froala expects. The label is what the button's
-tooltip shows for the key. Which code a key has on which keyboard layout, and whether the
-browser takes the combination first, is up to Froala and the browser:
+key, because Froala requires it. Froala adds Ctrl or Cmd itself, and a `KeyModifier.CONTROL`
+or `KeyModifier.META` given anyway is ignored. Shift and Alt can be added.
+`withShortcut(Key, ...)` takes a letter, a digit or a function key from F1 to F12. Any other key
+is given by its key code. That is the keyboard event's `keyCode`, which is what Froala expects.
+The label is what the button's tooltip shows for the key. Which code a key has on which keyboard
+layout, and whether the browser takes the combination first, is up to Froala and the browser:
 
 ```java
-insertTemplate.withShortcut(Key.F2);                          // Ctrl+F2
-insertTemplate.withShortcut(191, "/");                        // Ctrl+/ on a US layout, the tooltip shows "Ctrl+/"
+insertTemplate.withShortcut(Key.F2);                           // Ctrl+F2
+insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL);   // Ctrl+T (CONTROL is ignored)
+insertTemplate.withShortcut(191, "/");                         // Ctrl+/ on a US layout, the tooltip shows "Ctrl+/"
 ```
 
 These throw an `IllegalArgumentException`:
 
 - a `Key` that is no letter, digit or function key from F1 to F12
-- a modifier other than Shift and Alt
+- Alt Graph as a modifier
 - a key code below 1, or a missing label
 - a second command of the same name on one editor
 
 ```java
-insertTemplate.withShortcut(Key.SLASH);                       // IllegalArgumentException, use the key code
-insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL);  // IllegalArgumentException, Ctrl is always there
-insertTemplate.withShortcut(0, "X");                          // IllegalArgumentException, below 1
+insertTemplate.withShortcut(Key.SLASH);                        // IllegalArgumentException, use the key code
+insertTemplate.withShortcut(Key.KEY_T, KeyModifier.ALT_GRAPH); // IllegalArgumentException, Froala cannot bind it
+insertTemplate.withShortcut(0, "X");                           // IllegalArgumentException, below 1
 editor.addCommand(insertTemplate, event -> {});
-editor.addCommand(insertTemplate, event -> {});               // IllegalArgumentException, the name is taken
+editor.addCommand(insertTemplate, event -> {});                // IllegalArgumentException, the name is taken
 ```
 
 Adding or removing a command on an attached editor builds the editor again, as `setOptions`

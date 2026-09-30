@@ -15,6 +15,8 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import com.vaadin.flow.component.Key;
@@ -66,11 +68,18 @@ class FroalaCommandTest {
     void shortcut_takesOnlyWhatFroalaCanBind() {
         FroalaCommand command = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
 
-        // Froala binds Ctrl or Cmd plus a key, so Ctrl is implied and Meta cannot be asked for
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.CONTROL));
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.META));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.ALT_GRAPH));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.F13));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.SLASH));
+    }
+
+    @Test
+    void ctrlAndCmd_areIgnored_becauseFroalaAlwaysAddsThem() {
+        FroalaCommand command = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
+
+        assertEquals(Set.of(KeyModifier.SHIFT),
+                command.withShortcut(Key.KEY_T, KeyModifier.CONTROL, KeyModifier.SHIFT).shortcutModifiers());
+        assertEquals(Set.of(), command.withShortcut(113, "F2", KeyModifier.META).shortcutModifiers());
     }
 
     @Test
@@ -103,7 +112,7 @@ class FroalaCommandTest {
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(-1, "X"));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, null));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, " "));
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, "F2", KeyModifier.CONTROL));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, "F2", KeyModifier.ALT_GRAPH));
     }
 
     @Test
