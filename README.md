@@ -359,29 +359,33 @@ editor.setOptions(FroalaOptions.defaults()
 Registration registration = editor.addCommand(insertTemplate,
         event -> editor.replaceSelectionContent("<p>Dear customer,</p>"));
 
-registration.remove(); // the command and its buttons are gone from this editor
-
 // you can also add the command at multiple places, here in the toolbar and in the popup that opens on a link
 editor.setOptions(FroalaOptions.defaults()
         .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.name()))
         .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, insertTemplate.name())));
+
+registration.remove(); // the command and its buttons are gone from this editor
 ```
 
 The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
 `SvgIcon` with a URL or a `FontIcon`. An `SvgIcon` with a `DownloadHandler` shows nothing,
 because it has no URL until it is attached. A shortcut is always Ctrl, or Cmd on a Mac, plus a
 key, because Froala requires it. Shift and Alt can be added. `withShortcut(Key, ...)` takes a
-letter or digit. Any other key is given by its key code, the keyboard event's `keyCode` Froala
-expects, together with the label the button's tooltip shows for it. Which code a key has on
-which keyboard layout, and whether the browser takes the combination first, is up to Froala and
-the browser:
+letter or digit. Any other key is given by its key code. That is the keyboard event's `keyCode`,
+which is what Froala expects. The label is what the button's tooltip shows for the key. Which
+code a key has on which keyboard layout, and whether the browser takes the combination first, is
+up to Froala and the browser:
 
 ```java
 insertTemplate.withShortcut(113, "F2");                       // Ctrl+F2, the tooltip shows "Ctrl+F2"
 ```
 
-Other modifiers throw, and so do `withShortcut(Key, ...)` with a key that is no letter or
-digit, a key code below 1, a missing label and a second command of the same name on one editor:
+These throw an `IllegalArgumentException`:
+
+- a key that is no letter or digit, given as a `Key`
+- a modifier other than Shift and Alt
+- a key code below 1, or a missing label
+- a second command of the same name on one editor
 
 ```java
 insertTemplate.withShortcut(Key.F2);                          // IllegalArgumentException, use the key code 113
@@ -586,9 +590,10 @@ FroalaViewer viewer = new FroalaViewer();
 viewer.setContent(editor.getValue());
 ```
 
-It loads the add-on's stylesheets itself, so it needs no editor on the same page. It carries
-the class `vaadin-theme` for the editor's default theme. Remove it when your editors use
-another Froala theme:
+It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base
+text takes font, colour and size from the page, which under Lumo matches the editor. The
+`--vcf-froala-*` properties change the editor only. The viewer carries the class `vaadin-theme`
+for the editor's default theme. Remove it when your editors use another Froala theme:
 
 ```java
 viewer.removeClassName("vaadin-theme");

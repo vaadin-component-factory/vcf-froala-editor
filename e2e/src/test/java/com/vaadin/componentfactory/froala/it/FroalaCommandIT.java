@@ -77,10 +77,10 @@ class FroalaCommandIT extends SpringPlaywrightIT {
     @Test
     void keyCodeShortcut_runsTheListener_andShowsItsLabel() {
         assertThat(page.locator("#key-code .fr-toolbar button[data-cmd='memo']")).hasAttribute("title",
-                "Memo (Ctrl+F2)");
+                "Memo (Ctrl+Shift+F2)");
 
         page.locator("#key-code .fr-element").click();
-        page.keyboard().press("Control+F2");
+        page.keyboard().press("Control+Shift+F2");
 
         assertThat(page.locator("#log")).hasText("key-code");
     }

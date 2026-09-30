@@ -82,8 +82,8 @@ public class FroalaCommandTestView extends VerticalLayout {
         // a shortcut given as a key code, for a key withShortcut(Key) does not take
         FroalaEditor keyCode = editor("key-code");
         keyCode.setOptions(FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.of("bold", "memo")));
-        keyCode.addCommand(new FroalaCommand("memo", "Memo", VaadinIcon.NOTEBOOK.create()).withShortcut(113, "F2"),
-                event -> logTrigger("key-code"));
+        keyCode.addCommand(new FroalaCommand("memo", "Memo", VaadinIcon.NOTEBOOK.create()).withShortcut(113, "F2",
+                KeyModifier.SHIFT), event -> logTrigger("key-code"));
 
         add(log, removeFromFirst, addToLate, first, second, late, noButton, keyCode);
     }
