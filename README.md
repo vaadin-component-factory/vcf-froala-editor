@@ -14,7 +14,7 @@ as a Java component.
 | | Version |
 |---|---|
 | Java | 17 or newer |
-| Vaadin | 24.10, built and tested against 24.10.9 |
+| Vaadin | 24.10, built and tested against 24.10.7 |
 | Froala | 5.4.0, pulled in as the `froala-editor` npm package |
 
 ## Installation

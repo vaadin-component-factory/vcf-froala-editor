@@ -24,7 +24,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>24.10.9</vaadin.version>
+        <vaadin.version>24.10.7</vaadin.version>
 
         <!-- Test only. JUnit is pinned to what spring-boot-dependencies manages in the
              reactor root, so a standalone build of this module and a reactor build

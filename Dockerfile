@@ -14,8 +14,8 @@ COPY pom.xml $HOME/
 COPY component/ $HOME/component/
 COPY demo/ $HOME/demo/
 
-# The frontend build checks for a Vaadin license key even without commercial components. Pass
-# a Pro key as a secret with id "proKey", or an offline key with id "offlineKey":
+# If the build needs a Vaadin license key, pass a Pro key as a secret with id "proKey", or an
+# offline key with id "offlineKey":
 #
 #   $ docker build --secret id=proKey,src=$HOME/.vaadin/proKey .
 #   $ docker build --secret id=offlineKey,src=$HOME/.vaadin/offlineKey .

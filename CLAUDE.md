@@ -88,7 +88,7 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
 
 ## Stack
 
-- **Vaadin** 24.10.9 (Core) on **Spring Boot** 3.5.15, **JDK** 17+
+- **Vaadin** 24.10.7 (Core) on **Spring Boot** 3.5.14, **JDK** 17+
 - Base package: `com.vaadin.componentfactory.froala`
 - Build/verify gate: `mvn clean verify`. `-Pproduction` additionally builds the demo's
   production bundle.
@@ -96,8 +96,8 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
   root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
   `-Drequire.home.node=false`, e.g. `mvn clean verify -Drequire.home.node=false`.
 
-Spring Boot 3.5.15 is not "the latest 3.5.x" — it is the version
-`com.vaadin:vaadin-spring:24.10.9` is built against. Derive it from the Vaadin
+Spring Boot 3.5.14 is not "the latest 3.5.x" — it is the version
+`com.vaadin:vaadin-spring:24.10.7` is built against. Derive it from the Vaadin
 release when bumping instead of taking the newest 3.5.x.
 
 Java 17 and Vaadin 24 are the deliberate floor (ADR-0005). Do not raise them
