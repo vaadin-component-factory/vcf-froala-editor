@@ -18,7 +18,9 @@ package com.vaadin.componentfactory.froala.ui;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
+import com.vaadin.componentfactory.froala.FroalaUploadHandler;
 import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.componentfactory.froala.rest.UploadedFiles;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.router.Menu;
@@ -29,16 +31,21 @@ import com.vaadin.flow.router.Route;
 @Menu(title = "Full", order = 0.5)
 public class FullView extends FroalaViewBase {
 
-    public FullView() {
+    public FullView(UploadedFiles uploadedFiles) {
         getEditor().setHeight("500px");
         getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
                 .withToolbarButtons(FroalaToolbar.froalaDefault()));
 
+        // the same handler as in UploadView
+        FroalaUploadHandler handler = event -> uploadedFiles.store(event.getInputStream().readAllBytes());
+        getEditor().setImageUploadHandler(handler);
+        getEditor().setFileUploadHandler(handler);
+        getEditor().setVideoUploadHandler(handler);
+
         addComponentAtIndex(indexOf(getToolbar()) + 1,
                 new Paragraph("Every Froala plugin except those that need a server, a second library or a paid "
                         + "service, such as the AI assistant, collaboration or the image manager. The toolbar is "
-                        + "Froala's own. No upload URL is set, so a file or an "
-                        + "image picked from disk does not reach a server."));
+                        + "Froala's own. Uploads go to the demo's upload handler, as in the Uploads view."));
 
         getViewer().setMinHeight("250px");
     }
