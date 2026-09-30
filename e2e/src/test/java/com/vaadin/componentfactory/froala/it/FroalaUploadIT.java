@@ -63,27 +63,41 @@ class FroalaUploadIT extends SpringPlaywrightIT {
 
     @Test
     void droppedImage_goesThroughTheHandler() {
-        dispatchPixel("drop");
+        dispatchFile("drop", "pixel.png", "image/png", PIXEL_BASE64);
 
         assertThat(page.locator("#viewer img")).hasAttribute("src", PIXEL_LINK);
     }
 
     @Test
     void pastedImage_goesThroughTheHandler() {
-        dispatchPixel("paste");
+        dispatchFile("paste", "pixel.png", "image/png", PIXEL_BASE64);
 
         assertThat(page.locator("#viewer img")).hasAttribute("src", PIXEL_LINK);
     }
 
-    /** Drops or pastes the pixel into the editor with handlers, as a file the way a browser hands one over. */
-    private void dispatchPixel(String type) {
+    @Test
+    void droppedFile_goesThroughTheHandler() {
+        dispatchFile("drop", "notes.txt", "text/plain", "AQIDBA==");
+
+        assertThat(page.locator("#viewer a")).hasAttribute("href", "data:text/plain;source=handler;base64,AQIDBA==");
+    }
+
+    @Test
+    void droppedVideo_goesThroughTheHandler() {
+        dispatchFile("drop", "clip.mp4", "video/mp4", "AQIDBA==");
+
+        assertThat(page.locator("#viewer video")).hasAttribute("src", "data:video/mp4;source=handler;base64,AQIDBA==");
+    }
+
+    /** Drops or pastes a file into the editor with handlers, the way a browser hands one over. */
+    private void dispatchFile(String type, String name, String contentType, String base64) {
         page.locator("#editor .fr-element[contenteditable='true']").click();
         page.evaluate(
                 """
-                        ([type, base64]) => {
+                        ([type, name, contentType, base64]) => {
                             const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
                             const data = new DataTransfer();
-                            data.items.add(new File([bytes], 'pixel.png', { type: 'image/png' }));
+                            data.items.add(new File([bytes], name, { type: contentType }));
                             const area = document.querySelector('#editor .fr-element');
                             const box = area.getBoundingClientRect();
                             const init = { bubbles: true, cancelable: true };
@@ -91,7 +105,7 @@ class FroalaUploadIT extends SpringPlaywrightIT {
                                     ? new ClipboardEvent('paste', { ...init, clipboardData: data })
                                     : new DragEvent('drop', { ...init, dataTransfer: data, clientX: box.x + 5, clientY: box.y + 5 }));
                         }""",
-                new Object[] { type, PIXEL_BASE64 });
+                new Object[] { type, name, contentType, base64 });
     }
 
     @Test

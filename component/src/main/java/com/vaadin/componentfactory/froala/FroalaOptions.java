@@ -1084,8 +1084,15 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets the URL files are uploaded to. Froala's {@code fileUploadURL}. Behaves like
-     * {@link #withImageUploadUrl(String)} in every respect, including what happens without one.
+     * Sets the URL files are uploaded to. Froala's {@code fileUploadURL}.
+     *
+     * <p>
+     * For an endpoint of the application's own. {@link FroalaEditor#setFileUploadHandler(FroalaUploadHandler)} needs
+     * none and takes precedence over this URL. Without either the editor switches file upload off, see there.
+     *
+     * <p>
+     * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
+     * {@code {"link": "…"}} with a URL it serves the file under afterwards.
      *
      * @param fileUploadUrl upload URL, or null to leave Froala's default
      * @return a new instance
@@ -1095,8 +1102,15 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets the URL videos are uploaded to. Froala's {@code videoUploadURL}. Behaves like
-     * {@link #withImageUploadUrl(String)} in every respect, including what happens without one.
+     * Sets the URL videos are uploaded to. Froala's {@code videoUploadURL}.
+     *
+     * <p>
+     * For an endpoint of the application's own. {@link FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)} needs
+     * none and takes precedence over this URL. Without either the editor switches video upload off, see there.
+     *
+     * <p>
+     * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
+     * {@code {"link": "…"}} with a URL it serves the file under afterwards.
      *
      * @param videoUploadUrl upload URL, or null to leave Froala's default
      * @return a new instance

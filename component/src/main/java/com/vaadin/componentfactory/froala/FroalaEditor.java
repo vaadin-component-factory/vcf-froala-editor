@@ -509,9 +509,28 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Lets users upload files in the editor, which inserts a link to each one. Behaves like
-     * {@link #setImageUploadHandler(FroalaUploadHandler)} in every respect, with Froala's {@code fileUploadURL} and
-     * {@link FroalaOptions#withFileUploadUrl(String)} in place of the image ones.
+     * Lets users upload files in the editor, which inserts a link to each one. The handler stores each uploaded file
+     * and returns the link the editor puts into the document. Covers the upload button in the file popup and dropping a
+     * file that is no image onto the editor. A dropped image goes to
+     * {@link #setImageUploadHandler(FroalaUploadHandler)}.
+     *
+     * <pre>
+     * editor.setFileUploadHandler(event -&gt; {
+     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     return "/files/" + id;
+     * });
+     * </pre>
+     *
+     * <p>
+     * Without a handler, and without Froala's {@code fileUploadURL} in the options, file upload is switched off. Froala
+     * would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the stored
+     * HTML points at nothing after a reload. A handler takes precedence over
+     * {@link FroalaOptions#withFileUploadUrl(String)}.
+     *
+     * <p>
+     * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
+     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * {@link #setOptions(FroalaOptions)}.
      *
      * @param handler the handler, or null to remove it
      */
@@ -520,9 +539,26 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Lets users upload videos in the editor. Behaves like {@link #setImageUploadHandler(FroalaUploadHandler)} in every
-     * respect, with Froala's {@code videoUploadURL} and {@link FroalaOptions#withVideoUploadUrl(String)} in place of
-     * the image ones. Pasting is left to Froala, which does not upload a pasted video.
+     * Lets users upload videos in the editor. The handler stores each uploaded video and returns the link the editor
+     * puts into the document. Covers the upload button in the video popup and dropping a video onto the editor.
+     *
+     * <pre>
+     * editor.setVideoUploadHandler(event -&gt; {
+     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     return "/videos/" + id;
+     * });
+     * </pre>
+     *
+     * <p>
+     * Without a handler, and without Froala's {@code videoUploadURL} in the options, video upload is switched off.
+     * Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the
+     * stored HTML points at nothing after a reload. A handler takes precedence over
+     * {@link FroalaOptions#withVideoUploadUrl(String)}.
+     *
+     * <p>
+     * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
+     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * {@link #setOptions(FroalaOptions)}.
      *
      * @param handler the handler, or null to remove it
      */
