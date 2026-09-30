@@ -15,11 +15,6 @@
  */
 package com.vaadin.componentfactory.froala.files;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.URLConnection;
-import java.util.Set;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,29 +23,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Serves the files in {@link FroalaFileUploadService} under the link it returns. The demo's editors upload through the
- * add-on's upload handlers, which need no endpoint, but the link they put into the document has to be served by the
- * application.
+ * Serves the files in {@link FroalaFileUploadService} with a Spring REST controller, under {@link #PATH}. The demo's
+ * editors upload through the add-on's upload handlers, which need no endpoint, but the link they put into the document
+ * has to be served by the application. {@link FroalaFileServingVaadinRequestHandler} does the same without Spring.
  * <p>
- * What is <b>not</b> optional even here: the content type and the file name a browser sees on the way back are decided
- * by this class, not by whoever uploaded. The endpoint answers on the application's own origin, so serving an uploaded
- * file inline under a type the uploader chose is stored cross-site scripting.
+ * An application with Spring Security protects the path with its rules, and {@code VaadinSecurityConfigurer} lets only
+ * authenticated users through by default. What is <b>not</b> optional even here: the content type a browser sees on the
+ * way back is decided by the application, see {@link FroalaFileContentTypes}.
  */
 @RestController
-@RequestMapping("/froala-upload")
+@RequestMapping(FroalaFileServingRestController.PATH)
 public class FroalaFileServingRestController {
 
-    /**
-     * What may be handed back with its own content type. Everything else is served as a download, because this endpoint
-     * answers on the application's own origin: an uploaded HTML file served inline would run as our page.
-     */
-    private static final Set<String> INLINE_TYPES = Set.of("image/png", "image/jpeg", "image/gif", "image/webp",
-            "image/bmp");
+    public static final String PATH = "/froala-upload-spring-rest";
 
     private final FroalaFileUploadService files;
 
     public FroalaFileServingRestController(FroalaFileUploadService files) {
         this.files = files;
+    }
+
+    /** The link a file stored under the id is served under. */
+    public static String link(String id) {
+        return PATH + "/" + id;
     }
 
     @GetMapping("/{id}")
@@ -61,23 +56,12 @@ public class FroalaFileServingRestController {
             return ResponseEntity.notFound().build();
         }
 
-        // Sniffed from the bytes, never taken from the upload: the client decides neither the type it is served under
-        // nor the name. `nosniff` stops the browser from overriding the decision made here.
-        String sniffed = sniff(bytes);
-        boolean inline = sniffed != null && INLINE_TYPES.contains(sniffed);
+        String inlineType = FroalaFileContentTypes.inlineType(bytes);
 
         return ResponseEntity.ok()
-                .contentType(inline ? MediaType.parseMediaType(sniffed) : MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", (inline ? "inline" : "attachment") + "; filename=\"" + id + "\"")
+                .contentType(
+                        inlineType != null ? MediaType.parseMediaType(inlineType) : MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", FroalaFileContentTypes.disposition(inlineType, id))
                 .header("X-Content-Type-Options", "nosniff").body(bytes);
-    }
-
-    /** Null when the bytes do not identify themselves, which lands the file in the download branch. */
-    private static String sniff(byte[] bytes) {
-        try {
-            return URLConnection.guessContentTypeFromStream(new ByteArrayInputStream(bytes));
-        } catch (IOException e) {
-            return null;
-        }
     }
 }

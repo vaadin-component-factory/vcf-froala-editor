@@ -20,6 +20,7 @@ import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaUploadHandler;
 import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.componentfactory.froala.files.FroalaFileServingVaadinRequestHandler;
 import com.vaadin.componentfactory.froala.files.FroalaFileUploadService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Paragraph;
@@ -36,8 +37,9 @@ public class FullView extends FroalaViewBase {
         getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
                 .withToolbarButtons(FroalaToolbar.froalaDefault()));
 
-        // the same handler as in UploadView
-        FroalaUploadHandler handler = event -> uploadedFiles.store(event.getInputStream().readAllBytes());
+        // the same handler as in UploadView's first tab
+        FroalaUploadHandler handler = event -> FroalaFileServingVaadinRequestHandler
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
         getEditor().setImageUploadHandler(handler);
         getEditor().setFileUploadHandler(handler);
         getEditor().setVideoUploadHandler(handler);
@@ -45,7 +47,7 @@ public class FullView extends FroalaViewBase {
         addComponentAtIndex(indexOf(getToolbar()) + 1,
                 new Paragraph("Every Froala plugin except those that need a server, a second library or a paid "
                         + "service, such as the AI assistant, collaboration or the image manager. The toolbar is "
-                        + "Froala's own. Uploads go to the demo's upload handler, as in the Uploads view."));
+                        + "Froala's own. Uploads go to the demo's upload handler, as in the Upload / Files view."));
 
     }
 

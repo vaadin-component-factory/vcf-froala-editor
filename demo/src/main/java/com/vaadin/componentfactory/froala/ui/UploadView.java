@@ -22,25 +22,50 @@ import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaUploadHandler;
 import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.componentfactory.froala.files.FroalaFileServingRestController;
+import com.vaadin.componentfactory.froala.files.FroalaFileServingVaadinRequestHandler;
 import com.vaadin.componentfactory.froala.files.FroalaFileUploadService;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
+/**
+ * Uploads through the add-on's upload handlers, with the two ways the demo serves the stored files. Both tabs look the
+ * same, and only the code behind them differs.
+ */
 @Route("upload")
-@Menu(title = "Uploads", order = 8)
+@Menu(title = "Upload / Files", order = 8)
 public class UploadView extends VerticalLayout {
 
     public UploadView(FroalaFileUploadService uploadedFiles) {
+        // Both handlers store the file and return the link the editor puts into the document. Only the class that
+        // serves the file under that link differs.
+        FroalaUploadHandler vaadinHandler = event -> FroalaFileServingVaadinRequestHandler
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
+
+        FroalaUploadHandler springRestHandler = event -> FroalaFileServingRestController
+                .link(uploadedFiles.store(event.getInputStream().readAllBytes()));
+
+        TabSheet tabs = new TabSheet();
+        tabs.setWidthFull();
+        tabs.add("Vaadin Request Handler", createSample(vaadinHandler, "FroalaFileServingVaadinRequestHandler serves "
+                + "the files with a Vaadin RequestHandler. It runs inside Vaadin's request handling and gets the "
+                + "user's VaadinSession, so it can check the user without Spring."));
+        tabs.add("Spring Rest Controller", createSample(springRestHandler, "FroalaFileServingRestController serves "
+                + "the files with a Spring REST controller. Its path is covered by the application's Spring Security "
+                + "rules like any other."));
+
+        add(new Paragraph("Upload an image, a file or a video through the popup, or drop or paste an image. The "
+                + "handler stores it and returns a link, which the viewer below shows."), tabs);
+    }
+
+    private static VerticalLayout createSample(FroalaUploadHandler handler, String description) {
         FroalaOptions options = FroalaOptions.defaults()
                 .withPluginsEnabled(FroalaPlugin.IMAGE, FroalaPlugin.FILE, FroalaPlugin.VIDEO)
                 .withToolbarButtons(FroalaToolbar.of(FroalaButton.INSERT_IMAGE, FroalaButton.INSERT_FILE,
                         FroalaButton.INSERT_VIDEO));
-
-        // Stores the file and returns the link the editor puts into the document. The application serves the file
-        // under that link, here FroalaFileServingRestController.
-        FroalaUploadHandler handler = event -> uploadedFiles.store(event.getInputStream().readAllBytes());
 
         FroalaEditor editor = new FroalaEditor("With upload handlers", options);
         editor.setWidthFull();
@@ -51,8 +76,9 @@ public class UploadView extends VerticalLayout {
         FroalaViewer viewer = new DemoFroalaViewer();
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
 
-        add(new Paragraph("Upload an image, a file or a video through the popup, or drop or paste an image. The "
-                + "handler stores it and returns a /froala-upload/... link, which the viewer below shows."), editor,
-                viewer);
+        VerticalLayout sample = new VerticalLayout(new Paragraph(description), editor, viewer);
+        sample.setPadding(false);
+
+        return sample;
     }
 }

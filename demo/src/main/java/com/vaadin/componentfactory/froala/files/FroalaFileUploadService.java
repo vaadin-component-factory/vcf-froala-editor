@@ -22,8 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 /**
- * The files users uploaded in the demo's editors. {@link FroalaFileServingRestController} serves them under the link
- * {@link #store(byte[])} returns.
+ * The files users uploaded in the demo's editors. {@link FroalaFileServingVaadinRequestHandler} and
+ * {@link FroalaFileServingRestController} each serve them under a path of their own.
  * <p>
  * Demo only. Files live in a map for as long as the process does. No disk, no size cap, no cleanup, no access control.
  */
@@ -32,11 +32,11 @@ public class FroalaFileUploadService {
 
     private final Map<String, byte[]> files = new ConcurrentHashMap<>();
 
-    /** Stores the bytes and returns the link they are served under, which stays valid as long as the process runs. */
+    /** Stores the bytes and returns their id, which stays valid as long as the process runs. */
     public String store(byte[] bytes) {
         String id = UUID.randomUUID().toString();
         files.put(id, bytes);
-        return "/froala-upload/" + id;
+        return id;
     }
 
     /** The bytes stored under the id, or null for an unknown one. */

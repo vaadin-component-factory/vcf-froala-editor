@@ -519,6 +519,31 @@ stays valid across sessions. A URL of a Flow `DownloadHandler` does not, because
 the UI. A `FroalaViewer` opens such a link only after `setRouterIgnorePaths`, see
 [Viewer](#viewer).
 
+A Spring controller serves them, or without Spring a Vaadin `RequestHandler`. A
+`VaadinServiceInitListener` registers the handler. It runs before Flow's router and gets the
+user's `VaadinSession`, so the application can check who asks:
+
+```java
+public class ImageServing implements VaadinServiceInitListener {
+
+    @Override
+    public void serviceInit(ServiceInitEvent event) {
+        event.addRequestHandler((session, request, response) -> {
+            String path = request.getPathInfo();
+            if (path == null || !path.startsWith("/images/")) {
+                return false; // everything else goes to Flow
+            }
+            // check the user, then write the file with a content type the application decides
+            return true;
+        });
+    }
+}
+```
+
+Without Spring, the file `META-INF/services/com.vaadin.flow.server.VaadinServiceInitListener`
+names the listener. In a Spring application a bean is enough. The demo's Upload / Files view
+shows both ways, including how the content type is decided.
+
 Spring Boot limits a multipart upload to 1 MB by default, and that limit applies to the upload
 handler as well. A larger file is refused before the handler runs, and the user sees Froala's
 "Error during file upload." Raise it to what the editor should accept. The request carries
