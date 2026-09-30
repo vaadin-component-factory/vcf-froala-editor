@@ -56,26 +56,24 @@ public class UploadView extends VerticalLayout {
         tabs.add("Spring Rest Controller", createSample(springRestHandler, "FroalaFileServingRestController serves "
                 + "the files with a Spring REST controller. Its path is covered by the application's Spring Security "
                 + "rules like any other."));
-        tabs.add("No upload", createSample(null, "This sample shows the behavior of the Froala editor" +
-                " when no upload handler is defined. Images and videos are embedded with their original url instead of being uploaded " +
-                " to the server. The \"file-upload\" plugin has not been activated explicitly."));
+        tabs.add("No upload", createSample(null, "This sample shows the behavior of the Froala editor"
+                + " when no upload handler is defined. Images and videos are embedded with their original url instead of being uploaded "
+                + " to the server. The \"file-upload\" plugin has not been activated explicitly."));
 
         add(new Paragraph("Upload an image, a file or a video through the popup, or drop or paste an image. The "
                 + "handler stores it and returns a link, which the viewer below shows."), tabs);
     }
 
     private static VerticalLayout createSample(FroalaUploadHandler handler, String description) {
-        FroalaOptions options = FroalaOptions.defaults()
-                .withToolbarButtons(FroalaToolbar.of(FroalaButton.INSERT_IMAGE, FroalaButton.INSERT_FILE,
-                        FroalaButton.INSERT_VIDEO));
+        FroalaOptions options = FroalaOptions.defaults().withToolbarButtons(
+                FroalaToolbar.of(FroalaButton.INSERT_IMAGE, FroalaButton.INSERT_FILE, FroalaButton.INSERT_VIDEO));
 
-        if(handler != null) {
+        if (handler != null) {
             options = options.withPluginsEnabled(FroalaPlugin.IMAGE, FroalaPlugin.FILE, FroalaPlugin.VIDEO);
         } else {
             // no file upload, so we disable the respective plugin and hide implicitly hide the toolbar button
             options = options.withPluginsEnabled(FroalaPlugin.IMAGE, FroalaPlugin.VIDEO);
         }
-
 
         FroalaEditor editor = new FroalaEditor(options);
         editor.setWidthFull();
