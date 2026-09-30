@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.vaadin.componentfactory.froala.rest;
+package com.vaadin.componentfactory.froala.files;
 
 import java.util.Map;
 import java.util.UUID;
@@ -22,13 +22,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 /**
- * The files users uploaded in the demo's editors. {@link FroalaUploadController} serves them under the link
+ * The files users uploaded in the demo's editors. {@link FroalaFileServingRestController} serves them under the link
  * {@link #store(byte[])} returns.
  * <p>
  * Demo only. Files live in a map for as long as the process does. No disk, no size cap, no cleanup, no access control.
  */
 @Service
-public class UploadedFiles {
+public class FroalaFileUploadService {
 
     private final Map<String, byte[]> files = new ConcurrentHashMap<>();
 

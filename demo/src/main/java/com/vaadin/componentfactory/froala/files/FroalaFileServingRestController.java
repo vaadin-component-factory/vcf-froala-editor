@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.vaadin.componentfactory.froala.rest;
+package com.vaadin.componentfactory.froala.files;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -28,8 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Serves the files in {@link UploadedFiles} under the link it returns. The demo's editors upload through the add-on's
- * upload handlers, which need no endpoint, but the link they put into the document has to be served by the application.
+ * Serves the files in {@link FroalaFileUploadService} under the link it returns. The demo's editors upload through the
+ * add-on's upload handlers, which need no endpoint, but the link they put into the document has to be served by the
+ * application.
  * <p>
  * What is <b>not</b> optional even here: the content type and the file name a browser sees on the way back are decided
  * by this class, not by whoever uploaded. The endpoint answers on the application's own origin, so serving an uploaded
@@ -37,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/froala-upload")
-public class FroalaUploadController {
+public class FroalaFileServingRestController {
 
     /**
      * What may be handed back with its own content type. Everything else is served as a download, because this endpoint
@@ -46,9 +47,9 @@ public class FroalaUploadController {
     private static final Set<String> INLINE_TYPES = Set.of("image/png", "image/jpeg", "image/gif", "image/webp",
             "image/bmp");
 
-    private final UploadedFiles files;
+    private final FroalaFileUploadService files;
 
-    public FroalaUploadController(UploadedFiles files) {
+    public FroalaFileServingRestController(FroalaFileUploadService files) {
         this.files = files;
     }
 

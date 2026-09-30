@@ -20,7 +20,7 @@ import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaUploadHandler;
 import com.vaadin.componentfactory.froala.FroalaViewer;
-import com.vaadin.componentfactory.froala.rest.UploadedFiles;
+import com.vaadin.componentfactory.froala.files.FroalaFileUploadService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.router.Menu;
@@ -31,7 +31,7 @@ import com.vaadin.flow.router.Route;
 @Menu(title = "Full", order = 0.5)
 public class FullView extends FroalaViewBase {
 
-    public FullView(UploadedFiles uploadedFiles) {
+    public FullView(FroalaFileUploadService uploadedFiles) {
         getEditor().setHeight("500px");
         getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
                 .withToolbarButtons(FroalaToolbar.froalaDefault()));
@@ -47,7 +47,6 @@ public class FullView extends FroalaViewBase {
                         + "service, such as the AI assistant, collaboration or the image manager. The toolbar is "
                         + "Froala's own. Uploads go to the demo's upload handler, as in the Uploads view."));
 
-        getViewer().setMinHeight("250px");
     }
 
     @Override

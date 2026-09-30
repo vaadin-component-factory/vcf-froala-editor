@@ -41,7 +41,6 @@ public class BasicView extends FroalaViewBase {
                         + "lists, quotes, links and find and replace. Nothing that inserts images, tables or other "
                         + "content. The toolbar is FroalaToolbar.basics()."));
 
-        getViewer().setMinHeight("250px");
     }
 
     @Override

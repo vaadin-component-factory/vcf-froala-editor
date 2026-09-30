@@ -34,9 +34,7 @@ public abstract class FroalaViewBase extends VerticalLayout {
         editor.setId("editor");
         editor.setHelperText("Just a helper text");
 
-        viewer = new FroalaViewer();
-        viewer.setId("viewer");
-        viewer.getStyle().setBorder("2px dashed gray").setBorderRadius("5px");
+        viewer = new DemoFroalaViewer();
 
         toolbar = createToolbar(editor, viewer);
 
