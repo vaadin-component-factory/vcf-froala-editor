@@ -67,6 +67,9 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
     /** A letter or digit as a {@link Key} names it, e.g. {@code KeyT} or {@code Digit4}, or a bare {@code t}. */
     private static final Pattern SHORTCUT_KEY = Pattern.compile("(?:Key|Digit)?([A-Za-z0-9])");
 
+    /** A function key from F1 to F12 as a {@link Key} names it. Their key codes are 112 to 123, on every layout. */
+    private static final Pattern FUNCTION_KEY = Pattern.compile("F([1-9]|1[0-2])");
+
     /**
      * Creates a command.
      *
@@ -119,14 +122,20 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
      * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the given key. Froala shows the shortcut
      * in the button's tooltip.
      *
-     * @param key a letter or digit key, e.g. {@link Key#KEY_T} or {@link Key#DIGIT_4}
+     * @param key a letter, digit or function key from F1 to F12, e.g. {@link Key#KEY_T}, {@link Key#DIGIT_4} or
+     *            {@link Key#F10}
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
      * @return a new command with the shortcut
-     * @throws IllegalArgumentException if the key is not a letter or digit, or a modifier is not Shift or Alt
+     * @throws IllegalArgumentException if the key is not a letter, digit or function key from F1 to F12, or a modifier
+     *             is not Shift or Alt
      * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
         Objects.requireNonNull(key, "key must not be null");
+        Matcher functionKey = FUNCTION_KEY.matcher(key.getKeys().get(0));
+        if (functionKey.matches()) {
+            return withShortcut(111 + Integer.parseInt(functionKey.group(1)), functionKey.group(), modifiers);
+        }
         String letter = shortcutLetter(key);
         // Froala matches the event's keyCode, which for a letter or digit is the code of the upper case character
         return withShortcut(letter.charAt(0), letter, modifiers);
@@ -207,7 +216,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
         Matcher matcher = SHORTCUT_KEY.matcher(key.getKeys().get(0));
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
-                    "A shortcut key must be a letter or a digit, but got " + key.getKeys().get(0));
+                    "A shortcut key must be a letter, a digit or F1 to F12, but got " + key.getKeys().get(0));
         }
         return matcher.group(1).toUpperCase(Locale.ROOT);
     }

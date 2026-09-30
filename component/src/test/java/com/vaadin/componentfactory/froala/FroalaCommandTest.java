@@ -69,7 +69,20 @@ class FroalaCommandTest {
         // Froala binds Ctrl or Cmd plus a key, so Ctrl is implied and Meta cannot be asked for
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.CONTROL));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T, KeyModifier.META));
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.F2));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.F13));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.SLASH));
+    }
+
+    @Test
+    void functionKeyShortcut_isSentAsItsKeyCodeAndName() {
+        FroalaCommand f1 = new FroalaCommand("a", "A", VaadinIcon.STAR.create()).withShortcut(Key.F1);
+        FroalaCommand f12 = new FroalaCommand("b", "B", VaadinIcon.STAR.create()).withShortcut(Key.F12,
+                KeyModifier.SHIFT);
+
+        assertEquals("{\"keyCode\":112,\"letter\":\"F1\",\"shift\":false,\"alt\":false}",
+                f1.toJson().getObject("shortcut").toJson());
+        assertEquals("{\"keyCode\":123,\"letter\":\"F12\",\"shift\":true,\"alt\":false}",
+                f12.toJson().getObject("shortcut").toJson());
     }
 
     @Test
