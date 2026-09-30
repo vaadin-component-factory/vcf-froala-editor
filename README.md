@@ -569,6 +569,14 @@ FroalaViewer viewer = new FroalaViewer();
 viewer.setContent(editor.getValue());
 ```
 
+It loads the add-on's stylesheets itself, so it needs no editor on the same page. It carries
+the class `vaadin-theme` for the editor's default theme. Remove it when your editors use
+another Froala theme:
+
+```java
+viewer.removeClassName("vaadin-theme");
+```
+
 ### Sanitizing
 
 Nothing is sanitized on the server, neither the value `FroalaEditor` receives nor what

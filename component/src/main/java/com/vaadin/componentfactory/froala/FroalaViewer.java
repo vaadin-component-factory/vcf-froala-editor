@@ -21,7 +21,6 @@ import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.NpmPackage;
-import com.vaadin.flow.dom.Style;
 
 /**
  * Displays HTML written in a {@link FroalaEditor}, outside the editor. It imports Froala's stylesheet and carries
@@ -29,19 +28,29 @@ import com.vaadin.flow.dom.Style;
  * approach for <a href=
  * "https://froala.com/wysiwyg-editor/docs/overview/install-froala-commonjs/#displaying-content-outside-of-the-froala-editor">displaying
  * content outside the editor</a>.
+ *
+ * <p>
+ * The viewer also carries the class {@code vaadin-theme}, so the content rules of {@link FroalaTheme#VAADIN}, such as
+ * the colours of tracked changes, apply as they do in the editor. An application whose editors use another Froala theme
+ * removes it with {@code removeClassName("vaadin-theme")}. The base text, i.e. font, colour, size, weight and line
+ * height, comes from the page, which under Lumo gives the same values as the editor by default. Overriding the
+ * {@code --vcf-froala-*} or input field properties changes the editor only.
  */
 @Tag("vcf-froala-viewer")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
 @CssImport("froala-editor/css/froala_editor.pkgd.min.css")
+@CssImport("./vcf-froala-editor/vcf-froala-editor.css")
+@CssImport("./vcf-froala-editor/vcf-froala-theme-vaadin.css")
+@CssImport("./vcf-froala-editor/vcf-froala-theme-vaadin-rules.css")
 public class FroalaViewer extends Component implements HasSize, HasStyle {
 
     /**
-     * Creates a new instance and adds Froala's {@code fr-view} class to it. Replacing the class list with
-     * {@link HasStyle#setClassName(String)} removes that class, and the content then loses Froala's styling.
+     * Creates a new instance and adds Froala's {@code fr-view} class and the {@code vaadin-theme} class to it.
+     * Replacing the class list with {@link HasStyle#setClassName(String)} removes both, and the content then loses
+     * Froala's styling.
      */
     public FroalaViewer() {
-        addClassName("fr-view");
-        getStyle().setDisplay(Style.Display.BLOCK);
+        addClassNames("fr-view", "vaadin-theme");
     }
 
     /**

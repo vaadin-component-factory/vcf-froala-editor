@@ -18,6 +18,7 @@ package com.vaadin.componentfactory.froala;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import com.github.mvysny.kaributesting.v10.ElementUtilsKt;
 import com.github.mvysny.kaributesting.v10.MockVaadin;
@@ -66,6 +67,13 @@ class FroalaEditorKaribuTest {
     @AfterEach
     void tearDown() {
         MockVaadin.tearDown();
+    }
+
+    @Test
+    void viewer_carriesFroalasViewClassAndTheVaadinTheme() {
+        FroalaViewer viewer = new FroalaViewer();
+
+        assertEquals(Set.of("fr-view", "vaadin-theme"), viewer.getClassNames());
     }
 
     @Test
