@@ -55,11 +55,12 @@ Froala's editable area with `aria-labelledby` and `aria-describedby`.
 editor.setLicenseKey(key);
 ```
 
-The key is set on each editor. There is no global default, so an application that reads
-its key from configuration passes it to every editor it creates. The key is read when the
-editor is built in the browser. On an editor that is already attached, a new key takes
-effect only with the next build. That is a detach and attach, or a `setOptions` call with
-other options:
+The key is set on each editor. There is no global default, so an application that reads its key
+from configuration passes it to every editor it creates.
+
+The key is read when the editor is built in the browser. On an editor that is already attached,
+a new key takes effect only with the next build. That is a detach and attach, or a `setOptions`
+call with other options:
 
 ```java
 editor.setLicenseKey(key);                          // not yet used by the running editor
@@ -76,10 +77,12 @@ editor.setOptions(options.withSpellcheck(false));   // rebuilds the editor, now 
 | `ON_BLUR` | when the editor loses focus |
 | `INTERVAL` | every `setIntervalPeriod` milliseconds (default 2000) while there are changes |
 
-`setValueChangeTimeout` sets Froala's `typingTimer` for `ON_CHANGE` (default 500). Below
-250, Froala's own minimum, it throws. For example `setValueChangeTimeout(100)` throws an
-`IllegalArgumentException`. Toolbar commands, paste, cut and undo are sent at once.
-`INTERVAL` is the only mode that sends anything while the user types without pausing.
+`setValueChangeTimeout` sets Froala's `typingTimer` for `ON_CHANGE` (default 500). Below 250,
+Froala's own minimum, it throws. For example `setValueChangeTimeout(100)` throws an
+`IllegalArgumentException`.
+
+Toolbar commands, paste, cut and undo are sent at once. `INTERVAL` is the only mode that sends
+anything while the user types without pausing.
 
 This is the add-on's own `ValueChangeMode`, not Vaadin's
 `com.vaadin.flow.data.value.ValueChangeMode`:
@@ -109,10 +112,11 @@ editor.setOptions("{\"tabSpaces\": 4}");
 editor.setOptions(jsonObject);
 ```
 
-`FroalaOptions` is immutable, so one instance can be shared between editors. Not every
-Froala option has a `with…` method, but any option can be passed as JSON. `getOptionsJson()`
-returns the options set with `setOptions`, whichever way they were set. The add-on's own
-defaults, such as the `vaadin` theme, are not part of it.
+`FroalaOptions` is immutable, so one instance can be shared between editors. Not every Froala
+option has a `with…` method, but any option can be passed as JSON.
+
+`getOptionsJson()` returns the options set with `setOptions`, whichever way they were set. The
+add-on's own defaults, such as the `vaadin` theme, are not part of it.
 
 Limits of options:
 
@@ -169,8 +173,7 @@ FroalaOptions options = FroalaOptions.defaults()
   plugins.add(FroalaPlugin.TABLE);
   options = options.withPluginsEnabled(plugins);
   ```
-
-  `FroalaPlugin.all()` enables every plugin, as in
+- `FroalaPlugin.all()` enables every plugin, as in
   `options.withPluginsEnabled(FroalaPlugin.all())`. Some plugins need a server, a second
   library or a paid service, such as `IMAGE_MANAGER` or `SPELL_CHECKER`. The Javadoc of each
   constant says which.
@@ -199,9 +202,9 @@ FroalaOptions options = FroalaOptions.defaults()
       }
   }
   ```
-****- `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
-  A name without a file leaves the editor in English. For example `withLanguage("de_DE")`
-  shows English tooltips, because the file is called `de`.
+- `withLanguage` takes the name of a file in Froala's `js/languages/`, such as `de` or `pt_br`.
+  A name without a file leaves the editor in English. For example `withLanguage("de_DE")` shows
+  English tooltips, because the file is called `de`.
 - Without `withLanguage` the editor takes the language of the UI's locale, `UI.getLocale()`.
   It tries language and country first and the language alone second. For example `zh_CN`
   gives `zh_cn`, and `de_AT` gives `de` because there is no `de_at` file. A locale without a
@@ -219,12 +222,12 @@ FroalaOptions options = FroalaOptions.defaults()
   history. A build without a language reads the locale again. Only options that differ from
   the current ones cause a build, though. For example `setOptions` with the same options after
   `UI.setLocale` leaves the editor in its old language.
-- Track changes marks insertions and deletions in the HTML. That markup reaches the server
-  with the value unless the changes are accepted or rejected first. For example a deletion
-  stays in the value as a `<span data-tracking-deleted="true">`. Froala also adds the plugin's
-  five buttons to every toolbar, including one you set yourself. For example
-  `FroalaToolbar.of("bold", "italic")` then shows `showChanges`, `applyAll`, `removeAll`,
-  `applyLast` and `removeLast` as well.
+- Track changes marks insertions and deletions in the HTML. That markup reaches the server with
+  the value unless the changes are accepted or rejected first. For example a deletion stays in
+  the value as a `<span data-tracking-deleted="true">`.
+- Froala adds the five buttons of track changes to every toolbar, including one you set
+  yourself. For example `FroalaToolbar.of("bold", "italic")` then shows `showChanges`,
+  `applyAll`, `removeAll`, `applyLast` and `removeLast` as well.
 
 ### Text direction
 
@@ -243,11 +246,12 @@ FroalaOptions.defaults().withDirection(FroalaTextDirection.RTL);                
 FroalaOptions.defaults().withLanguage("en").withDirection(FroalaTextDirection.RTL); // dir="rtl" and English under any locale
 ```
 
-The direction is applied each time the editor is built, and it wins over a `dir` you set on
-the component yourself. With neither a language file nor a direction, Froala's default `AUTO`
-applies and sets no `dir`. When a build with `AUTO` follows one with a direction, the
-component gets back the `dir` it had before, your own or none. With none it follows the page
-again.
+The direction is applied each time the editor is built, and it wins over a `dir` you set on the
+component yourself.
+
+With neither a language file nor a direction, Froala's default `AUTO` applies and sets no
+`dir`. When a build with `AUTO` follows one with a direction, the component gets back the `dir`
+it had before, your own or none. With none it follows the page again.
 
 ### Toolbar
 
@@ -369,9 +373,12 @@ registration.remove(); // the command and its buttons are gone from this editor
 
 The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
 `SvgIcon` with a URL or a `FontIcon`. An `SvgIcon` with a `DownloadHandler` shows nothing,
-because it has no URL until it is attached. A shortcut is always Ctrl, or Cmd on a Mac, plus a
-key, because Froala requires it. Froala adds Ctrl or Cmd itself, and a `KeyModifier.CONTROL`
-or `KeyModifier.META` given anyway is ignored. Shift and Alt can be added.
+because it has no URL until it is attached.
+
+A shortcut is always Ctrl, or Cmd on a Mac, plus a key, because Froala requires it. Froala adds
+Ctrl or Cmd itself, and a `KeyModifier.CONTROL` or `KeyModifier.META` given anyway is ignored.
+Shift and Alt can be added.
+
 `withShortcut(Key, ...)` takes a letter, a digit or a function key from F1 to F12. Any other key
 is given by its key code. That is the keyboard event's `keyCode`, which is what Froala expects.
 The label is what the button's tooltip shows for the key. Which code a key has on which keyboard
@@ -503,11 +510,14 @@ editor.setFileUploadHandler(...);
 editor.setVideoUploadHandler(...);
 ```
 
-The upload goes through Flow, so it needs no endpoint of its own. It is refused while the editor
-is disabled or read-only, and the handler runs outside the UI's lock like any Flow upload. The
-application serves the stored files itself, like `/images/<id>` above, under a link that stays
-valid across sessions. A URL of a Flow `DownloadHandler` does not, because it is bound to the UI.
-A `FroalaViewer` opens such a link only after `setRouterIgnorePaths`, see [Viewer](#viewer).
+The upload goes through Flow, so it needs no endpoint of its own. It is refused while the
+editor is disabled or read-only, and the handler runs outside the UI's lock like any Flow
+upload.
+
+The application serves the stored files itself, like `/images/<id>` above, under a link that
+stays valid across sessions. A URL of a Flow `DownloadHandler` does not, because it is bound to
+the UI. A `FroalaViewer` opens such a link only after `setRouterIgnorePaths`, see
+[Viewer](#viewer).
 
 Spring Boot limits a multipart upload to 1 MB by default, and that limit applies to the upload
 handler as well. A larger file is refused before the handler runs, and the user sees Froala's
@@ -549,17 +559,18 @@ html {
 }
 ```
 
-The greys and tints are mixed from the theme's colors, so `--vcf-froala-neutral-color`
-changes every grey in the editor. Hues Lumo has no color for keep their tone, such as the
-purple of track changes. The field states look as they do on a Vaadin text field. The heights
-and spacing of the toolbar and popups stay Froala's, because Froala places parts of them at
-fixed offsets.
+The greys and tints are mixed from the theme's colors, so `--vcf-froala-neutral-color` changes
+every grey in the editor. Hues Lumo has no color for keep their tone, such as the purple of
+track changes. The field states look as they do on a Vaadin text field.
+
+The heights and spacing of the toolbar and popups stay Froala's, because Froala places parts of
+them at fixed offsets.
 
 The editor provides a set of variants for the Vaadin theme:
 
 | Variant | What it does |
 |---|---|
-| `OUTLINED` | Outlines the editor with a border, no field background. Let the editor appear like Froala's native look. |
+| `OUTLINED` | Outlines the editor with a border, no field background. Looks like Froala's native editor. |
 | `NO_HOVER_HIGHLIGHT` | No highlight while the mouse is over the editor. |
 
 These can be set like theme variants on other fields:
@@ -568,9 +579,8 @@ These can be set like theme variants on other fields:
 editor.addThemeVariants(FroalaEditorVariant.OUTLINED, FroalaEditorVariant.NO_HOVER_HIGHLIGHT);
 ```
 
-Please note, that these theme variants are not the built-in Froala themes, nor do they affect
-them. To change the whole editor theme to a Froala native theme, you have to set that via the
-options:
+These theme variants are not Froala's built-in themes and do not affect them. To change the
+whole editor theme to a Froala native theme, you have to set that via the options:
 
 ```java
 // Froala's own look, no theme
@@ -628,10 +638,12 @@ FroalaViewer viewer = new FroalaViewer();
 viewer.setContent(editor.getValue());
 ```
 
-It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base
-text takes font, colour and size from the page, which under Lumo matches the editor. The
-`--vcf-froala-*` properties change the editor only. The viewer carries the class `vaadin-theme`
-for the editor's default theme. Remove it when your editors use another Froala theme:
+It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base text
+takes font, colour and size from the page, which under Lumo matches the editor. The
+`--vcf-froala-*` properties change the editor only.
+
+The viewer carries the class `vaadin-theme` for the editor's default theme. Remove it when your
+editors use another Froala theme:
 
 ```java
 viewer.removeClassName("vaadin-theme");
@@ -648,8 +660,9 @@ viewer.setRouterIgnorePaths("/files", "/reports/*.pdf");
 
 A path is relative to the application's root, so it holds under any context path. A `*` matches
 any characters, and a path without one covers everything below it, so `/files` stands for
-`/files/*`. For HTML you display some other way, the static method does the same for any
-component:
+`/files/*`.
+
+For HTML you display some other way, the static method does the same for any component:
 
 ```java
 FroalaViewer.applyRouterIgnore(div, "/files");
@@ -668,11 +681,14 @@ String safe = Jsoup.clean(editor.getValue(), Safelist.relaxed());
 
 Froala's cleaning in the browser is still worth setting, because it decides what the user can
 put into the editor at all. `FroalaOptions` has a `withHtml…` method for each of Froala's
-`html…` options. The lists hold regular expressions, matched against the whole name and
-ignoring case. For example `"h[1-6]"` allows `H3`, and `"b"` allows `b` but not `br`. The two
-exceptions are `withHtmlAllowedEmptyTags` and `withHtmlDoNotWrapTags`, which take plain tag
-names. A tag that is not allowed is unwrapped and its text stays. A tag in `withHtmlRemoveTags`
-goes together with its content.
+`html…` options.
+
+The lists hold regular expressions, matched against the whole name and ignoring case. For
+example `"h[1-6]"` allows `H3`, and `"b"` allows `b` but not `br`. The two exceptions are
+`withHtmlAllowedEmptyTags` and `withHtmlDoNotWrapTags`, which take plain tag names.
+
+A tag that is not allowed is unwrapped and its text stays. A tag in `withHtmlRemoveTags` goes
+together with its content.
 
 ```java
 FroalaOptions options = FroalaOptions.defaults()
@@ -682,12 +698,13 @@ FroalaOptions options = FroalaOptions.defaults()
         .withHtmlAllowedStyleProps(List.of()); // an empty list removes every style attribute
 ```
 
-Pasted text gets its own options on top of these. `withPastePlain(true)` keeps lists and
-tables and turns everything else into plain paragraphs. `withPasteDeniedTags`,
-`withPasteDeniedAttrs` and `withPasteAllowedStyleProps` narrow what a paste keeps. The two
-denied lists take exact names, not patterns, so `"h[1-6]"` denies nothing. Text from Word goes
-through `FroalaPlugin.WORD_PASTE`, which asks the user whether to keep the formatting. The
-`withWord…` methods change that.
+Pasted text gets its own options on top of these. `withPastePlain(true)` keeps lists and tables
+and turns everything else into plain paragraphs. `withPasteDeniedTags`, `withPasteDeniedAttrs`
+and `withPasteAllowedStyleProps` narrow what a paste keeps. The two denied lists take exact
+names, not patterns, so `"h[1-6]"` denies nothing.
+
+Text from Word goes through `FroalaPlugin.WORD_PASTE`, which asks the user whether to keep the
+formatting. The `withWord…` methods change that.
 
 ```java
 FroalaOptions options = FroalaOptions.defaults()
@@ -717,9 +734,10 @@ sets, in a global stylesheet (the editor's content lives in the light DOM):
 
 This puts the button inside the editor box. The row of insert buttons that opens from it
 follows along, because Froala positions it from the button's computed `left`. In an empty
-editor the button covers the start of the placeholder text. The add-on cannot offer a
-custom property for this, because the right value depends on the layout around each editor. If
-you need it to vary, use a property of your own:
+editor the button covers the start of the placeholder text.
+
+The add-on cannot offer a custom property for this, because the right value depends on the
+layout around each editor. If you need it to vary, use a property of your own:
 
 ```css
 .fr-quick-insert {
