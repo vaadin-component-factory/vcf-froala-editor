@@ -353,13 +353,18 @@ appears, in the toolbar or in a popup's button list, like any of Froala's comman
 FroalaCommand insertTemplate = new FroalaCommand("insertTemplate", "Insert template", VaadinIcon.FILE_TEXT.create())
         .withShortcut(Key.KEY_T, KeyModifier.SHIFT); // Ctrl+Shift+T, or Cmd+Shift+T on a Mac
 
+// the command's name places its button, here in the toolbar after bold
 editor.setOptions(FroalaOptions.defaults()
-        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, "insertTemplate"))
-        .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, "insertTemplate")));
+        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.name())));
 Registration registration = editor.addCommand(insertTemplate,
         event -> editor.replaceSelectionContent("<p>Dear customer,</p>"));
 
 registration.remove(); // the command and its buttons are gone from this editor
+
+// you can also add the command at multiple places, here in the toolbar and in the popup that opens on a link
+editor.setOptions(FroalaOptions.defaults()
+        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.name()))
+        .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, insertTemplate.name())));
 ```
 
 The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
