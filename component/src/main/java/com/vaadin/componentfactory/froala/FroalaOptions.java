@@ -1069,9 +1069,8 @@ public final class FroalaOptions implements Serializable {
      * Sets the URL images are uploaded to. Froala's {@code imageUploadURL}.
      *
      * <p>
-     * Without one Froala does not upload at all. It reads the file in the browser and inserts a {@code blob:} URL,
-     * which is valid only in the tab that created it. The document the server stores then points at nothing after a
-     * reload, so leaving this unset means leaving image upload switched off, not making it local.
+     * For an endpoint of the application's own. {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)} needs
+     * none and takes precedence over this URL. Without either the editor switches image upload off, see there.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer

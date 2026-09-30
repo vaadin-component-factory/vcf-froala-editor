@@ -15,6 +15,7 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -49,6 +50,8 @@ import com.vaadin.flow.component.shared.HasThemeVariant;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.server.streams.UploadEvent;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.shared.Registration;
 
 /**
@@ -478,6 +481,65 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * Lets users upload images in the editor. The handler stores each uploaded image and returns the link the editor
+     * puts into the document. Covers the upload button, dropping an image onto the editor and pasting one.
+     *
+     * <pre>
+     * editor.setImageUploadHandler(event -&gt; {
+     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     return "/images/" + id;
+     * });
+     * </pre>
+     *
+     * <p>
+     * Without a handler, and without Froala's {@code imageUploadURL} in the options, image upload is switched off.
+     * Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the
+     * stored HTML points at nothing after a reload. A handler takes precedence over
+     * {@link FroalaOptions#withImageUploadUrl(String)}.
+     *
+     * <p>
+     * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
+     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * {@link #setOptions(FroalaOptions)}.
+     *
+     * @param handler the handler, or null to remove it
+     */
+    public void setImageUploadHandler(FroalaUploadHandler handler) {
+        setUploadHandler("image-upload-url", handler);
+    }
+
+    /**
+     * Lets users upload files in the editor, which inserts a link to each one. Behaves like
+     * {@link #setImageUploadHandler(FroalaUploadHandler)} in every respect, with Froala's {@code fileUploadURL} and
+     * {@link FroalaOptions#withFileUploadUrl(String)} in place of the image ones.
+     *
+     * @param handler the handler, or null to remove it
+     */
+    public void setFileUploadHandler(FroalaUploadHandler handler) {
+        setUploadHandler("file-upload-url", handler);
+    }
+
+    /**
+     * Lets users upload videos in the editor. Behaves like {@link #setImageUploadHandler(FroalaUploadHandler)} in every
+     * respect, with Froala's {@code videoUploadURL} and {@link FroalaOptions#withVideoUploadUrl(String)} in place of
+     * the image ones. Pasting is left to Froala, which does not upload a pasted video.
+     *
+     * @param handler the handler, or null to remove it
+     */
+    public void setVideoUploadHandler(FroalaUploadHandler handler) {
+        setUploadHandler("video-upload-url", handler);
+    }
+
+    /** Flow turns the handler into a URL in the attribute, which the client passes to Froala as the upload URL. */
+    private void setUploadHandler(String attribute, FroalaUploadHandler handler) {
+        if (handler == null) {
+            getElement().removeAttribute(attribute);
+        } else {
+            getElement().setAttribute(attribute, new LinkUpload(handler));
+        }
+    }
+
+    /**
      * Adds a command of the application's own to this editor and runs the listener whenever the user triggers it in
      * this editor, by a button or by its shortcut. Where the command's button appears is decided by its name, in the
      * toolbar or in a popup's button list:
@@ -792,6 +854,42 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public int getIntervalPeriod() {
         return getElement().getProperty("intervalPeriod", DEFAULT_INTERVAL_PERIOD);
+    }
+
+    /**
+     * Receives Froala's upload and answers with the {@code {"link": "…"}} JSON Froala expects. Flow already refuses an
+     * upload to a disabled editor. The status on success and failure is set by Flow's {@code responseHandled}.
+     */
+    private final class LinkUpload implements UploadHandler {
+
+        private final FroalaUploadHandler handler;
+
+        private LinkUpload(FroalaUploadHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public void handleUploadRequest(UploadEvent event) throws IOException {
+            // a form field such as Froala's imageUploadParams, not a file
+            if (event.getFileName() == null) {
+                return;
+            }
+
+            // Flow runs an upload outside the session lock. Read-only locks the value against the client like disabled
+            // does, and the uploaded file would reach the value as a change from the client.
+            event.getUI().accessSynchronously(() -> {
+                if (isReadOnly()) {
+                    throw new IllegalStateException("Upload refused, the editor is read-only");
+                }
+            });
+
+            String link = Objects.requireNonNull(handler.upload(event), "The upload handler returned no link");
+
+            JsonObject body = Json.createObject();
+            body.put("link", link);
+            event.getResponse().setContentType("application/json;charset=UTF-8");
+            event.getResponse().getWriter().write(body.toJson());
+        }
     }
 
     /** A command together with the listener it was added with, and its popover or null for none. */

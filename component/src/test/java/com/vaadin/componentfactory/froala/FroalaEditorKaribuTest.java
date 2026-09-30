@@ -108,6 +108,19 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
+    void uploadHandler_givesTheElementAnUploadUrlAndNullTakesItAway() {
+        FroalaEditor editor = attachedEditor();
+
+        editor.setImageUploadHandler(event -> "/images/1");
+
+        assertTrue(editor.getElement().hasAttribute("image-upload-url"));
+
+        editor.setImageUploadHandler(null);
+
+        assertFalse(editor.getElement().hasAttribute("image-upload-url"));
+    }
+
+    @Test
     void licenseKey_nullRemovesTheProperty() {
         FroalaEditor editor = attachedEditor();
         editor.setLicenseKey("test-key");

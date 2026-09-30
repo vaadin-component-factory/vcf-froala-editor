@@ -48,6 +48,8 @@ the editor runs with Froala's watermark.
 
 - The server can insert HTML at the caret or replace the selection with it.
 - The server can select the whole content.
+- Images, files and videos are uploaded through Flow to a handler of the application, which
+  stores the file and returns its link. No upload endpoint of its own is needed.
 - A listener reports whether text is selected, e.g. to enable an action only then.
 - `FroalaViewer` shows stored HTML outside the editor, looking as it did while editing. It
   needs no editor on the page.
@@ -56,8 +58,8 @@ the editor runs with Froala's watermark.
 
 - The handling of unsanitized HTML is documented, with an example of sanitizing on the server
   with jsoup.
-- Upload is off until an upload URL is set. So no `blob:` links end up in the stored HTML that
-  would be dead after a reload.
+- Upload is off until an upload handler or URL is set. So no `blob:` links end up in the stored
+  HTML that would be dead after a reload.
 
 ## Quality
 

@@ -78,6 +78,9 @@ function registerCommands(commands) {
   }
 }
 
+// the kinds of file Froala uploads, each with its own options such as imageUploadURL and imageUpload
+const UPLOAD_KINDS = ['image', 'file', 'video'];
+
 class FroalaEditorElement extends SlotStylesMixin(
   FieldMixin(ThemableMixin(ElementMixin(FocusMixin(DisabledMixin(PolylitMixin(LitElement))))))
 ) {
@@ -166,6 +169,18 @@ class FroalaEditorElement extends SlotStylesMixin(
     // not part of _config(), because the buttons show a change without a rebuild.
     activeCommands: {
       type: Array,
+    },
+
+    // The URLs of the upload handlers the server set, from the attributes image-upload-url, file-upload-url and
+    // video-upload-url, which Flow fills in when it registers a handler. Declared for the same reason as `options`.
+    imageUploadUrl: {
+      type: String,
+    },
+    fileUploadUrl: {
+      type: String,
+    },
+    videoUploadUrl: {
+      type: String,
     },
   };
 
@@ -387,9 +402,10 @@ class FroalaEditorElement extends SlotStylesMixin(
     // an option, the setter wins. Assigned rather than spread so that an option the server did set is not
     // overwritten with an undefined we do not have.
     //
-    // Underneath the server's options sit two defaults of ours. The vaadin theme is on unless they pick another.
+    // Underneath the server's options sit defaults of ours. The vaadin theme is on unless they pick another.
     // The save plugin is off unless they ask for it. The value reaches the server through the value change
-    // listener, and without a saveURL the plugin only runs a failing save after every edit.
+    // listener, and without a saveURL the plugin only runs a failing save after every edit. An upload without a
+    // target is off, see _uploadsWithoutUrlOff. The URL of an upload handler goes on top, like the license key.
     //
     // pluginsEnabled is always named explicitly, because Froala's own default is every plugin registered on the page,
     // and that depends on what other editors happened to load.
@@ -398,6 +414,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     const options = {
       saveInterval: 0,
       theme: 'vaadin',
+      ...this._uploadsWithoutUrlOff(),
       ...this.options,
       pluginsEnabled: [...pluginsEnabled, ...commands.map(({ name }) => commandPlugin(name))],
     };
@@ -412,6 +429,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     if (this._valueChangeTimeout !== null) {
       options.typingTimer = this._valueChangeTimeout;
     }
+    UPLOAD_KINDS.filter((kind) => this[`${kind}UploadUrl`]).forEach((kind) => {
+      options[`${kind}UploadURL`] = this[`${kind}UploadUrl`];
+    });
 
     // Froala builds asynchronously, so an options change can arrive while the editor being replaced is still
     // bootstrapping. See _editorGeneration.
@@ -555,7 +575,34 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   /** What an editor is built from and has to be built again for when it changes, as JSON. */
   _config() {
-    return JSON.stringify([this.options ?? null, this.commands ?? []]);
+    return JSON.stringify([
+      this.options ?? null,
+      this.commands ?? [],
+      UPLOAD_KINDS.map((kind) => this[`${kind}UploadUrl`] ?? null),
+    ]);
+  }
+
+  /**
+   * Switches off every upload that has nowhere to go: no handler, no URL and no S3 or Azure target in the options.
+   * Froala would read the file in the browser and insert a `blob:` URL, which ends up in the stored HTML and is dead
+   * after a reload (#11). `imageUpload` and its siblings take the button out of the insert popup and ignore a dropped
+   * file, `imagePaste` drops a pasted image.
+   */
+  _uploadsWithoutUrlOff() {
+    const off = {};
+    UPLOAD_KINDS.filter(
+      (kind) =>
+        !this[`${kind}UploadUrl`] &&
+        !this.options?.[`${kind}UploadURL`] &&
+        !this.options?.[`${kind}UploadToS3`] &&
+        !this.options?.[`${kind}UploadToAzure`]
+    ).forEach((kind) => {
+      off[`${kind}Upload`] = false;
+    });
+    if (off.imageUpload === false) {
+      off.imagePaste = false;
+    }
+    return off;
   }
 
   _reportSelection() {

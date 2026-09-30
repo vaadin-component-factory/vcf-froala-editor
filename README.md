@@ -486,9 +486,31 @@ popover.addOpenedChangeListener(event -> editor.setCommandActive(reviewMode, eve
 
 ### Uploads
 
-Without an upload URL Froala uploads nothing. It inserts a `blob:` URL that is valid only in
-the browser tab that created it, so the stored HTML points at nothing after a reload. Set a
-URL for each kind of file the editor may insert:
+Upload is off until the editor has somewhere to send the file. Froala would otherwise insert a
+`blob:` URL that is valid only in the browser tab that created it, so the stored HTML would
+point at nothing after a reload. Switched off means the upload button is gone from the insert
+popup, and a dropped or pasted image is not inserted.
+
+An upload handler switches it on. It stores the file and returns the link the editor puts into
+the document:
+
+```java
+editor.setImageUploadHandler(event -> {
+    String id = storage.save(event.getInputStream(), event.getFileName());
+    return "/images/" + id;
+});
+editor.setFileUploadHandler(...);
+editor.setVideoUploadHandler(...);
+```
+
+The upload goes through Flow, so it needs no endpoint of its own. It is refused while the editor
+is disabled or read-only, and the handler runs outside the UI's lock like any Flow upload. The
+application serves the stored files itself, like `/images/<id>` above, under a link that stays
+valid across sessions. A URL of a Flow `DownloadHandler` does not, because it is bound to the UI.
+
+An endpoint of your own works too, with a URL in the options. It receives a multipart POST
+with the file as `file` and answers `{"link": "…"}` with the URL it serves the file under. A
+handler takes precedence over the URL:
 
 ```java
 FroalaOptions options = FroalaOptions.defaults()
@@ -496,9 +518,6 @@ FroalaOptions options = FroalaOptions.defaults()
         .withFileUploadUrl("/api/upload/file")
         .withVideoUploadUrl("/api/upload/video");
 ```
-
-The endpoint receives a multipart POST with the file as `file` and answers
-`{"link": "…"}` with the URL it serves the file under.
 
 ### Theme
 
