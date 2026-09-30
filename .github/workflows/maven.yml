@@ -1,0 +1,38 @@
+name: Build and test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    # Playwright downloads Chromium by itself, but not the system libraries it needs.
+    # The version matches the Playwright dependency in e2e/pom.xml.
+    - name: Install Playwright system dependencies
+      run: npx --yes playwright@1.62.0 install-deps chromium
+
+    # Unit and browserless tests in component, the Playwright tests in e2e.
+    - name: Build and test
+      run: mvn -B clean verify
+
+    - name: Upload test reports
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: |
+          component/target/surefire-reports/
+          e2e/target/failsafe-reports/
+        retention-days: 7
