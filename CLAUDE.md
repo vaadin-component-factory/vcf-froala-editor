@@ -194,9 +194,11 @@ one.
 
 ## Release
 
-The branch `v-herd-demo` always holds the released version, because the demo server
-deploys from it with the root `Dockerfile`. A snapshot there breaks the deployment, since
-a `-SNAPSHOT` artifact is in no public repository. That is why the steps run in this order.
+The demo server deploys from the branch `v-herd-demo` with the root `Dockerfile`, and it
+shows the released version, not the work that follows it. The build would run with a
+snapshot too, because the `Dockerfile` builds the add-on from `component/` itself. The
+order of the steps keeps the branch on the release all the same. Until the first release
+the branch carries the snapshot.
 
 1. Remove `-SNAPSHOT` from every version in the four poms (root, `component`, `demo`,
    `e2e`), the parent references and the add-on dependencies included. In `README.md`, set
@@ -204,9 +206,8 @@ a `-SNAPSHOT` artifact is in no public repository. That is why the steps run in 
    released yet.
 2. Commit as `Release <version>` and tag it with
    `git tag -a <version> -m "Release <version>"`.
-3. Bring `v-herd-demo` to the tagged state. Create it from main the first time, later merge
-   main into it with `git merge main -X theirs`. `git diff <version> HEAD` must come back
-   empty.
+3. Bring `v-herd-demo` to the tagged state by merging main into it with
+   `git merge main -X theirs`. `git diff <version> HEAD` must come back empty.
 4. The maintainer pushes main, the tag and `v-herd-demo` together, and creates the GitHub
    release.
 5. Only then bump main to the next snapshot, usually the next patch (`1.0.0` becomes
