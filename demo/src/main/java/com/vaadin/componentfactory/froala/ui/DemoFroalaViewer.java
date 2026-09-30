@@ -27,5 +27,8 @@ public class DemoFroalaViewer extends FroalaViewer {
         getStyle().setBorder("2px dashed gray").setBorderRadius("5px").setAlignSelf(Style.AlignSelf.STRETCH);
 
         setMinHeight("250px");
+
+        // The router would take a click on an uploaded file's link as a route, which it is not.
+        setRouterIgnorePaths("/froala-upload");
     }
 }

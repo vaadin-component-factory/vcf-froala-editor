@@ -15,12 +15,17 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.shared.Registration;
 
 /**
  * Displays HTML written in a {@link FroalaEditor}, outside the editor. It imports Froala's stylesheet and carries
@@ -45,6 +50,41 @@ import com.vaadin.flow.component.dependency.NpmPackage;
 public class FroalaViewer extends Component implements HasSize, HasStyle {
 
     /**
+     * The element property the click listener reads the patterns from, as regular expressions. A property is sent again
+     * when the component is attached anew, so the patterns survive a detach.
+     */
+    private static final String ROUTER_IGNORE_PROPERTY = "vcfRouterIgnorePatterns";
+
+    /**
+     * Vaadin's router takes a click on a link inside the application as navigation to a route. It leaves a link with
+     * {@code router-ignore} alone, so a clicked link whose path matches gets it here, before the router's listener on
+     * the window sees the click. The path is taken relative to {@code document.baseURI}, the application's root, as the
+     * router itself does. A link outside it is no concern of the router's.
+     */
+    private static final String ROUTER_IGNORE_LISTENER = """
+            if (!this.vcfRouterIgnoreListener) {
+                this.vcfRouterIgnoreListener = true;
+                this.addEventListener('click', e => {
+                    const patterns = this.%s;
+                    const link = e.target.closest('a');
+                    if (!patterns || !link || !link.href || !this.contains(link)) {
+                        return;
+                    }
+                    const url = new URL(link.href);
+                    const address = url.origin + url.pathname;
+                    if (!address.startsWith(document.baseURI)) {
+                        return;
+                    }
+                    const path = '/' + address.slice(document.baseURI.length);
+                    if (patterns.some(pattern => new RegExp(pattern).test(path))) {
+                        link.setAttribute('router-ignore', '');
+                    }
+                });
+            }""".formatted(ROUTER_IGNORE_PROPERTY);
+
+    private Registration routerIgnore;
+
+    /**
      * Creates a new instance and adds Froala's {@code fr-view} class and the {@code vaadin-theme} class to it.
      * Replacing the class list with {@link HasStyle#setClassName(String)} removes both, and the content then loses
      * Froala's styling.
@@ -65,5 +105,127 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      */
     public void setContent(String text) {
         getElement().setProperty("innerHTML", text);
+    }
+
+    /**
+     * Sets the paths whose links in the content open with a page load instead of Vaadin's router, see
+     * {@link #applyRouterIgnore(Component, Collection)} for the patterns. The router takes a link inside the
+     * application as a route, so a link to an uploaded file shows "Couldn't find route" without this. The paths replace
+     * the ones set before. With no paths, every link goes to the router again.
+     *
+     * <pre>
+     * viewer.setRouterIgnorePaths("/froala-upload");
+     * </pre>
+     *
+     * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     */
+    public void setRouterIgnorePaths(String... paths) {
+        setRouterIgnorePaths(Arrays.asList(paths));
+    }
+
+    /**
+     * Sets the paths whose links in the content open with a page load instead of Vaadin's router, see
+     * {@link #setRouterIgnorePaths(String...)}.
+     *
+     * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     */
+    public void setRouterIgnorePaths(Collection<String> paths) {
+        if (routerIgnore != null) {
+            routerIgnore.remove();
+            routerIgnore = null;
+        }
+
+        if (!paths.isEmpty()) {
+            routerIgnore = applyRouterIgnore(this, paths);
+        }
+    }
+
+    /**
+     * Lets the links inside the given component open with a page load instead of Vaadin's router when their path
+     * matches one of the patterns, see {@link #applyRouterIgnore(Component, Collection)}. For HTML displayed without a
+     * {@link FroalaViewer}, like in an {@code Html} component or a {@code Div}.
+     *
+     * @param component the component whose links are concerned
+     * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     * @return a registration that leaves the links to the router again
+     */
+    public static Registration applyRouterIgnore(Component component, String... paths) {
+        return applyRouterIgnore(component, Arrays.asList(paths));
+    }
+
+    /**
+     * Lets the links inside the given component open with a page load instead of Vaadin's router when their path
+     * matches one of the patterns. The router takes a click on a link inside the application as navigation to a route,
+     * which a link to an uploaded file or another resource of the application is not. A link that matches gets the
+     * attribute {@code router-ignore} when it is clicked, and every other link stays with the router.
+     *
+     * <p>
+     * A path is matched relative to the application's root, so {@code /froala-upload} matches
+     * {@code https://example.com/app/froala-upload/42} when the application runs under {@code /app}. A {@code *}
+     * matches any characters, slashes included. A pattern without one covers everything below the path, so
+     * {@code /froala-upload} stands for {@code /froala-upload/*}:
+     *
+     * <pre>
+     * FroalaViewer.applyRouterIgnore(div, "/froala-upload", "/reports/*.pdf");
+     * </pre>
+     *
+     * <p>
+     * Calling it again for the same component replaces the patterns.
+     *
+     * @param component the component whose links are concerned
+     * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     * @return a registration that leaves the links to the router again
+     */
+    public static Registration applyRouterIgnore(Component component, Collection<String> paths) {
+        var element = component.getElement();
+        element.setPropertyList(ROUTER_IGNORE_PROPERTY, paths.stream().map(FroalaViewer::toRegex).toList());
+        Serializable patterns = element.getPropertyRaw(ROUTER_IGNORE_PROPERTY);
+
+        // Runs on every attach, because a component attached anew can get a new element in the browser.
+        Registration attach = component.addAttachListener(event -> element.executeJs(ROUTER_IGNORE_LISTENER));
+        if (component.isAttached()) {
+            element.executeJs(ROUTER_IGNORE_LISTENER);
+        }
+
+        return () -> {
+            attach.remove();
+            // Only its own patterns, since a later call for the same component replaced them with its own.
+            if (element.getPropertyRaw(ROUTER_IGNORE_PROPERTY) == patterns) {
+                element.removeProperty(ROUTER_IGNORE_PROPERTY);
+            }
+        };
+    }
+
+    /**
+     * Turns a path pattern into a regular expression that JavaScript and Java read alike. A backslash before a
+     * character other than a letter or a digit makes it literal in both.
+     */
+    static String toRegex(String path) {
+        String pattern = path.trim();
+
+        if (pattern.isEmpty()) {
+            throw new IllegalArgumentException("A router-ignore path must not be blank");
+        }
+
+        if (!pattern.startsWith("/")) {
+            pattern = "/" + pattern;
+        }
+
+        if (!pattern.contains("*")) {
+            pattern = (pattern.endsWith("/") ? pattern : pattern + "/") + "*";
+        }
+
+        var regex = new StringBuilder("^");
+        for (char c : pattern.toCharArray()) {
+            if (c == '*') {
+                regex.append(".*");
+            } else if (Character.isLetterOrDigit(c)) {
+                regex.append(c);
+            } else {
+                regex.append('\\').append(c);
+            }
+        }
+
+        return regex.append('$').toString();
     }
 }

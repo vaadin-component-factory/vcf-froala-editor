@@ -52,7 +52,8 @@ the editor runs with Froala's watermark.
   stores the file and returns its link. No upload endpoint of its own is needed.
 - A listener reports whether text is selected, e.g. to enable an action only then.
 - `FroalaViewer` shows stored HTML outside the editor, looking as it did while editing. It
-  needs no editor on the page.
+  needs no editor on the page. Links to paths the application names, such as uploaded files,
+  open with a page load instead of Vaadin's router.
 
 ## Security
 

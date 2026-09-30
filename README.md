@@ -507,6 +507,7 @@ The upload goes through Flow, so it needs no endpoint of its own. It is refused 
 is disabled or read-only, and the handler runs outside the UI's lock like any Flow upload. The
 application serves the stored files itself, like `/images/<id>` above, under a link that stays
 valid across sessions. A URL of a Flow `DownloadHandler` does not, because it is bound to the UI.
+A `FroalaViewer` opens such a link only after `setRouterIgnorePaths`, see [Viewer](#viewer).
 
 Spring Boot limits a multipart upload to 1 MB by default, and that limit applies to the upload
 handler as well. A larger file is refused before the handler runs, and the user sees Froala's
@@ -634,6 +635,24 @@ for the editor's default theme. Remove it when your editors use another Froala t
 
 ```java
 viewer.removeClassName("vaadin-theme");
+```
+
+Vaadin's router takes a click on a link inside the application as navigation to a route. A link
+to an uploaded file is none, so the click shows "Couldn't find route". Give the viewer the paths
+whose links should open with a page load instead. Every other link stays with the router, so a
+link to one of your views keeps working as before:
+
+```java
+viewer.setRouterIgnorePaths("/files", "/reports/*.pdf");
+```
+
+A path is relative to the application's root, so it holds under any context path. A `*` matches
+any characters, and a path without one covers everything below it, so `/files` stands for
+`/files/*`. For HTML you display some other way, the static method does the same for any
+component:
+
+```java
+FroalaViewer.applyRouterIgnore(div, "/files");
 ```
 
 ### Sanitizing

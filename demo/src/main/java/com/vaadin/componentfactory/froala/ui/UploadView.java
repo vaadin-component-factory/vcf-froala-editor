@@ -39,7 +39,7 @@ public class UploadView extends VerticalLayout {
                         FroalaButton.INSERT_VIDEO));
 
         // Stores the file and returns the link the editor puts into the document. The application serves the file
-        // under that link, here FroalaUploadController.
+        // under that link, here FroalaFileServingRestController.
         FroalaUploadHandler handler = event -> uploadedFiles.store(event.getInputStream().readAllBytes());
 
         FroalaEditor editor = new FroalaEditor("With upload handlers", options);

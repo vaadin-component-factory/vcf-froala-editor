@@ -32,7 +32,11 @@ public class FroalaViewerTestView extends VerticalLayout {
     public FroalaViewerTestView() {
         FroalaViewer viewer = new FroalaViewer();
         viewer.setId("viewer");
-        viewer.setContent("<p>Shown without an editor</p>");
+        // Two views of the e2e app, one of them matched by a router-ignore pattern.
+        viewer.setContent("<p>Shown without an editor</p>" //
+                + "<p><a id=\"ignored\" href=\"" + FroalaThemeTestView.ROUTE + "\">Page load</a></p>" //
+                + "<p><a id=\"routed\" href=\"" + FroalaDirectionTestView.ROUTE + "\">Router</a></p>");
+        viewer.setRouterIgnorePaths("/" + FroalaThemeTestView.ROUTE + "*");
         add(viewer);
     }
 }

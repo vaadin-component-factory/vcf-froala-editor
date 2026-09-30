@@ -19,12 +19,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 
+import com.vaadin.componentfactory.froala.it.views.FroalaDirectionTestView;
+import com.vaadin.componentfactory.froala.it.views.FroalaThemeTestView;
 import com.vaadin.componentfactory.froala.it.views.FroalaViewerTestView;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Covers a viewer on a view without an editor, which has to load the add-on's stylesheets on its own.
+ * Covers a viewer on a view without an editor, which has to load the add-on's stylesheets on its own, and the links in
+ * its content.
  */
 @SpringBootTest(classes = E2eApplication.class, webEnvironment = WebEnvironment.RANDOM_PORT)
 class FroalaViewerIT extends SpringPlaywrightIT {
@@ -37,5 +42,29 @@ class FroalaViewerIT extends SpringPlaywrightIT {
     @Test
     void viewerWithoutEditor_getsItsOwnRule() {
         assertThat(page.locator("#viewer")).hasCSS("overflow", "auto");
+    }
+
+    @Test
+    void linkMatchingARouterIgnorePath_opensWithAPageLoad() {
+        clickAfterMarking("#ignored", FroalaThemeTestView.ROUTE);
+
+        assertNull(page.evaluate("window.beforeClick"));
+    }
+
+    @Test
+    void linkMatchingNoRouterIgnorePath_staysWithTheRouter() {
+        clickAfterMarking("#routed", FroalaDirectionTestView.ROUTE);
+
+        assertEquals(true, page.evaluate("window.beforeClick"));
+    }
+
+    /**
+     * The router changes the URL as well, so only a marker that a page load wipes out tells the two apart.
+     */
+    private void clickAfterMarking(String link, String route) {
+        page.evaluate("window.beforeClick = true");
+
+        page.locator(link).click();
+        page.waitForURL("**/" + route);
     }
 }
