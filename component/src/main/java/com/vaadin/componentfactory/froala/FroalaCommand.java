@@ -51,11 +51,14 @@ import com.vaadin.flow.dom.Element;
  * @param name the command name, letters, digits and underscores, starting with a letter
  * @param title the button's tooltip and accessible name
  * @param icon the button's icon
- * @param shortcutKey the key that triggers the command together with Ctrl, or Cmd on a Mac. Null for no shortcut.
+ * @param shortcutKeyCode the key code that triggers the command together with Ctrl, or Cmd on a Mac, as Froala expects
+ *            it: the keyboard event's {@code keyCode}. 0 for no shortcut.
+ * @param shortcutLabel the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code T} or
+ *            {@code F2}. Null for no shortcut.
  * @param shortcutModifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} on top of Ctrl or Cmd, or empty
  * @param toggle whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}
  */
-public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key shortcutKey,
+public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int shortcutKeyCode, String shortcutLabel,
         Set<KeyModifier> shortcutModifiers, boolean toggle) implements Serializable {
 
     /** What Froala puts into a {@code data-cmd} attribute and its button ids unescaped, so nothing else is allowed. */
@@ -80,12 +83,18 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
         }
 
         shortcutModifiers = shortcutModifiers == null ? Set.of() : Set.copyOf(shortcutModifiers);
-        if (shortcutKey == null && !shortcutModifiers.isEmpty()) {
-            throw new IllegalArgumentException("Shortcut modifiers need a shortcut key");
-        }
-        if (shortcutKey != null) {
-            // throws for a key Froala cannot bind
-            shortcutLetter(shortcutKey);
+        if (shortcutKeyCode == 0 && shortcutLabel == null) {
+            if (!shortcutModifiers.isEmpty()) {
+                throw new IllegalArgumentException("Shortcut modifiers need a shortcut key");
+            }
+        } else {
+            if (shortcutKeyCode < 1) {
+                throw new IllegalArgumentException("A shortcut key code must be 1 or more, but got " + shortcutKeyCode);
+            }
+            // Froala's tooltip hint ends with the label, and would read "Ctrl+undefined" without one
+            if (shortcutLabel == null || shortcutLabel.isBlank()) {
+                throw new IllegalArgumentException("A shortcut needs a label for the button's tooltip");
+            }
         }
         // Froala's shortcuts always hold Ctrl, or Cmd on a Mac, and can add Shift and Alt to it. Nothing else.
         if (!Set.of(KeyModifier.SHIFT, KeyModifier.ALT).containsAll(shortcutModifiers)) {
@@ -103,7 +112,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
      * @param icon the button's icon
      */
     public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
-        this(name, title, icon, null, Set.of(), false);
+        this(name, title, icon, 0, null, Set.of(), false);
     }
 
     /**
@@ -114,10 +123,31 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
      * @return a new command with the shortcut
      * @throws IllegalArgumentException if the key is not a letter or digit, or a modifier is not Shift or Alt
+     * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
         Objects.requireNonNull(key, "key must not be null");
-        return new FroalaCommand(name, title, icon, key, Set.copyOf(Arrays.asList(modifiers)), toggle);
+        String letter = shortcutLetter(key);
+        // Froala matches the event's keyCode, which for a letter or digit is the code of the upper case character
+        return withShortcut(letter.charAt(0), letter, modifiers);
+    }
+
+    /**
+     * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the key with the given key code, e.g.
+     * {@code withShortcut(113, "F2")} for Ctrl+F2. The key code is what Froala expects, the keyboard event's
+     * {@code keyCode}. Any key code from 1 up is accepted. Which code a key has on which keyboard layout, and whether
+     * the browser or the operating system takes a combination before the page sees it, is up to the caller.
+     *
+     * @param keyCode the key code, 1 or more
+     * @param shortcutLabel the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code F2}
+     * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
+     * @return a new command with the shortcut
+     * @throws IllegalArgumentException if the key code is below 1, the label is null or blank, or a modifier is not
+     *             Shift or Alt
+     */
+    public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
+        return new FroalaCommand(name, title, icon, keyCode, shortcutLabel, Set.copyOf(Arrays.asList(modifiers)),
+                toggle);
     }
 
     /**
@@ -128,7 +158,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
      * @return a new command that is a toggle
      */
     public FroalaCommand withToggle() {
-        return new FroalaCommand(name, title, icon, shortcutKey, shortcutModifiers, true);
+        return new FroalaCommand(name, title, icon, shortcutKeyCode, shortcutLabel, shortcutModifiers, true);
     }
 
     /** The command as the client registers it with Froala. */
@@ -139,12 +169,10 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, Key
         json.put("icon", iconAttributes());
         json.put("toggle", toggle);
 
-        if (shortcutKey != null) {
-            String letter = shortcutLetter(shortcutKey);
+        if (shortcutLabel != null) {
             JsonObject shortcut = Json.createObject();
-            // Froala matches the event's keyCode, which for a letter or digit is the code of the upper case character
-            shortcut.put("keyCode", letter.charAt(0));
-            shortcut.put("letter", letter);
+            shortcut.put("keyCode", shortcutKeyCode);
+            shortcut.put("letter", shortcutLabel);
             shortcut.put("shift", shortcutModifiers.contains(KeyModifier.SHIFT));
             shortcut.put("alt", shortcutModifiers.contains(KeyModifier.ALT));
             json.put("shortcut", shortcut);

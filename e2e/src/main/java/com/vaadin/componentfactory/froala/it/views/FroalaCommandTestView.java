@@ -33,8 +33,8 @@ import com.vaadin.flow.shared.Registration;
 
 /**
  * Fixture view for the application's own commands, see {@code FroalaCommandIT}. Two editors add the same command before
- * they are attached, a third one gets it only after, and a fourth has it without a toolbar button. The log names the
- * editor whose listener ran.
+ * they are attached, a third one gets it only after, and a fourth has it without a toolbar button. A fifth has a
+ * command whose shortcut is a key code. The log names the editor whose listener ran.
  */
 @Route(FroalaCommandTestView.ROUTE)
 @AnonymousAllowed
@@ -79,7 +79,13 @@ public class FroalaCommandTestView extends VerticalLayout {
             addToLate.setEnabled(false);
         });
 
-        add(log, removeFromFirst, addToLate, first, second, late, noButton);
+        // a shortcut given as a key code, for a key withShortcut(Key) does not take
+        FroalaEditor keyCode = editor("key-code");
+        keyCode.setOptions(FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.of("bold", "memo")));
+        keyCode.addCommand(new FroalaCommand("memo", "Memo", VaadinIcon.NOTEBOOK.create()).withShortcut(113, "F2"),
+                event -> logTrigger("key-code"));
+
+        add(log, removeFromFirst, addToLate, first, second, late, noButton, keyCode);
     }
 
     private static FroalaEditor editor(String id) {

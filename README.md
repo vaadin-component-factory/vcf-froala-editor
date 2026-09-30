@@ -370,12 +370,23 @@ editor.setOptions(FroalaOptions.defaults()
 The icon is any Vaadin icon: `VaadinIcon`, `LumoIcon`, an icon of your own iconset, an
 `SvgIcon` with a URL or a `FontIcon`. An `SvgIcon` with a `DownloadHandler` shows nothing,
 because it has no URL until it is attached. A shortcut is always Ctrl, or Cmd on a Mac, plus a
-letter or digit. Shift and Alt can be added. Other keys and modifiers throw, and so does a
-second command of the same name on one editor:
+key, because Froala requires it. Shift and Alt can be added. `withShortcut(Key, ...)` takes a
+letter or digit. Any other key is given by its key code, the keyboard event's `keyCode` Froala
+expects, together with the label the button's tooltip shows for it. Which code a key has on
+which keyboard layout, and whether the browser takes the combination first, is up to Froala and
+the browser:
 
 ```java
-insertTemplate.withShortcut(Key.F2);                          // IllegalArgumentException, not a letter or digit
+insertTemplate.withShortcut(113, "F2");                       // Ctrl+F2, the tooltip shows "Ctrl+F2"
+```
+
+Other modifiers throw, and so do `withShortcut(Key, ...)` with a key that is no letter or
+digit, a key code below 1, a missing label and a second command of the same name on one editor:
+
+```java
+insertTemplate.withShortcut(Key.F2);                          // IllegalArgumentException, use the key code 113
 insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL);  // IllegalArgumentException, Ctrl is always there
+insertTemplate.withShortcut(0, "X");                          // IllegalArgumentException, below 1
 editor.addCommand(insertTemplate, event -> {});
 editor.addCommand(insertTemplate, event -> {});               // IllegalArgumentException, the name is taken
 ```

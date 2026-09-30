@@ -73,13 +73,34 @@ class FroalaCommandTest {
     }
 
     @Test
+    void keyCodeShortcut_isSentWithItsLabel() {
+        FroalaCommand command = new FroalaCommand("a", "A", VaadinIcon.STAR.create()).withShortcut(113, "F2",
+                KeyModifier.SHIFT);
+
+        assertEquals("{\"keyCode\":113,\"letter\":\"F2\",\"shift\":true,\"alt\":false}",
+                command.toJson().getObject("shortcut").toJson());
+    }
+
+    @Test
+    void keyCodeShortcut_takesAnyKeyCodeFromOneWithALabel() {
+        FroalaCommand command = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
+
+        assertEquals(1, command.withShortcut(1, "X").shortcutKeyCode());
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(0, "X"));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(-1, "X"));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, null));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, " "));
+        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, "F2", KeyModifier.CONTROL));
+    }
+
+    @Test
     void toggle_isSentAndKeptByTheOtherCopies() {
         FroalaCommand plain = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
         FroalaCommand toggle = plain.withToggle().withShortcut(Key.KEY_T);
 
         assertFalse(plain.toJson().getBoolean("toggle"));
         assertTrue(toggle.toJson().getBoolean("toggle"));
-        assertEquals(Key.KEY_T, toggle.shortcutKey());
+        assertEquals('T', toggle.shortcutKeyCode());
         assertTrue(plain.withShortcut(Key.KEY_T).withToggle().toggle());
     }
 
