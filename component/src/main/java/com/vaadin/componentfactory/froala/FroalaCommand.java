@@ -122,6 +122,17 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
      * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the given key. Froala shows the shortcut
      * in the button's tooltip.
      *
+     * <p>
+     * Froala finds a shortcut by the keyboard event's numeric {@code keyCode}, not by the {@link Key}. A letter, a
+     * digit and a function key from F1 to F12 each have a fixed code, e.g. 84 for T and 121 for F10, so this method
+     * derives it from the key.
+     *
+     * <p>
+     * Other keys throw, e.g. {@link Key#SLASH}. Their code depends on the keyboard layout. The slash is a key of its
+     * own on a US layout but Shift+7 on a German one, so the same {@link Key} leads to different key codes on different
+     * layouts, and this method cannot map it to one code. Where such a shortcut is needed, define the key codes for the
+     * layouts your users have with {@link #withShortcut(int, String, KeyModifier...)}.
+     *
      * @param key a letter, digit or function key from F1 to F12, e.g. {@link Key#KEY_T}, {@link Key#DIGIT_4} or
      *            {@link Key#F10}
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd
