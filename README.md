@@ -560,6 +560,12 @@ editor.setReadOnly(true);
 editor.replaceSelectionContent("<strong>[redacted]</strong>"); // inserts nothing
 ```
 
+`selectAll` selects the whole content, and the selection change listener reports it:
+
+```java
+editor.selectAll();
+```
+
 ### Viewer
 
 `FroalaViewer` displays HTML with Froala's styles, so it looks as it did in the editor:

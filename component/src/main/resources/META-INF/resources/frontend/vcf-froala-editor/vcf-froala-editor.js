@@ -114,6 +114,9 @@ class FroalaEditorElement extends SlotStylesMixin(
   // a focus() that arrived before the editor was initialized, applied from its `initialized` event
   _pendingFocus = false;
 
+  // a selectAll() that arrived before the editor was initialized, applied from its `initialized` event
+  _pendingSelectAll = false;
+
   // the popovers of the own commands, by command name, see _setCommandPopover
   _commandPopovers = {};
 
@@ -470,6 +473,11 @@ class FroalaEditorElement extends SlotStylesMixin(
 
           this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
 
+          if (this._pendingSelectAll) {
+            this._pendingSelectAll = false;
+            this.selectAll();
+          }
+
           if (this._pendingFocus) {
             this._pendingFocus = false;
             this.editor.events.focus();
@@ -733,6 +741,18 @@ class FroalaEditorElement extends SlotStylesMixin(
 
     // Reported at once rather than left to the value change mode, because the change came from the server.
     this.onValueChange();
+  }
+
+  /**
+   * Selects the whole content. Maps onto Froala's `commands.selectAll`. A call that arrives while Froala is still
+   * building is held back until the editor is initialized, like replaceSelectionContent.
+   */
+  selectAll() {
+    if (this._editorInitialized) {
+      this.editor.commands.selectAll();
+    } else {
+      this._pendingSelectAll = true;
+    }
   }
 
   /**

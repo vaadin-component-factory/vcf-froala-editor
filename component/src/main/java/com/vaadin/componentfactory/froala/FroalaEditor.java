@@ -469,6 +469,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * Selects the whole content of the editor. Maps onto Froala's {@code commands.selectAll}. The selection change
+     * listener reports the selection as it does one the user makes. A call that arrives before the editor is
+     * initialized, e.g. in the same round trip as the attach, is applied once it is.
+     */
+    public void selectAll() {
+        getElement().callJsFunction("selectAll");
+    }
+
+    /**
      * Adds a command of the application's own to this editor and runs the listener whenever the user triggers it in
      * this editor, by a button or by its shortcut. Where the command's button appears is decided by its name, in the
      * toolbar or in a popup's button list:

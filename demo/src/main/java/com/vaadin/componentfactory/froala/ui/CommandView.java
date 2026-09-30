@@ -45,10 +45,8 @@ public class CommandView extends VerticalLayout {
         editor.setValue("<p>Thank you for your order. It will be shipped <b>tomorrow</b>.</p>");
         editor.setWidthFull();
 
-        // Froala's own selectAll command, run in the browser. `this.editor` is the Froala instance the add-on keeps
-        // on its element, which is not API of the add-on.
         editor.addCommand(new FroalaCommand("selectAllText", "Select all text", VaadinIcon.ALIGN_JUSTIFY.create()),
-                event -> editor.getElement().executeJs("this.editor.commands.selectAll()"));
+                event -> editor.selectAll());
 
         Dialog dialog = new Dialog(new Paragraph("Opened by an own command of the editor."));
         dialog.setHeaderTitle("Own command");

@@ -616,6 +616,26 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void selectAll_selectsTheWholeContent_andIsReported() {
+        page.locator("#editor .fr-element").waitFor();
+
+        page.locator("#select-all").click();
+
+        assertThat(page.locator("#selection-log")).hasText("true");
+        assertEquals(FroalaTestView.INITIAL_TEXT, page.evaluate("() => window.getSelection().toString()"));
+    }
+
+    @Test
+    void selectAll_whileTheEditorIsStillBuilding_isNotLost() {
+        page.locator("#editor .fr-element").waitFor();
+
+        page.locator("#reattach-and-select-all").click();
+
+        assertThat(page.locator("#selection-log")).hasText("true");
+        assertEquals(FroalaTestView.INITIAL_TEXT, page.evaluate("() => window.getSelection().toString()"));
+    }
+
+    @Test
     void selectionChange_isReportedOncePerSwitch() {
         editableArea().click();
         page.keyboard().press("End");

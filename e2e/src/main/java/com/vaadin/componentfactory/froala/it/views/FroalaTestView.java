@@ -157,6 +157,17 @@ public class FroalaTestView extends VerticalLayout {
         });
         reattachAndInsert.setId("reattach-and-insert");
 
+        Button selectAll = new Button("Select all", event -> editor.selectAll());
+        selectAll.setId("select-all");
+
+        // Detach, attach and select all in one round trip, so the call reaches a client editor Froala is still building
+        Button reattachAndSelectAll = new Button("Re-attach and select all", event -> {
+            remove(editor);
+            addComponentAtIndex(1, editor);
+            editor.selectAll();
+        });
+        reattachAndSelectAll.setId("reattach-and-select-all");
+
         // Label, helper text and error message all change in one round trip, so a test sees one consistent state
         Button otherFieldTexts = new Button("Other field texts");
         otherFieldTexts.addClickListener(event -> {
@@ -177,8 +188,8 @@ public class FroalaTestView extends VerticalLayout {
         rebuild.setId("rebuild");
 
         add(focus, focusLog, selectionLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue,
-                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, otherFieldTexts, rebuild, editor,
-                viewer);
+                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, selectAll, reattachAndSelectAll,
+                otherFieldTexts, rebuild, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);
