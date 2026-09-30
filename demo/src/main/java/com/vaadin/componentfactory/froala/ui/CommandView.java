@@ -67,7 +67,9 @@ public class CommandView extends VerticalLayout {
         viewer.setContent(editor.getValue());
         viewer.setVisible(false);
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
-        FroalaCommand showViewer = new FroalaCommand("showViewer", "Show viewer", VaadinIcon.EYE.create()).withToggle();
+        FroalaCommand showViewer = new FroalaCommand("showViewer", "Show viewer", VaadinIcon.EYE.create()).withToggle()
+                .withShortcut(Key.F10);
+
         editor.addCommand(showViewer, event -> {
             boolean active = !editor.isCommandActive(showViewer);
             editor.setCommandActive(showViewer, active);
