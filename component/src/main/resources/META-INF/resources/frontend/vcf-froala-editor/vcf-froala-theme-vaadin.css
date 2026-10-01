@@ -1,73 +1,121 @@
 /* The vaadin Froala theme, active by default. Its rules in vcf-froala-theme-vaadin-rules.css take their values from
    the properties below, so the editor is restyled by overriding them, without touching Lumo. Lumo's dark variant needs
    nothing of its own here for the same reason. Only the hues Lumo has no colour for, such as the purple and teal of
-   the track changes and collaboration plugins, keep their own tone. :where() keeps the specificity at zero, so an
-   override on html or :root wins whatever order the stylesheets load in. */
-:where(html) {
-  --vcf-froala-background-color: var(--lumo-base-color);
-  --vcf-froala-neutral-color: var(--lumo-contrast);
-  --vcf-froala-accent-color: var(--lumo-primary-color);
-  --vcf-froala-accent-contrast-color: var(--lumo-primary-contrast-color);
-  --vcf-froala-error-color: var(--lumo-error-color);
-  --vcf-froala-success-color: var(--lumo-success-color);
-  --vcf-froala-warning-color: var(--lumo-warning-color);
-  --vcf-froala-border-color: var(--lumo-contrast-20pct);
+   the track changes and collaboration plugins, keep their own tone.
 
-  --vcf-froala-text-color: var(--lumo-body-text-color);
-  --vcf-froala-text-color-secondary: var(--lumo-secondary-text-color);
-  --vcf-froala-text-color-tertiary: var(--lumo-tertiary-text-color);
-  --vcf-froala-text-color-disabled: var(--lumo-disabled-text-color);
-  --vcf-froala-value-color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
-  --vcf-froala-disabled-value-color: var(--vaadin-input-field-disabled-value-color, var(--lumo-disabled-text-color));
-  --vcf-froala-placeholder-color: var(--vaadin-input-field-placeholder-color, var(--lumo-secondary-text-color));
+   The public --vcf-froala-* properties are not declared at all, only their private copies, and each copy falls back
+   to Lumo. The copies are resolved on the editor's own elements, so they pick up an override on any ancestor, and a
+   Lumo variant on any ancestor as well. Vaadin puts the dark variant on the UI's element when it is switched at
+   runtime, not on html. A copy resolved on html would keep the light colours. Froala puts its popups, modals,
+   tooltip and an inline toolbar into the body, outside the editor, so they get the copies too. */
+:where(
+    vcf-froala-editor,
+    vcf-froala-viewer,
+    .vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal, .fr-overlay, .fr-tooltip)
+  ) {
+  --_vcf-froala-background-color: var(--vcf-froala-background-color, var(--lumo-base-color));
+  --_vcf-froala-neutral-color: var(--vcf-froala-neutral-color, var(--lumo-contrast));
+  --_vcf-froala-accent-color: var(--vcf-froala-accent-color, var(--lumo-primary-color));
+  --_vcf-froala-accent-contrast-color: var(--vcf-froala-accent-contrast-color, var(--lumo-primary-contrast-color));
+  --_vcf-froala-error-color: var(--vcf-froala-error-color, var(--lumo-error-color));
+  --_vcf-froala-success-color: var(--vcf-froala-success-color, var(--lumo-success-color));
+  --_vcf-froala-warning-color: var(--vcf-froala-warning-color, var(--lumo-warning-color));
+  --_vcf-froala-border-color: var(--vcf-froala-border-color, var(--lumo-contrast-20pct));
 
-  --vcf-froala-font-family: var(--lumo-font-family);
-  --vcf-froala-content-font-size: var(--vaadin-input-field-value-font-size, var(--lumo-font-size-m));
-  --vcf-froala-content-font-weight: var(--vaadin-input-field-value-font-weight, 400);
-  --vcf-froala-content-line-height: var(--lumo-line-height-m);
-  --vcf-froala-font-size-xxs: var(--lumo-font-size-xxs);
-  --vcf-froala-font-size-xs: var(--lumo-font-size-xs);
-  --vcf-froala-font-size-s: var(--lumo-font-size-s);
-  --vcf-froala-font-size-m: var(--lumo-font-size-m);
-
-  --vcf-froala-field-border-radius: var(--vaadin-input-field-border-radius, var(--lumo-border-radius-m));
-  --vcf-froala-radius-s: var(--lumo-border-radius-s);
-  --vcf-froala-radius-m: var(--lumo-border-radius-m);
-  --vcf-froala-radius-l: var(--lumo-border-radius-l);
-
-  --vcf-froala-shadow-xs: var(--lumo-box-shadow-xs);
-  --vcf-froala-shadow-s: var(--lumo-box-shadow-s);
-  --vcf-froala-shadow-m: var(--lumo-box-shadow-m);
-  --vcf-froala-shadow-l: var(--lumo-box-shadow-l);
-
-  --vcf-froala-focus-ring-color: var(--vaadin-focus-ring-color, var(--lumo-primary-color-50pct));
-  --vcf-froala-focus-ring-width: var(--vaadin-focus-ring-width, 2px);
-  --vcf-froala-clickable-cursor: var(--lumo-clickable-cursor);
-
-  --vcf-froala-field-background: var(--vaadin-input-field-background, var(--lumo-contrast-10pct));
-  --vcf-froala-hover-highlight: var(--vaadin-input-field-hover-highlight, var(--lumo-contrast-50pct));
-  --vcf-froala-hover-highlight-opacity: var(--vaadin-input-field-hover-highlight-opacity, 0.1);
-  --vcf-froala-invalid-border-color: var(--lumo-error-color);
-  --vcf-froala-invalid-background: var(--vaadin-input-field-invalid-background, var(--lumo-error-color-10pct));
-  --vcf-froala-invalid-hover-highlight: var(
-    --vaadin-input-field-invalid-hover-highlight,
-    var(--lumo-error-color-50pct)
+  --_vcf-froala-text-color: var(--vcf-froala-text-color, var(--lumo-body-text-color));
+  --_vcf-froala-text-color-secondary: var(--vcf-froala-text-color-secondary, var(--lumo-secondary-text-color));
+  --_vcf-froala-text-color-tertiary: var(--vcf-froala-text-color-tertiary, var(--lumo-tertiary-text-color));
+  --_vcf-froala-text-color-disabled: var(--vcf-froala-text-color-disabled, var(--lumo-disabled-text-color));
+  --_vcf-froala-value-color: var(
+    --vcf-froala-value-color,
+    var(--vaadin-input-field-value-color, var(--lumo-body-text-color))
   );
-  --vcf-froala-readonly-border: var(--vaadin-input-field-readonly-border, 1px dashed var(--lumo-contrast-30pct));
-  --vcf-froala-disabled-background: var(--vaadin-input-field-disabled-background, var(--lumo-contrast-5pct));
+  --_vcf-froala-disabled-value-color: var(
+    --vcf-froala-disabled-value-color,
+    var(--vaadin-input-field-disabled-value-color, var(--lumo-disabled-text-color))
+  );
+  --_vcf-froala-placeholder-color: var(
+    --vcf-froala-placeholder-color,
+    var(--vaadin-input-field-placeholder-color, var(--lumo-secondary-text-color))
+  );
+
+  --_vcf-froala-font-family: var(--vcf-froala-font-family, var(--lumo-font-family));
+  --_vcf-froala-content-font-size: var(
+    --vcf-froala-content-font-size,
+    var(--vaadin-input-field-value-font-size, var(--lumo-font-size-m))
+  );
+  --_vcf-froala-content-font-weight: var(
+    --vcf-froala-content-font-weight,
+    var(--vaadin-input-field-value-font-weight, 400)
+  );
+  --_vcf-froala-content-line-height: var(--vcf-froala-content-line-height, var(--lumo-line-height-m));
+  --_vcf-froala-font-size-xxs: var(--vcf-froala-font-size-xxs, var(--lumo-font-size-xxs));
+  --_vcf-froala-font-size-xs: var(--vcf-froala-font-size-xs, var(--lumo-font-size-xs));
+  --_vcf-froala-font-size-s: var(--vcf-froala-font-size-s, var(--lumo-font-size-s));
+  --_vcf-froala-font-size-m: var(--vcf-froala-font-size-m, var(--lumo-font-size-m));
+
+  --_vcf-froala-field-border-radius: var(
+    --vcf-froala-field-border-radius,
+    var(--vaadin-input-field-border-radius, var(--lumo-border-radius-m))
+  );
+  --_vcf-froala-radius-s: var(--vcf-froala-radius-s, var(--lumo-border-radius-s));
+  --_vcf-froala-radius-m: var(--vcf-froala-radius-m, var(--lumo-border-radius-m));
+  --_vcf-froala-radius-l: var(--vcf-froala-radius-l, var(--lumo-border-radius-l));
+
+  --_vcf-froala-shadow-xs: var(--vcf-froala-shadow-xs, var(--lumo-box-shadow-xs));
+  --_vcf-froala-shadow-s: var(--vcf-froala-shadow-s, var(--lumo-box-shadow-s));
+  --_vcf-froala-shadow-m: var(--vcf-froala-shadow-m, var(--lumo-box-shadow-m));
+  --_vcf-froala-shadow-l: var(--vcf-froala-shadow-l, var(--lumo-box-shadow-l));
+
+  --_vcf-froala-focus-ring-color: var(
+    --vcf-froala-focus-ring-color,
+    var(--vaadin-focus-ring-color, var(--lumo-primary-color-50pct))
+  );
+  --_vcf-froala-focus-ring-width: var(--vcf-froala-focus-ring-width, var(--vaadin-focus-ring-width, 2px));
+  --_vcf-froala-clickable-cursor: var(--vcf-froala-clickable-cursor, var(--lumo-clickable-cursor));
+
+  --_vcf-froala-field-background: var(
+    --vcf-froala-field-background,
+    var(--vaadin-input-field-background, var(--lumo-contrast-10pct))
+  );
+  --_vcf-froala-hover-highlight: var(
+    --vcf-froala-hover-highlight,
+    var(--vaadin-input-field-hover-highlight, var(--lumo-contrast-50pct))
+  );
+  --_vcf-froala-hover-highlight-opacity: var(
+    --vcf-froala-hover-highlight-opacity,
+    var(--vaadin-input-field-hover-highlight-opacity, 0.1)
+  );
+  --_vcf-froala-invalid-border-color: var(--vcf-froala-invalid-border-color, var(--lumo-error-color));
+  --_vcf-froala-invalid-background: var(
+    --vcf-froala-invalid-background,
+    var(--vaadin-input-field-invalid-background, var(--lumo-error-color-10pct))
+  );
+  --_vcf-froala-invalid-hover-highlight: var(
+    --vcf-froala-invalid-hover-highlight,
+    var(--vaadin-input-field-invalid-hover-highlight, var(--lumo-error-color-50pct))
+  );
+  --_vcf-froala-readonly-border: var(
+    --vcf-froala-readonly-border,
+    var(--vaadin-input-field-readonly-border, 1px dashed var(--lumo-contrast-30pct))
+  );
+  --_vcf-froala-disabled-background: var(
+    --vcf-froala-disabled-background,
+    var(--vaadin-input-field-disabled-background, var(--lumo-contrast-5pct))
+  );
 }
 
 /* The editable area, set like the value of a Vaadin text field. Froala sets neither of these through a colour, so the
    generated rules do not cover them. */
 vcf-froala-editor .vaadin-theme.fr-box .fr-element {
-  font-weight: var(--vcf-froala-content-font-weight);
-  line-height: var(--vcf-froala-content-line-height);
+  font-weight: var(--_vcf-froala-content-font-weight);
+  line-height: var(--_vcf-froala-content-line-height);
 }
 
 /* Vaadin's focus ring around the box follows the box's corners, but only under this theme. Other themes keep Froala's
    10px, the element's default. */
 vcf-froala-editor:has(.vaadin-theme.fr-box) {
-  --_vcf-froala-box-radius: var(--vcf-froala-field-border-radius);
+  --_vcf-froala-box-radius: var(--_vcf-froala-field-border-radius);
 }
 
 /* The frame is the box's toolbar, editing area and bottom bar. Its fill lies over its background colour as an image, so a
@@ -75,7 +123,7 @@ vcf-froala-editor:has(.vaadin-theme.fr-box) {
    frame is filled like a Vaadin text field and has no border. A state replaces the fill with its own tint, as on a
    Vaadin text field, and the outlined frame gets the tint over its background colour. */
 vcf-froala-editor:not([theme~='outlined']) {
-  --_vcf-froala-fill: var(--vcf-froala-field-background);
+  --_vcf-froala-fill: var(--_vcf-froala-field-background);
 }
 
 vcf-froala-editor[readonly] {
@@ -83,11 +131,11 @@ vcf-froala-editor[readonly] {
 }
 
 vcf-froala-editor[disabled] {
-  --_vcf-froala-fill: var(--vcf-froala-disabled-background);
+  --_vcf-froala-fill: var(--_vcf-froala-disabled-background);
 }
 
 vcf-froala-editor[invalid] {
-  --_vcf-froala-fill: var(--vcf-froala-invalid-background);
+  --_vcf-froala-fill: var(--_vcf-froala-invalid-background);
 }
 
 vcf-froala-editor .vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
@@ -106,27 +154,27 @@ vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box :is(.fr-toolbar,
    buttons and keep their background colour. Popups that Froala places in the toolbar are left out, because they are
    opaque themselves. A collaborator's avatar needs the real background colour for its initials and ring. */
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar {
-  --_vcf-froala-background-color: var(--vcf-froala-background-color);
+  --_vcf-froala-toolbar-background-color: var(--_vcf-froala-background-color);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn:not(.fr-popup .fr-btn) {
-  --vcf-froala-background-color: transparent;
+  --_vcf-froala-background-color: transparent;
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn .fr-collab-avatar {
-  --vcf-froala-background-color: var(--_vcf-froala-background-color);
+  --_vcf-froala-background-color: var(--_vcf-froala-toolbar-background-color);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-more-toolbar {
-  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 4%, transparent);
+  background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 4%, transparent);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-newline {
-  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 6%, transparent);
+  background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 6%, transparent);
 }
 
 vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-separator {
-  background-color: color-mix(in srgb, var(--vcf-froala-neutral-color) 8%, transparent);
+  background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 8%, transparent);
 }
 
 /* A bottom toolbar with its second row open pads the divider, and Froala paints it like the toolbar */
@@ -136,16 +184,16 @@ vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar.fr-b
 
 /* Only the outer edge turns to the error colour, not the line between the editing area and the bottom bar */
 vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box :is(.fr-toolbar, .fr-second-toolbar) {
-  border-color: var(--vcf-froala-invalid-border-color);
+  border-color: var(--_vcf-froala-invalid-border-color);
 }
 
 vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box .fr-wrapper {
-  border-left-color: var(--vcf-froala-invalid-border-color);
-  border-right-color: var(--vcf-froala-invalid-border-color);
+  border-left-color: var(--_vcf-froala-invalid-border-color);
+  border-right-color: var(--_vcf-froala-invalid-border-color);
 }
 
 vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box .fr-wrapper:not(:has(~ .fr-second-toolbar)) {
-  border-bottom-color: var(--vcf-froala-invalid-border-color);
+  border-bottom-color: var(--_vcf-froala-invalid-border-color);
 }
 
 /* Read-only has no frame colour and no background, but a border of its own. An outline draws it without moving
@@ -156,7 +204,7 @@ vcf-froala-editor[readonly] .vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .
 }
 
 vcf-froala-editor[readonly] .vaadin-theme.fr-box {
-  outline: var(--vcf-froala-readonly-border);
+  outline: var(--_vcf-froala-readonly-border);
   outline-offset: -1px;
 }
 
@@ -172,7 +220,7 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
     .fr-wrapper {
     --_vcf-froala-hover: color-mix(
       in srgb,
-      var(--vcf-froala-hover-highlight) calc(var(--vcf-froala-hover-highlight-opacity) * 100%),
+      var(--_vcf-froala-hover-highlight) calc(var(--_vcf-froala-hover-highlight-opacity) * 100%),
       transparent
     );
     background-image: linear-gradient(var(--_vcf-froala-hover), var(--_vcf-froala-hover)),
@@ -184,7 +232,7 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
     .fr-wrapper {
     --_vcf-froala-hover: color-mix(
       in srgb,
-      var(--vcf-froala-invalid-hover-highlight) calc(var(--vcf-froala-hover-highlight-opacity) * 100%),
+      var(--_vcf-froala-invalid-hover-highlight) calc(var(--_vcf-froala-hover-highlight-opacity) * 100%),
       transparent
     );
   }
@@ -194,9 +242,9 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
    `svg path` do not reach. It takes its fill from the element, so the element gets the colours Froala's icons get,
    the accent colour while a toggle is active. */
 .vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn vaadin-icon {
-  fill: color-mix(in srgb, var(--vcf-froala-neutral-color) 80%, var(--vcf-froala-background-color));
+  fill: color-mix(in srgb, var(--_vcf-froala-neutral-color) 80%, var(--_vcf-froala-background-color));
 }
 
 .vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn.fr-active:not(.fr-dropdown) vaadin-icon {
-  fill: var(--vcf-froala-accent-color);
+  fill: var(--_vcf-froala-accent-color);
 }

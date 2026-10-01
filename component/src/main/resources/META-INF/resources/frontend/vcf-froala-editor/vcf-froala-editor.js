@@ -208,9 +208,9 @@ class FroalaEditorElement extends SlotStylesMixin(
           box-sizing: border-box;
 
           /* Vaadin's focus ring and disabled value colour, taken from the theme's properties */
-          --vaadin-focus-ring-color: var(--vcf-froala-focus-ring-color);
-          --vaadin-focus-ring-width: var(--vcf-froala-focus-ring-width);
-          --vaadin-input-field-disabled-value-color: var(--vcf-froala-disabled-value-color);
+          --vaadin-focus-ring-color: var(--_vcf-froala-focus-ring-color);
+          --vaadin-focus-ring-width: var(--_vcf-froala-focus-ring-width);
+          --vaadin-input-field-disabled-value-color: var(--_vcf-froala-disabled-value-color);
         }
 
         .vcf-froala-editor-container {

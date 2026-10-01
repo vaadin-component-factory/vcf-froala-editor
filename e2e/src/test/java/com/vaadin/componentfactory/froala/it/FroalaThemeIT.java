@@ -69,9 +69,13 @@ class FroalaThemeIT extends SpringPlaywrightIT {
     }
 
     private void switchToLumoDark() {
+        switchToLumoDark("document.documentElement");
+    }
+
+    private void switchToLumoDark(String element) {
         // Froala animates its button backgrounds, and a computed style read during the transition is the old colour
         page.addStyleTag(new Page.AddStyleTagOptions().setContent("* { transition: none !important; }"));
-        page.evaluate("() => document.documentElement.setAttribute('theme', 'dark')");
+        page.evaluate("() => " + element + ".setAttribute('theme', 'dark')");
     }
 
     private String computed(String selector, String property) {
@@ -299,6 +303,27 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         // the default's fill is see-through and lies over the same background colour
         assertEquals(lumo("--lumo-base-color"), computed("#themed .fr-wrapper", "background-color"));
         assertTrue(computed("#themed .fr-wrapper", "background-image").contains(lumo("--lumo-contrast-10pct")));
+    }
+
+    @Test
+    void lumoDark_onTheUi_isFollowed() {
+        // Vaadin switches the variant at runtime through the UI's theme list, which sets it on the body, not on html.
+        // A property resolved on html would keep the light colours there.
+        waitForEditors();
+        switchToLumoDark("document.body");
+
+        assertEquals(lumo("--lumo-base-color"), computed("#outlined .fr-wrapper", "background-color"));
+        assertTrue(computed("#themed .fr-wrapper", "background-image").contains(lumo("--lumo-contrast-10pct")));
+    }
+
+    @Test
+    void themeProperties_onHtml_winInLumoDarkOnTheUi() {
+        // An override on html still wins below an element that carries the dark variant
+        waitForEditors();
+        switchToLumoDark("document.body");
+        setProperty("--vcf-froala-background-color", "rgb(1, 2, 3)");
+
+        assertEquals("rgb(1, 2, 3)", computed("#outlined .fr-wrapper", "background-color"));
     }
 
     @Test

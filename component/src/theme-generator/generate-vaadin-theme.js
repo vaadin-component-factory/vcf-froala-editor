@@ -534,12 +534,14 @@ for (const rule of styleRules(css)) {
 }
 if (openMedia) output.push('}\n');
 
+// The rules read the private copies, which vcf-froala-theme-vaadin.css resolves on the editor's own elements. Read
+// there, a Lumo variant on any ancestor reaches them, not only one on html.
 fs.writeFileSync(
   target,
   `/* Generated from Froala ${version}'s froala_editor.pkgd.css by component/src/theme-generator/generate-vaadin-theme.js.
    Do not edit it. Run the generator again instead. The properties it uses are set in vcf-froala-theme-vaadin.css. */
 
-` + output.join('\n')
+` + output.join('\n').replaceAll('var(--vcf-froala-', 'var(--_vcf-froala-')
 );
 console.log(`wrote ${target}`);
 skipped.forEach((entry) => console.warn(`skipped ${entry}`));
