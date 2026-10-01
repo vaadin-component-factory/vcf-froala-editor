@@ -114,7 +114,7 @@ class FroalaOptionsTest {
                 .withTableColorsButtons(list).withEmbedlyEditButtons(list).withEmbedlyInsertButtons(list)
                 .withFormEditButtons(list).withFormUpdateButtons(list);
 
-        List<String> keys = List.of(options.toJson().keys());
+        List<String> keys = List.copyOf(options.toJson().propertyNames());
         assertEquals(List.of("codeViewKeepActiveButtons", "selectionActionButtons", "quickInsertButtons",
                 "colorsButtons", "emoticonsButtons", "specialCharButtons", "faButtons", "linkEditButtons",
                 "linkInsertButtons", "anchorEditButtons", "imageEditButtons", "imageInsertButtons", "imageAltButtons",
@@ -122,9 +122,9 @@ class FroalaOptionsTest {
                 "filesInsertButtons", "filesInsertButtons2", "tableEditButtons", "tableInsertButtons",
                 "tableColorsButtons", "embedlyEditButtons", "embedlyInsertButtons", "formEditButtons",
                 "formUpdateButtons"), keys);
-        assertEquals("[\"table\"]", options.toJson().get("quickInsertButtons").toJson());
+        assertEquals("[\"table\"]", options.toJson().get("quickInsertButtons").toString());
         keys.stream().filter(key -> !key.equals("quickInsertButtons"))
-                .forEach(key -> assertEquals("[\"bold\"]", options.toJson().get(key).toJson(), key));
+                .forEach(key -> assertEquals("[\"bold\"]", options.toJson().get(key).toString(), key));
     }
 
     @Test
@@ -190,7 +190,7 @@ class FroalaOptionsTest {
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("[1]"));
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{"));
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{} {}"));
-        // elemental would write the infinite double Jackson reads as the string "Infinity"
+        // Jackson reads 1e999 as an infinite double, which JSON has no form for
         assertThrows(IllegalArgumentException.class,
                 () -> FroalaOptions.defaults().withImageTuiOptions("{\"a\": {\"b\": [1e999]}}"));
         assertEquals("{}", FroalaOptions.defaults().withImageTuiOptions("{}").withImageTuiOptions(null).toString());

@@ -17,10 +17,15 @@ package com.vaadin.componentfactory.froala.it;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.theme.lumo.Lumo;
+
 /**
  * The app the e2e tests boot. It holds only the test views in {@code views}, nothing of the demo. Test code in
  * {@code src/main/java}, see ADR-0006.
  */
 @SpringBootApplication
-public class E2eApplication {
+@StyleSheet(Lumo.STYLESHEET)
+public class E2eApplication implements AppShellConfigurator {
 }

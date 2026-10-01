@@ -25,10 +25,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 
-import elemental.json.Json;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
-import elemental.json.JsonValue;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * A toolbar layout. It sets which buttons the toolbar shows and in which order, and in the grouped form how they are
@@ -321,16 +321,16 @@ public final class FroalaToolbar implements Serializable {
     }
 
     /** Returns the toolbar as Froala receives it: an array in the flat form, an object of named groups in the other. */
-    JsonValue toJson() {
+    JsonNode toJson() {
         if (groups == null) {
-            JsonArray names = Json.createArray();
-            buttons.forEach(button -> names.set(names.length(), button));
+            ArrayNode names = JsonNodeFactory.instance.arrayNode();
+            buttons.forEach(button -> names.add(button));
 
             return names;
         }
 
-        JsonObject grouped = Json.createObject();
-        groups.forEach(group -> grouped.put(group.getName(), group.toJson()));
+        ObjectNode grouped = JsonNodeFactory.instance.objectNode();
+        groups.forEach(group -> grouped.set(group.getName(), group.toJson()));
 
         return grouped;
     }
@@ -342,7 +342,7 @@ public final class FroalaToolbar implements Serializable {
      */
     @Override
     public String toString() {
-        return toJson().toJson();
+        return toJson().toString();
     }
 
     @Override

@@ -87,26 +87,27 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
 
 ## Stack
 
-- **Vaadin** 24.10.7 (Core) on **Spring Boot** 3.5.14, **JDK** 17+
+- **Vaadin** 25.3.0 (Core) on **Spring Boot** 4.1.1, **JDK** 21+. This is main, add-on 2.x. The
+  branch `v1` carries add-on 1.x on Vaadin 24.10.7, Spring Boot 3.5.14 and JDK 17 (ADR-0010).
 - Base package: `com.vaadin.componentfactory.froala`
 - Build/verify gate: `mvn clean verify`. `-Pproduction` additionally builds the demo's
   production bundle.
-- The frontend build uses Vaadin's own Node.js in `~/.vaadin` (`require.home.node=true` in the
-  root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
-  `-Drequire.home.node=false`, e.g. `mvn clean verify -Drequire.home.node=false`.
+- The frontend build uses Vaadin's own Node.js in `~/.vaadin` (`vaadin.require.home.node=true` in
+  the root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
+  `-Dvaadin.require.home.node=false`, e.g. `mvn clean verify -Dvaadin.require.home.node=false`.
+  Vaadin 25 renamed the property. On `v1` it is still called `require.home.node`.
 
-Spring Boot 3.5.14 is not "the latest 3.5.x" — it is the version
-`com.vaadin:vaadin-spring:24.10.7` is built against. Derive it from the Vaadin
-release when bumping instead of taking the newest 3.5.x.
+Spring Boot 4.1.1 is not "the latest 4.x". It is the version `com.vaadin:vaadin-spring:25.3.0`
+is built against. Derive it from the Vaadin release when bumping instead of taking the newest
+Spring Boot.
 
-Vaadin stays on 24.10.7 on purpose (maintainer, 2026-09-30). From 24.10.8 on, a production
-frontend build asks for a Vaadin license key even with core components only, and the e2e
-build, CI and the demo server then fail without one. 24.10.7 builds without a key. Before
-raising the 24.10.x version, build `e2e` with an empty `user.home` and check that it still
-passes.
+Before raising the Vaadin version, build `e2e` with an empty `user.home` and check that it still
+passes. A Vaadin release can start asking for a license key in a production build even with core
+components only, and the e2e build, CI and the demo server then fail without one. This is why
+`v1` stays on 24.10.7. The `CLAUDE.md` on that branch has the details.
 
-Java 17 and Vaadin 24 are the deliberate floor (ADR-0005). Do not raise them
-without writing the reason down as an ADR first.
+Java 21 and Vaadin 25 are main's floor. Java 17 and Vaadin 24 are `v1`'s (ADR-0005, ADR-0010).
+Keep the lines as close as the versions allow, so a change can be taken over between them.
 
 A Froala update reruns the theme generator, because the vaadin theme's rules are generated from
 Froala's stylesheet (ADR-0007):
@@ -156,25 +157,26 @@ the watermark as a defect. Where a key has to be exercised, a dummy string is en
 This project uses **classic state (component fields / Spring beans)**.
 
 Use plain component fields and Spring beans for state; wire UI updates explicitly.
-Do not introduce Signals (ADR-0005).
+Do not introduce Signals. Vaadin 24 has none (ADR-0005), and whether main uses them is open
+in #49.
 
 ## Testing
 
 License-free stack, all run by `mvn clean verify`.
 
-- **JUnit 5** — unit tests, in `component/`, pinned to the version
+- **JUnit 6** — unit tests, in `component/`, pinned to the version
   `spring-boot-dependencies` manages in the reactor root, so a standalone build of the
   add-on and a reactor build run the same one.
 - **Browserless UI-unit — Karibu Testing** (`MockVaadin`), in `component/`, test scope.
   Fast, browser-free, runs in the normal test phase. Plain `MockVaadin.setup()`; the
   `-spring` artifact and `MockSpringServlet` are forbidden (ADR-0003). Pinned to the
-  **2.4.x** line, which has to move together with the Vaadin version (ADR-0005). Karibu
-  initialises no servlet filters (no Spring Security) and **executes no JavaScript** —
-  it can assert server-side state and element attributes, never the Froala editor
-  itself.
+  **2.7.x** line, 2.7.3 or newer for Vaadin 25.3, which has to move together with the Vaadin
+  version (ADR-0010). Karibu initialises no servlet filters (no Spring Security) and
+  **executes no JavaScript** — it can assert server-side state and element attributes, never
+  the Froala editor itself.
 - **Browser e2e — plain Playwright** (`*IT` extending `SpringPlaywrightIT`), real
   headless Chromium, run by failsafe on every `verify`. No DramaFinder
-  (ADR-0005). **Every Froala behaviour that needs the JS to run must be tested here.**
+  (ADR-0010). **Every Froala behaviour that needs the JS to run must be tested here.**
 
 **Test our wiring, not Froala.** The add-on's job is the connection between Flow and
 Froala, so that is what the tests cover: does the value we set arrive, does the change

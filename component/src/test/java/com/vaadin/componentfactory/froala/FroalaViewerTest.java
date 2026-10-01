@@ -18,7 +18,6 @@ package com.vaadin.componentfactory.froala;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import elemental.json.JsonArray;
 import org.junit.jupiter.api.Test;
 
 import com.vaadin.flow.shared.Registration;
@@ -56,7 +55,7 @@ class FroalaViewerTest {
         viewer.setRouterIgnorePaths("/a");
         viewer.setRouterIgnorePaths("/b");
         assertEquals("[\"" + FroalaViewer.toRegex("/b").replace("\\", "\\\\") + "\"]",
-                ((JsonArray) viewer.getElement().getPropertyRaw("vcfRouterIgnorePatterns")).toJson());
+                viewer.getElement().getPropertyRaw("vcfRouterIgnorePatterns").toString());
 
         viewer.setRouterIgnorePaths();
         assertFalse(viewer.getElement().hasProperty("vcfRouterIgnorePatterns"));

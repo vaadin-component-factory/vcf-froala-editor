@@ -877,7 +877,6 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     private void selectValueChangeMode(String label) {
         page.locator("#value-change-mode").click();
-        page.locator("vaadin-select-overlay vaadin-select-item").filter(new Locator.FilterOptions().setHasText(label))
-                .first().click();
+        page.locator("vaadin-select-item").filter(new Locator.FilterOptions().setHasText(label)).first().click();
     }
 }

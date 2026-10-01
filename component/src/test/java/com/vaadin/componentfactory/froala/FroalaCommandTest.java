@@ -39,7 +39,7 @@ class FroalaCommandTest {
         assertEquals(
                 "{\"name\":\"insertTemplate\",\"title\":\"Insert template\",\"icon\":{\"icon\":\"vaadin:file-text\"},"
                         + "\"toggle\":false}",
-                command.toJson().toJson());
+                command.toJson().toString());
     }
 
     @Test
@@ -47,8 +47,8 @@ class FroalaCommandTest {
         FroalaCommand svg = new FroalaCommand("a", "A", new SvgIcon("icons/sprite.svg", "star"));
         FroalaCommand font = new FroalaCommand("b", "B", new FontIcon("fa", "fa-star"));
 
-        assertEquals("{\"src\":\"icons/sprite.svg\",\"symbol\":\"star\"}", svg.toJson().getObject("icon").toJson());
-        assertEquals("{\"icon-class\":\"fa fa-star\"}", font.toJson().getObject("icon").toJson());
+        assertEquals("{\"src\":\"icons/sprite.svg\",\"symbol\":\"star\"}", svg.toJson().get("icon").toString());
+        assertEquals("{\"icon-class\":\"fa fa-star\"}", font.toJson().get("icon").toString());
     }
 
     @Test
@@ -59,9 +59,9 @@ class FroalaCommandTest {
                 KeyModifier.ALT);
 
         assertEquals("{\"keyCode\":84,\"letter\":\"T\",\"shift\":true,\"alt\":false}",
-                letter.toJson().getObject("shortcut").toJson());
+                letter.toJson().get("shortcut").toString());
         assertEquals("{\"keyCode\":52,\"letter\":\"4\",\"shift\":false,\"alt\":true}",
-                digit.toJson().getObject("shortcut").toJson());
+                digit.toJson().get("shortcut").toString());
     }
 
     @Test
@@ -89,9 +89,9 @@ class FroalaCommandTest {
                 KeyModifier.SHIFT);
 
         assertEquals("{\"keyCode\":112,\"letter\":\"F1\",\"shift\":false,\"alt\":false}",
-                f1.toJson().getObject("shortcut").toJson());
+                f1.toJson().get("shortcut").toString());
         assertEquals("{\"keyCode\":123,\"letter\":\"F12\",\"shift\":true,\"alt\":false}",
-                f12.toJson().getObject("shortcut").toJson());
+                f12.toJson().get("shortcut").toString());
     }
 
     @Test
@@ -100,7 +100,7 @@ class FroalaCommandTest {
                 KeyModifier.SHIFT);
 
         assertEquals("{\"keyCode\":113,\"letter\":\"F2\",\"shift\":true,\"alt\":false}",
-                command.toJson().getObject("shortcut").toJson());
+                command.toJson().get("shortcut").toString());
     }
 
     @Test
@@ -122,8 +122,8 @@ class FroalaCommandTest {
         FroalaCommand plain = new FroalaCommand("a", "A", VaadinIcon.STAR.create());
         FroalaCommand toggle = plain.withToggle().withShortcut(Key.KEY_T);
 
-        assertFalse(plain.toJson().getBoolean("toggle"));
-        assertTrue(toggle.toJson().getBoolean("toggle"));
+        assertFalse(plain.toJson().get("toggle").asBoolean());
+        assertTrue(toggle.toJson().get("toggle").asBoolean());
         assertEquals('T', toggle.getShortcutKeyCode());
         assertTrue(plain.withShortcut(Key.KEY_T).withToggle().isToggle());
     }

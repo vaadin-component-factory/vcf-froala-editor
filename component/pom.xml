@@ -9,7 +9,7 @@
 
     <groupId>org.vaadin.addons.componentfactory</groupId>
     <artifactId>vcf-froala-editor</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <name>Froala Editor</name>
     <packaging>jar</packaging>
 
@@ -22,16 +22,17 @@
     </licenses>
 
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>24.10.7</vaadin.version>
+        <vaadin.version>25.3.0</vaadin.version>
 
         <!-- Test only. JUnit is pinned to what spring-boot-dependencies manages in the
              reactor root, so a standalone build of this module and a reactor build
              run the same version. Karibu's line is Vaadin-version-specific and not
-             BOM-managed: 2.4.x -> Vaadin 24.8+ (not 25), 2.6.x+ -> Vaadin 25+. -->
-        <junit-jupiter.version>5.12.2</junit-jupiter.version>
-        <karibu-testing.version>2.4.4</karibu-testing.version>
+             BOM-managed: 2.4.x -> Vaadin 24.8+ (not 25), 2.6.x+ -> Vaadin 25+, and Vaadin 25.3
+             needs 2.7.3 or newer. -->
+        <junit-jupiter.version>6.0.3</junit-jupiter.version>
+        <karibu-testing.version>2.7.3</karibu-testing.version>
         <maven-surefire.version>3.5.6</maven-surefire.version>
 
         <spotless.plugin.version>3.10.2</spotless.plugin.version>

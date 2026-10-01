@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.text.WordUtils;
-import org.vaadin.addons.componentfactory.toolbarlayout.ToolbarLayout;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaEditorVariant;
@@ -41,14 +40,14 @@ import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.menubar.MenuBar;
 
 /** The demo's menus for trying the editor out: component state, value and Froala options. */
 // Froala's own themes, which the add-on does not load
 @CssImport("froala-editor/css/themes/dark.min.css")
 @CssImport("froala-editor/css/themes/gray.min.css")
 @CssImport("froala-editor/css/themes/royal.min.css")
-public class DemoToolbar extends ToolbarLayout {
+public class DemoToolbar extends MenuBar {
 
     private static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
     private static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
@@ -90,7 +89,7 @@ public class DemoToolbar extends ToolbarLayout {
                 }
             });
         }
-        menu.add(new Hr());
+        menu.addSeparator();
         menu.addItem("Focus", _unused -> editor.focus());
     }
 
@@ -108,7 +107,7 @@ public class DemoToolbar extends ToolbarLayout {
         replaceSelection.setEnabled(false);
         editor.addSelectionChangeListener(event -> replaceSelection.setEnabled(event.hasSelection()));
 
-        menu.add(new Hr());
+        menu.addSeparator();
         // the underscore has to go first, because capitalizeFully only splits on whitespace and ON_BLUR would read
         // "On_blur"
         choice(menu.addItem("Value change mode").getSubMenu(), List.of(FroalaValueChangeMode.values()),

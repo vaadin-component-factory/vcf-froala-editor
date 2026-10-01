@@ -131,12 +131,12 @@ class FroalaUploadIT extends SpringPlaywrightIT {
 
     @Test
     void handlersSizeLimit_appliesWhereTheServletContainerParsesTheRequest() {
-        // Spring Boot has the container parse the multipart request, and Flow then skips the handler's limits. The
-        // add-on checks the size itself, so this is where a missing check would show.
+        // Spring Boot has the container parse the multipart request. Flow 25 applies the handler's limit there as well
+        // and refuses the file itself, with 500 (maintainer, 2026-10-01).
         page.locator("#limited .fr-element").waitFor();
 
         assertEquals(200, postTo("#limited", new FilePayload("small.png", "image/png", new byte[4])).status());
-        assertEquals(413, postTo("#limited", PIXEL).status());
+        assertEquals(500, postTo("#limited", PIXEL).status());
     }
 
     @Test

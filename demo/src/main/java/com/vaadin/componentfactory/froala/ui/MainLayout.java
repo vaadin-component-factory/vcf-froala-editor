@@ -49,7 +49,7 @@ public class MainLayout extends AppLayout {
 
     /** The build info is missing when the demo runs from an IDE without a Maven build, so the version is left out. */
     public MainLayout(Optional<BuildProperties> buildProperties) {
-        Button darkMode = new Button(VaadinIcon.ADJUST.create(), _unused -> {
+        Button darkMode = new Button(VaadinIcon.CONTRAST.create(), _unused -> {
             ThemeList themeList = UI.getCurrent().getElement().getThemeList();
 
             if (themeList.contains(Lumo.DARK)) {

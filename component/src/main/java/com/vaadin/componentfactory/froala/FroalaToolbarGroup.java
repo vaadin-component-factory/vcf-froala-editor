@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import elemental.json.Json;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * One named group of toolbar buttons in Froala's grouped toolbar, with the alignment and the overflow count that belong
@@ -181,12 +181,12 @@ public final class FroalaToolbarGroup implements Serializable {
     }
 
     /** Returns the group as Froala receives it: its buttons, plus align and buttonsVisible when they were set. */
-    JsonObject toJson() {
-        JsonArray names = Json.createArray();
-        buttons.forEach(button -> names.set(names.length(), button));
+    ObjectNode toJson() {
+        ArrayNode names = JsonNodeFactory.instance.arrayNode();
+        buttons.forEach(button -> names.add(button));
 
-        JsonObject group = Json.createObject();
-        group.put("buttons", names);
+        ObjectNode group = JsonNodeFactory.instance.objectNode();
+        group.set("buttons", names);
 
         if (align != null) {
             group.put("align", align.getOptionValue());
@@ -205,7 +205,7 @@ public final class FroalaToolbarGroup implements Serializable {
      */
     @Override
     public String toString() {
-        return name + ": " + toJson().toJson();
+        return name + ": " + toJson().toString();
     }
 
     @Override

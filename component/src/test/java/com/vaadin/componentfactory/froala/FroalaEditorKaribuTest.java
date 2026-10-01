@@ -21,18 +21,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.github.mvysny.kaributesting.v10.ElementUtilsKt;
 import com.github.mvysny.kaributesting.v10.MockVaadin;
-import elemental.json.Json;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
-import elemental.json.JsonValue;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -217,10 +216,9 @@ class FroalaEditorKaribuTest {
     @Test
     void defaultPlugins_areTheBasics() {
         // ADR-0008: options that name no plugins get the basic set, sent as a property of its own
-        JsonArray sent = (JsonArray) new FroalaEditor().getElement().getPropertyRaw("defaultPluginsEnabled");
+        ArrayNode sent = (ArrayNode) new FroalaEditor().getElement().getPropertyRaw("defaultPluginsEnabled");
 
-        assertEquals(FroalaPlugin.basics(),
-                IntStream.range(0, sent.length()).mapToObj(sent::getString).collect(Collectors.toSet()));
+        assertEquals(FroalaPlugin.basics(), sent.valueStream().map(JsonNode::asString).collect(Collectors.toSet()));
     }
 
     @Test
@@ -423,7 +421,7 @@ class FroalaEditorKaribuTest {
         assertThrows(IllegalArgumentException.class, () -> editor.setOptions("[1, 2, 3]"));
         assertThrows(IllegalArgumentException.class, () -> editor.setOptions(""));
 
-        // elemental's own parser would take this and drop the rest
+        // a lenient parser would take this and drop the rest
         assertThrows(IllegalArgumentException.class, () -> editor.setOptions("{\"tabSpaces\": 4} trailing"));
     }
 
@@ -449,10 +447,10 @@ class FroalaEditorKaribuTest {
         });
         editor.addCommand(second, event -> {
         });
-        assertEquals("[" + first.toJson().toJson() + "," + second.toJson().toJson() + "]", commandsOn(editor));
+        assertEquals("[" + first.toJson().toString() + "," + second.toJson().toString() + "]", commandsOn(editor));
 
         registration.remove();
-        assertEquals("[" + second.toJson().toJson() + "]", commandsOn(editor));
+        assertEquals("[" + second.toJson().toString() + "]", commandsOn(editor));
     }
 
     @Test
@@ -464,7 +462,7 @@ class FroalaEditorKaribuTest {
         });
         layout.add(editor);
 
-        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+        assertEquals("[" + command.toJson().toString() + "]", commandsOn(editor));
     }
 
     @Test
@@ -519,7 +517,7 @@ class FroalaEditorKaribuTest {
 
         stale.remove();
 
-        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+        assertEquals("[" + command.toJson().toString() + "]", commandsOn(editor));
     }
 
     @Test
@@ -530,7 +528,7 @@ class FroalaEditorKaribuTest {
 
         editor.addCommand(command, popover);
 
-        assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
+        assertEquals("[" + command.toJson().toString() + "]", commandsOn(editor));
         assertTrue(popover.isAttached());
         assertEquals(editor, popover.getTarget());
         assertTrue(hasPendingJavaScript("_setCommandPopover"));
@@ -668,37 +666,37 @@ class FroalaEditorKaribuTest {
 
     /** Fires a DOM event from the client with one entry of event data, the way Flow delivers it. */
     private void fireClientEvent(FroalaEditor editor, String type, String key, String value) {
-        fireClientEvent(editor, type, key, Json.create(value));
+        fireClientEvent(editor, type, key, JsonNodeFactory.instance.stringNode(value));
     }
 
     private void fireClientEvent(FroalaEditor editor, String type, String key, boolean value) {
-        fireClientEvent(editor, type, key, Json.create(value));
+        fireClientEvent(editor, type, key, JsonNodeFactory.instance.booleanNode(value));
     }
 
-    private void fireClientEvent(FroalaEditor editor, String type, String key, JsonValue value) {
-        JsonObject data = Json.createObject();
-        data.put(key, value);
+    private void fireClientEvent(FroalaEditor editor, String type, String key, JsonNode value) {
+        ObjectNode data = JsonNodeFactory.instance.objectNode();
+        data.set(key, value);
         ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), type, data));
     }
 
     /** The commands as they sit on the element, which is what the client registers with Froala. */
     private String commandsOn(FroalaEditor editor) {
-        return ((JsonArray) editor.getElement().getPropertyRaw("commands")).toJson();
+        return editor.getElement().getPropertyRaw("commands").toString();
     }
 
     /** The names of the pressed toggle commands as they sit on the element. */
     private String activeCommandsOn(FroalaEditor editor) {
-        return ((JsonArray) editor.getElement().getPropertyRaw("activeCommands")).toJson();
+        return editor.getElement().getPropertyRaw("activeCommands").toString();
     }
 
     /** The options as they sit on the element, which is what the client will read them from. */
     private String optionsOn(FroalaEditor editor) {
-        return ((JsonObject) editor.getElement().getPropertyRaw("options")).toJson();
+        return editor.getElement().getPropertyRaw("options").toString();
     }
 
     /** The locale's language file names as they sit on the element, best first. */
     private String localeLanguagesOn(FroalaEditor editor) {
-        return ((JsonArray) editor.getElement().getPropertyRaw("localeLanguages")).toJson();
+        return editor.getElement().getPropertyRaw("localeLanguages").toString();
     }
 
     private List<String> uploadAttributesOn(FroalaEditor editor) {

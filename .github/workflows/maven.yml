@@ -49,7 +49,7 @@ jobs:
           e2e/target/failsafe-reports/
         retention-days: 7
 
-  # The add-on on its own, the way it is released: without the reactor root, on the Java 17 floor (ADR-0005),
+  # The add-on on its own, the way it is released: without the reactor root, on the Java 21 floor (ADR-0010),
   # and with the Vaadin Directory package.
   component:
 
@@ -58,10 +58,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
         cache: maven
 

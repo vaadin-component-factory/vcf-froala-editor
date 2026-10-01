@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import elemental.json.Json;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import com.vaadin.flow.component.AbstractSinglePropertyField;
 import com.vaadin.flow.component.Component;
@@ -50,9 +50,9 @@ import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.HttpStatusCode;
-import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
+import com.vaadin.flow.server.streams.UploadResult;
 import com.vaadin.flow.shared.Registration;
 
 /**
@@ -227,8 +227,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
         // The plugins for options that name none. A property of its own, so that the options on the element stay what
         // the application set, and the client needs no list of its own.
-        JsonArray basics = Json.createArray();
-        FroalaPlugin.basics().forEach(plugin -> basics.set(basics.length(), plugin));
+        ArrayNode basics = JsonNodeFactory.instance.arrayNode();
+        FroalaPlugin.basics().forEach(plugin -> basics.add(plugin));
         element.setPropertyJson(DEFAULT_PLUGINS_PROPERTY, basics);
 
         element.addEventListener("_value-delta", event -> {
@@ -387,11 +387,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         applyOptions(options == null ? null : options.toJson());
     }
 
-    private void applyOptions(JsonObject options) {
+    private void applyOptions(ObjectNode options) {
         // Froala's `events` option is a map of callbacks, and JSON has no functions. Whatever arrived here under that
         // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped,
         // because the options were written to do something and silently doing nothing is worse.
-        if (options != null && options.hasKey("events")) {
+        if (options != null && options.has("events")) {
             throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
                     + " it cannot be set from the server. Froala events reach the server only through the listeners"
                     + " FroalaEditor offers, such as addValueChangeListener.");
@@ -406,7 +406,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             return;
         }
 
-        optionsJson = options.toJson();
+        optionsJson = options.toString();
         getElement().setPropertyJson(OPTIONS_PROPERTY, options);
     }
 
@@ -415,8 +415,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * The client takes the first name it has a file for, so the list of Froala's language files lives in one place.
      */
     private void sendLocaleLanguages() {
-        JsonArray names = Json.createArray();
-        languageFileCandidates(getLocale()).forEach(name -> names.set(names.length(), name));
+        ArrayNode names = JsonNodeFactory.instance.arrayNode();
+        languageFileCandidates(getLocale()).forEach(name -> names.add(name));
         getElement().setPropertyJson(LOCALE_LANGUAGES_PROPERTY, names);
     }
 
@@ -765,8 +765,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     private void sendActiveCommands() {
-        JsonArray json = Json.createArray();
-        activeCommands.forEach(name -> json.set(json.length(), name));
+        ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        activeCommands.forEach(name -> json.add(name));
         getElement().setPropertyJson(ACTIVE_COMMANDS_PROPERTY, json);
     }
 
@@ -785,8 +785,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         // that build reads the locale as it is now, like one caused by setOptions
         sendLocaleLanguages();
 
-        JsonArray json = Json.createArray();
-        commands.values().forEach(added -> json.set(json.length(), added.command().toJson()));
+        ArrayNode json = JsonNodeFactory.instance.arrayNode();
+        commands.values().forEach(added -> json.add(added.command().toJson()));
         getElement().setPropertyJson(COMMANDS_PROPERTY, json);
     }
 
@@ -934,8 +934,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Receives Froala's upload and answers with the {@code {"link": "…"}} JSON Froala expects. Flow already refuses an
-     * upload to a disabled editor. A refusal answers 403 for a read-only editor and 413 for a file over the handler's
-     * limit, without an exception, so that it is not logged as an error.
+     * upload to a disabled editor. It also refuses a file over the handler's limit in a multipart request, with 500. A
+     * refusal here answers 403 for a read-only editor and 413 for a body that is not multipart and over the limit or of
+     * unknown size, without an exception, so that it is not logged as an error.
      */
     private final class LinkUpload implements UploadHandler {
 
@@ -966,9 +967,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                 return;
             }
 
-            // Flow applies getFileSizeMax only when it parses a multipart request itself. Not where the servlet
-            // container has parsed it already, as under Spring Boot, and not for a body that is not multipart at all,
-            // whose size can be unknown. Froala always sends multipart with a known size.
+            // Flow applies getFileSizeMax to the files of a multipart request, but not to a body that is not multipart
+            // at all, whose size can be unknown. Froala always sends multipart with a known size.
             long max = handler.getFileSizeMax();
             if (max >= 0 && (event.getFileSize() < 0 || event.getFileSize() > max)) {
                 event.getResponse().setStatus(HttpStatusCode.REQUEST_ENTITY_TOO_LARGE.getCode());
@@ -977,10 +977,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
             String link = Objects.requireNonNull(handler.upload(event), "The upload handler returned no link");
 
-            JsonObject body = Json.createObject();
+            ObjectNode body = JsonNodeFactory.instance.objectNode();
             body.put("link", link);
             event.getResponse().setContentType("application/json;charset=UTF-8");
-            event.getResponse().getWriter().write(body.toJson());
+            event.getResponse().getWriter().write(body.toString());
         }
 
         /**
@@ -988,9 +988,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
          * 200 already, so only a failure needs one.
          */
         @Override
-        public void responseHandled(boolean success, VaadinResponse response) {
-            if (!success) {
-                response.setStatus(HttpStatusCode.INTERNAL_SERVER_ERROR.getCode());
+        public void responseHandled(UploadResult result) {
+            if (!result.success()) {
+                result.response().setStatus(HttpStatusCode.INTERNAL_SERVER_ERROR.getCode());
             }
         }
     }

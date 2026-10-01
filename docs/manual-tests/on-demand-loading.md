@@ -13,7 +13,7 @@ mvn -pl component install -DskipTests
 mvn -pl demo -Pproduction spring-boot:run
 ```
 
-In the devcontainer both commands also need `-Drequire.home.node=false`.
+In the devcontainer both commands also need `-Dvaadin.require.home.node=false`.
 
 ## 2. The default editor
 

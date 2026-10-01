@@ -22,14 +22,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import elemental.json.Json;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
-import elemental.json.JsonValue;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Froala's options, typed. Immutable, because every {@code with…} method returns a new instance and leaves this one
@@ -74,15 +74,17 @@ import elemental.json.JsonValue;
  */
 public final class FroalaOptions implements Serializable {
 
-    private static final ObjectMapper STRICT_JSON = new ObjectMapper()
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+    private static final ObjectMapper STRICT_JSON = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
 
-    private static final FroalaOptions EMPTY = new FroalaOptions(Json.createObject());
+    private static final JsonNodeFactory JSON = JsonNodeFactory.instance;
+
+    private static final FroalaOptions EMPTY = new FroalaOptions(JSON.objectNode());
 
     /** The options as Froala will receive them. Never handed out or mutated, which keeps the class immutable. */
-    private final JsonObject values;
+    private final ObjectNode values;
 
-    private FroalaOptions(JsonObject values) {
+    private FroalaOptions(ObjectNode values) {
         this.values = values;
     }
 
@@ -100,51 +102,39 @@ public final class FroalaOptions implements Serializable {
      * Returns a copy with the given option set, or removed if the value is null. Each option name appears in exactly
      * one {@code with…} method, so the name and its type stay together.
      */
-    private FroalaOptions with(String option, JsonValue value) {
-        JsonObject copy = copyOf(values);
+    private FroalaOptions with(String option, JsonNode value) {
+        ObjectNode copy = values.deepCopy();
 
         if (value == null) {
             copy.remove(option);
         } else {
-            copy.put(option, value);
+            copy.set(option, value);
         }
 
         return new FroalaOptions(copy);
     }
 
     private FroalaOptions with(String option, String value) {
-        return with(option, value == null ? null : Json.create(value));
+        return with(option, value == null ? null : JSON.stringNode(value));
     }
 
     private FroalaOptions with(String option, boolean value) {
-        return with(option, Json.create(value));
+        return with(option, JSON.booleanNode(value));
     }
 
     private FroalaOptions with(String option, int value) {
-        return with(option, Json.create(value));
+        return with(option, JSON.numberNode(value));
     }
 
     private FroalaOptions with(String option, Collection<String> values) {
         if (values == null) {
-            return with(option, (JsonValue) null);
+            return with(option, (JsonNode) null);
         }
 
-        JsonArray array = Json.createArray();
-        values.forEach(value -> array.set(array.length(),
-                Objects.requireNonNull(value, () -> option + " must not contain null")));
+        ArrayNode array = JSON.arrayNode();
+        values.forEach(value -> array.add(Objects.requireNonNull(value, () -> option + " must not contain null")));
 
         return with(option, array);
-    }
-
-    /** Elemental has no copy operation, so a copy is a fresh object with every entry put into it again. */
-    private static JsonObject copyOf(JsonObject source) {
-        JsonObject copy = Json.createObject();
-
-        for (String key : source.keys()) {
-            copy.put(key, source.<JsonValue> get(key));
-        }
-
-        return copy;
     }
 
     // -----------------------------------------------------------------------------------------------------------
@@ -266,21 +256,21 @@ public final class FroalaOptions implements Serializable {
      */
     public FroalaOptions withImageTuiOptions(String imageTuiOptions) {
         if (imageTuiOptions == null) {
-            return with("imageTUIOptions", (JsonValue) null);
+            return with("imageTUIOptions", (JsonNode) null);
         }
 
         return with("imageTUIOptions", parseObject(imageTuiOptions, "imageTUIOptions"));
     }
 
     /**
-     * Parses a JSON object literal strictly, so that what passes is valid JSON and not whatever elemental's lenient
-     * parser accepts, such as text after the object.
+     * Parses a JSON object literal strictly, so that what passes is valid JSON and nothing more, such as text after the
+     * object.
      */
-    static JsonObject parseObject(String json, String what) {
+    static ObjectNode parseObject(String json, String what) {
         JsonNode node;
         try {
             node = STRICT_JSON.readTree(json);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException(what + " must be a JSON object: " + e.getOriginalMessage(), e);
         }
 
@@ -288,12 +278,12 @@ public final class FroalaOptions implements Serializable {
             throw new IllegalArgumentException(what + " must be a JSON object, but got: " + json);
         }
 
-        // Jackson reads 1e999 as an infinite double, which would reach Froala as the string "Infinity"
+        // Jackson reads 1e999 as an infinite double, which JSON has no form for
         if (hasInfiniteNumber(node)) {
             throw new IllegalArgumentException(what + " holds a number out of range: " + json);
         }
 
-        return Json.parse(node.toString());
+        return (ObjectNode) node;
     }
 
     private static boolean hasInfiniteNumber(JsonNode node) {
@@ -310,13 +300,13 @@ public final class FroalaOptions implements Serializable {
         return false;
     }
 
-    private static JsonObject toJsonObject(Map<String, String> entries) {
+    private static ObjectNode toJsonObject(Map<String, String> entries) {
         if (entries == null) {
             return null;
         }
 
         // Sorted, so that equal maps give equal JSON whatever order they iterate in, which equals relies on
-        JsonObject object = Json.createObject();
+        ObjectNode object = JSON.objectNode();
         new TreeMap<>(entries).forEach((key, value) -> object.put(key,
                 Objects.requireNonNull(value, () -> "The value for '" + key + "' must not be null")));
 
@@ -1226,8 +1216,8 @@ public final class FroalaOptions implements Serializable {
      *
      * @return a new JSON object, never null
      */
-    JsonObject toJson() {
-        return copyOf(values);
+    ObjectNode toJson() {
+        return values.deepCopy();
     }
 
     /**
@@ -1237,7 +1227,7 @@ public final class FroalaOptions implements Serializable {
      */
     @Override
     public String toString() {
-        return values.toJson();
+        return values.toString();
     }
 
     /**
@@ -1247,19 +1237,19 @@ public final class FroalaOptions implements Serializable {
      */
     @Override
     public boolean equals(Object other) {
-        // elemental compares by identity, so this walks the keys itself
+        // Jackson ignores the order of keys inside an object, so this compares each option's JSON text
         if (this == other) {
             return true;
         }
 
-        if (!(other instanceof FroalaOptions options) || values.keys().length != options.values.keys().length) {
+        if (!(other instanceof FroalaOptions options) || values.size() != options.values.size()) {
             return false;
         }
 
-        for (String key : values.keys()) {
-            JsonValue theirs = options.values.get(key);
+        for (String key : values.propertyNames()) {
+            JsonNode theirs = options.values.get(key);
 
-            if (theirs == null || !values.<JsonValue> get(key).toJson().equals(theirs.toJson())) {
+            if (theirs == null || !values.get(key).toString().equals(theirs.toString())) {
                 return false;
             }
         }
@@ -1272,8 +1262,8 @@ public final class FroalaOptions implements Serializable {
         int hash = 0;
 
         // Sum, so that the result does not depend on the order the options were set in, matching equals.
-        for (String key : values.keys()) {
-            hash += key.hashCode() ^ values.<JsonValue> get(key).toJson().hashCode();
+        for (String key : values.propertyNames()) {
+            hash += key.hashCode() ^ values.get(key).toString().hashCode();
         }
 
         return hash;

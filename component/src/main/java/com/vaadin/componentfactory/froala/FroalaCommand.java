@@ -24,8 +24,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import elemental.json.Json;
-import elemental.json.JsonObject;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.KeyModifier;
@@ -284,20 +284,20 @@ public final class FroalaCommand implements Serializable {
     }
 
     /** The command as the client registers it with Froala. */
-    JsonObject toJson() {
-        JsonObject json = Json.createObject();
+    ObjectNode toJson() {
+        ObjectNode json = JsonNodeFactory.instance.objectNode();
         json.put("name", name);
         json.put("title", title);
-        json.put("icon", iconAttributes());
+        json.set("icon", iconAttributes());
         json.put("toggle", toggle);
 
         if (shortcutLabel != null) {
-            JsonObject shortcut = Json.createObject();
+            ObjectNode shortcut = JsonNodeFactory.instance.objectNode();
             shortcut.put("keyCode", shortcutKeyCode);
             shortcut.put("letter", shortcutLabel);
             shortcut.put("shift", shortcutModifiers.contains(KeyModifier.SHIFT));
             shortcut.put("alt", shortcutModifiers.contains(KeyModifier.ALT));
-            json.put("shortcut", shortcut);
+            json.set("shortcut", shortcut);
         }
 
         return json;
@@ -308,9 +308,9 @@ public final class FroalaCommand implements Serializable {
      * an icon from an HTML string, which has no properties. An icon sets some of each, e.g. {@code SvgIcon} its
      * {@code src} as an attribute and its {@code symbol} as a property.
      */
-    private JsonObject iconAttributes() {
+    private ObjectNode iconAttributes() {
         Element element = icon.getElement();
-        JsonObject attributes = Json.createObject();
+        ObjectNode attributes = JsonNodeFactory.instance.objectNode();
         element.getAttributeNames().forEach(attribute -> {
             String value = element.getAttribute(attribute);
             if (value != null) {

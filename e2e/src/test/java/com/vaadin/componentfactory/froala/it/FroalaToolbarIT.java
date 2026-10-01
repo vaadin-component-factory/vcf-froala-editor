@@ -15,17 +15,15 @@
  */
 package com.vaadin.componentfactory.froala.it;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import elemental.json.Json;
-import elemental.json.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.it.views.FroalaToolbarTestView;
@@ -59,10 +57,9 @@ class FroalaToolbarIT extends SpringPlaywrightIT {
         // A button whose plugin is not enabled, or whose name Froala does not know, is dropped silently. Froala adds
         // helper buttons of its own, such as formatOLOptions, so only what is missing counts. Buttons in an overflow
         // panel are in the page as well, only hidden.
-        JsonObject groups = Json.parse(FroalaToolbar.basics().toString());
-        Set<String> expected = Arrays.stream(groups.keys()).map(name -> groups.getObject(name).getArray("buttons"))
-                .flatMap(buttons -> IntStream.range(0, buttons.length()).mapToObj(buttons::getString))
-                .collect(Collectors.toSet());
+        JsonNode groups = new ObjectMapper().readTree(FroalaToolbar.basics().toString());
+        Set<String> expected = groups.valueStream().flatMap(group -> group.get("buttons").valueStream())
+                .map(JsonNode::asString).collect(Collectors.toSet());
         @SuppressWarnings("unchecked")
         List<String> drawn = (List<String>) page.evaluate(
                 "() => [...document.querySelectorAll('#basics .fr-toolbar .fr-command[data-cmd]')].map(b => b.dataset.cmd)");
