@@ -27,6 +27,15 @@ as a Java component.
 </dependency>
 ```
 
+The add-on is published in the Vaadin Directory, so its repository goes into the `pom.xml` as well:
+
+```xml
+<repository>
+    <id>vaadin-addons</id>
+    <url>https://maven.vaadin.com/vaadin-addons</url>
+</repository>
+```
+
 Vaadin's frontend build pulls in the `froala-editor` npm package by itself.
 
 The add-on is not released yet. Until it is, build it with `mvn install` in the `component`
@@ -127,7 +136,7 @@ Limits of options:
   ```java
   editor.setOptions(options.withPlaceholderText("Write something"));
   editor.setOptions(FroalaOptions.defaults().withSpellcheck(false)); // the placeholder is gone
-  editor.setOptions(options.withSpellcheck(false));                 // both are set
+  editor.setOptions(options.withSpellcheck(false));                  // both are set
   ```
 - Froala cannot change options on a running editor. Calling `setOptions` with other options
   on an attached editor destroys it and builds a new one. The value is kept, but caret,
@@ -259,7 +268,7 @@ it had before, your own or none. With none it follows the page again.
 `withToolbarButtons` takes a `FroalaToolbar`, either flat or grouped.
 `withToolbarButtonsMd`, `…Sm` and `…Xs` do the same for narrower screens. A button is named
 by its command. `FroalaButton` has a constant for each of Froala's buttons, and its Javadoc
-names the plugin each one needs.
+names the plugin each one needs. Froala leaves out a button whose plugin is not enabled.
 
 ```java
 FroalaToolbar flat = FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC, FroalaButton.VERTICAL_SEPARATOR,
@@ -302,7 +311,7 @@ starting point for a toolbar that differs in a detail:
 // every button of every group shown, no overflow panels
 FroalaOptions options = FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.basics().withAllButtonsVisible());
 
-// Froala's toolbar, with every insert button shown and five text buttons before the overflow
+// Froala's toolbar, with every enabled insert button shown and five text buttons before the overflow
 FroalaToolbar toolbar = FroalaToolbar.froalaDefault()
         .withAllButtonsVisible(FroalaToolbarGroup.MORE_RICH)
         .withButtonsVisible(FroalaToolbarGroup.MORE_TEXT, 5);
@@ -316,7 +325,7 @@ FroalaToolbar.of(FroalaButton.BOLD).withAllButtonsVisible(FroalaToolbarGroup.MOR
 ```
 
 Setting a toolbar also replaces Froala's narrower variants, which show fewer buttons per group.
-For example `froalaDefault()` on a phone still shows four insert buttons, where Froala's own
+For example `froalaDefault()` on a phone still shows up to four insert buttons, where Froala's own
 default shows none. Set the narrow ones yourself where they should differ. To hide the insert
 buttons on phones as Froala does:
 
@@ -336,7 +345,7 @@ which `FroalaPlugin.basics()` does not contain:
 
 ```java
 // the image popup with replace, align, remove, alternative text and size only
-FroalaOptions options = FroalaOptions.defaults().withImageEditButtons(List.of(
+FroalaOptions options = FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.IMAGE).withImageEditButtons(List.of(
         FroalaButton.IMAGE_REPLACE, FroalaButton.IMAGE_ALIGN, FroalaButton.IMAGE_REMOVE,
         FroalaButton.HORIZONTAL_SEPARATOR, FroalaButton.IMAGE_ALT, FroalaButton.IMAGE_SIZE));
 ```
@@ -346,7 +355,9 @@ they come from `FroalaQuickInsertButton` rather than `FroalaButton`. It needs
 `FroalaPlugin.QUICK_INSERT`, which is not in `basics()` either:
 
 ```java
-FroalaOptions.defaults().withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE, FroalaQuickInsertButton.UL));
+FroalaOptions.defaults()
+        .withPluginsEnabled(FroalaPlugin.QUICK_INSERT, FroalaPlugin.TABLE, FroalaPlugin.LISTS)
+        .withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE, FroalaQuickInsertButton.UL));
 ```
 
 ### Own commands
@@ -395,12 +406,15 @@ insertTemplate = insertTemplate.withShortcut(191, "/");                       //
 
 These throw an `IllegalArgumentException`:
 
+- a command name that does not start with a letter, or holds anything but letters, digits and
+  underscores
 - a `Key` that is no letter, digit or function key from F1 to F12
-- Alt Graph as a modifier
+- a modifier other than Shift, Alt, Ctrl or Cmd, such as Alt Graph
 - a key code below 1, or a blank label
 - a second command of the same name on one editor
 
 ```java
+new FroalaCommand("insert-template", "Insert template", icon); // IllegalArgumentException, the dash
 insertTemplate.withShortcut(Key.SLASH);                        // IllegalArgumentException, use the key code
 insertTemplate.withShortcut(Key.KEY_T, KeyModifier.ALT_GRAPH); // IllegalArgumentException, Froala cannot bind it
 insertTemplate.withShortcut(0, "X");                           // IllegalArgumentException, below 1
@@ -425,7 +439,8 @@ What is shared:
 ```java
 first.addCommand(new FroalaCommand("sign", "Sign", VaadinIcon.PENCIL.create()), event -> sign(first));
 second.addCommand(new FroalaCommand("sign", "Sign off", VaadinIcon.CHECK.create()), event -> sign(second));
-// both editors show the one built last, say "Sign off" with the check mark, and each runs its own listener
+// both editors show the one built last, say "Sign off" with the check mark
+// each runs its own listener
 
 editor.addCommand(new FroalaCommand("bold", "Bold", VaadinIcon.BOLD.create()), event -> {});
 // Froala's bold is gone from every editor on the page
@@ -452,7 +467,7 @@ The editor puts the popover into the UI and points it at the button, which Froal
 every rebuild. So don't add the popover to a layout and don't set a target of your own:
 
 ```java
-layout.add(popover);         // not needed, because the editor has put it into the UI already
+layout.add(popover);           // not needed, because the editor has put it into the UI already
 popover.setTarget(someButton); // takes the popover away from the command's button
 ```
 
@@ -673,7 +688,7 @@ value change mode, and is not in `getValue()` right after the call:
 
 ```java
 editor.replaceSelectionContent("<strong>[redacted]</strong>");
-editor.getValue();                                            // still the old value
+editor.getValue();                                              // still the old value
 editor.addValueChangeListener(event -> save(event.getValue())); // gets the new one
 ```
 
@@ -762,10 +777,10 @@ FroalaOptions options = FroalaOptions.defaults()
         .withHtmlAllowedStyleProps(List.of()); // an empty list removes every style attribute
 ```
 
-Pasted text gets its own options on top of these. `withPastePlain(true)` keeps lists and tables
-and turns everything else into plain paragraphs. `withPasteDeniedTags`, `withPasteDeniedAttrs`
-and `withPasteAllowedStyleProps` narrow what a paste keeps. The two denied lists take exact
-names, not patterns, so `"h[1-6]"` denies nothing.
+Pasted text gets its own options on top of these. `withPastePlain(true)` keeps lists and tables,
+turns headings, quotes and preformatted blocks into plain paragraphs and removes the formatting.
+`withPasteDeniedTags`, `withPasteDeniedAttrs` and `withPasteAllowedStyleProps` narrow what a
+paste keeps. The two denied lists take exact names, not patterns, so `"h[1-6]"` denies nothing.
 
 Text from Word goes through `FroalaPlugin.WORD_PASTE`, which asks the user whether to keep the
 formatting. The `withWord…` methods change that.
