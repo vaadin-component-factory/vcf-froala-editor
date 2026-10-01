@@ -49,6 +49,9 @@ public class EditorView extends VerticalLayout {
 
 The value is the editor's HTML as a `String`. It is not sanitized. See [Sanitizing](#sanitizing).
 
+A new editor has the basic rich-text plugins only. Tables, images and the other inserts need
+`withPluginsEnabled`, see [Plugins and languages](#plugins-and-languages).
+
 Label, helper text and error message work as in Vaadin's other fields. They are linked to
 Froala's editable area with `aria-labelledby` and `aria-describedby`. Read-only, disabled,
 invalid and the size methods work as on other fields too.
@@ -85,7 +88,7 @@ editor.setOptions(options.withSpellcheck(false));   // rebuilds the editor, now 
 Froala's own minimum, it throws. For example `setValueChangeTimeout(100)` throws an
 `IllegalArgumentException`.
 
-Toolbar commands, paste, cut and undo are sent at once. `INTERVAL` is the only mode that sends
+In `ON_CHANGE`, toolbar commands, paste, cut and undo are sent at once. `INTERVAL` is the only mode that sends
 anything while the user types without pausing.
 
 The modes are the add-on's own `FroalaValueChangeMode`, not Vaadin's `ValueChangeMode`:
@@ -283,15 +286,15 @@ the number of buttons, or use one of the `MORE_…` names:
 ```java
 // throws: four buttons, three shown by default, and no button to open the rest
 FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools",
-        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.PRINT, FroalaButton.FULLSCREEN));
+        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.SELECT_ALL, FroalaButton.HELP));
 
 // works: all four are shown
 FroalaToolbar.ofGroups(FroalaToolbarGroup.named("tools",
-        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.PRINT, FroalaButton.FULLSCREEN).withButtonsVisible(4));
+        FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.SELECT_ALL, FroalaButton.HELP).withButtonsVisible(4));
 ```
 
 Two ready-made toolbars cover the common cases. `FroalaToolbar.froalaDefault()` is Froala's
-own default toolbar. `FroalaToolbar.basics()` has the same groups, reduced to the buttons of
+own default toolbar. `FroalaToolbar.basics()` has its four `MORE_…` groups, reduced to the buttons of
 `FroalaPlugin.basics()`. The Javadoc of each lists every group with its buttons. Both are a
 starting point for a toolbar that differs in a detail:
 
@@ -328,7 +331,8 @@ FroalaOptions options = FroalaOptions.defaults()
 The popups have button lists of their own, such as the one that opens on an image or on a
 link. Each has a `with…Buttons` method on `FroalaOptions` named after Froala's option, and its
 Javadoc lists Froala's default. The list replaces the default, so name every button the popup
-should keep:
+should keep. A popup exists only with its plugin. The image popup needs `FroalaPlugin.IMAGE`,
+which `FroalaPlugin.basics()` does not contain:
 
 ```java
 // the image popup with replace, align, remove, alternative text and size only
@@ -338,7 +342,8 @@ FroalaOptions options = FroalaOptions.defaults().withImageEditButtons(List.of(
 ```
 
 `withQuickInsertButtons` is the exception. The quick insert plugin names its buttons itself, so
-they come from `FroalaQuickInsertButton` rather than `FroalaButton`:
+they come from `FroalaQuickInsertButton` rather than `FroalaButton`. It needs
+`FroalaPlugin.QUICK_INSERT`, which is not in `basics()` either:
 
 ```java
 FroalaOptions.defaults().withQuickInsertButtons(List.of(FroalaQuickInsertButton.TABLE, FroalaQuickInsertButton.UL));
@@ -385,7 +390,7 @@ layout, and whether the browser takes the combination first, is up to Froala and
 ```java
 insertTemplate = insertTemplate.withShortcut(Key.F2);                         // Ctrl+F2
 insertTemplate = insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL); // Ctrl+T (CONTROL is ignored)
-insertTemplate = insertTemplate.withShortcut(191, "/");                       // Ctrl+/ on a US layout, the tooltip shows "Ctrl+/"
+insertTemplate = insertTemplate.withShortcut(191, "/");                       // Ctrl+/ on a US layout. The tooltip shows "Ctrl+/"
 ```
 
 These throw an `IllegalArgumentException`:
@@ -447,7 +452,7 @@ The editor puts the popover into the UI and points it at the button, which Froal
 every rebuild. So don't add the popover to a layout and don't set a target of your own:
 
 ```java
-layout.add(popover);         // not needed, the editor has put it into the UI already
+layout.add(popover);         // not needed, because the editor has put it into the UI already
 popover.setTarget(someButton); // takes the popover away from the command's button
 ```
 
@@ -620,7 +625,7 @@ The editor provides a set of variants for the Vaadin theme:
 
 | Variant | What it does |
 |---|---|
-| `OUTLINED` | Outlines the editor with a border, no field background. Looks like Froala's native editor. |
+| `OUTLINED` | Outlines the editor with a border and no field background. Looks like Froala's native editor. |
 | `NO_HOVER_HIGHLIGHT` | No highlight while the mouse is over the editor. |
 
 These can be set like theme variants on other fields:
@@ -630,7 +635,7 @@ editor.addThemeVariants(FroalaEditorVariant.OUTLINED, FroalaEditorVariant.NO_HOV
 ```
 
 These theme variants are not Froala's built-in themes and do not affect them. To change the
-whole editor theme to a Froala native theme, you have to set that via the options:
+whole editor theme to a Froala native theme, set it in the options:
 
 ```java
 // Froala's own look, no theme
@@ -697,7 +702,9 @@ viewer.setContent(editor.getValue());
 
 It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base text
 takes font, color and size from the page, which under Lumo matches the editor. The
-`--vcf-froala-*` properties change the editor only.
+`--vcf-froala-*` properties of the base text, such as `--vcf-froala-value-color`, change the
+editor only. The colors of other content, such as tracked changes, follow the properties in the
+viewer too.
 
 The viewer carries the class `vaadin-theme` for the editor's default theme. Remove it when your
 editors use another Froala theme:
@@ -729,7 +736,7 @@ FroalaViewer.applyRouterIgnore(div, "/files");
 
 Nothing is sanitized on the server, neither the value `FroalaEditor` receives nor what
 `FroalaViewer.setContent` displays. Froala's own cleaning runs in the browser and does not
-protect a value that reaches the server any other way. Treat the value as untrusted input,
+protect a value that reaches the server any other way. Treat the value as untrusted input
 and sanitize it before storing or displaying it, for example with jsoup:
 
 ```java
@@ -774,6 +781,7 @@ FroalaOptions options = FroalaOptions.defaults()
 
 ### The quick insert button is hidden by the AppLayout drawer or cut off in a Dialog
 
+This applies to editors with `FroalaPlugin.QUICK_INSERT`, which `basics()` does not contain.
 Froala's quick insert button (the `+` on an empty line) goes to the left of the editor box
 whenever there is at least its own width of room between the editor and the page edge.
 Froala does not check whether an ancestor of the editor clips that spot. So inside an
@@ -802,8 +810,8 @@ layout around each editor. If you need it to vary, use a property of your own:
 }
 ```
 
-Alternatively, leave enough room to the left of the editor inside its container, or switch
-the `quickInsert` plugin off.
+Alternatively, leave enough room to the left of the editor inside its container, or leave
+`FroalaPlugin.QUICK_INSERT` out.
 
 ## More
 

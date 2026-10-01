@@ -40,8 +40,9 @@ import com.vaadin.flow.shared.Registration;
  * The viewer also carries the class {@code vaadin-theme}, so the content rules of {@link FroalaTheme#VAADIN}, such as
  * the colors of tracked changes, apply as they do in the editor. An application whose editors use another Froala theme
  * removes it with {@code removeClassName("vaadin-theme")}. The base text (font, color, size, weight and line height)
- * comes from the page, which under Lumo gives the same values as the editor by default. Overriding the
- * {@code --vcf-froala-*} or input field properties changes the editor only.
+ * comes from the page, which under Lumo gives the same values as the editor by default. Overriding the base text's
+ * {@code --vcf-froala-*} properties, such as {@code --vcf-froala-value-color}, or the input field properties changes
+ * the editor only.
  */
 @Tag("vcf-froala-viewer")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
