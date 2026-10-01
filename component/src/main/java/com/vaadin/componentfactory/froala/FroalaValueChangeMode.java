@@ -23,6 +23,9 @@ package com.vaadin.componentfactory.froala;
  * Not to be confused with Vaadin's {@link com.vaadin.flow.data.value.ValueChangeMode}. {@link #ON_CHANGE} behaves like
  * Vaadin's {@code LAZY} while the user types, not like Vaadin's {@code ON_CHANGE}. {@link #INTERVAL} matches Vaadin's
  * {@code TIMEOUT}. There is no equivalent of Vaadin's {@code EAGER}.
+ *
+ * <p>
+ * In every mode a pending change is also sent when the editor loses focus.
  */
 public enum FroalaValueChangeMode {
 
@@ -42,9 +45,6 @@ public enum FroalaValueChangeMode {
      * Sends the value every {@link FroalaEditor#setIntervalPeriod(int)} milliseconds while there are changes to send,
      * independently of user events. This is the only mode that sends anything while the user types without pausing,
      * because Froala reports no change during an uninterrupted burst of typing.
-     *
-     * <p>
-     * Equivalent to Vaadin's own {@link com.vaadin.flow.data.value.ValueChangeMode#TIMEOUT}.
      */
     INTERVAL("interval");
 

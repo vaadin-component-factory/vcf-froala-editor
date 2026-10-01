@@ -18,7 +18,7 @@ package com.vaadin.componentfactory.froala;
 import com.vaadin.flow.component.shared.ThemeVariant;
 
 /**
- * Theme variants of {@link FroalaEditor}. They apply to the vaadin theme ({@link FroalaTheme#VAADIN}) only. Without a
+ * Theme variants of {@link FroalaEditor}. They apply to the Vaadin theme ({@link FroalaTheme#VAADIN}) only. Without a
  * variant the editor is filled like a Vaadin text field.
  *
  * @see FroalaEditor#addThemeVariants

@@ -164,8 +164,8 @@ public final class FroalaOptions implements Serializable {
     /**
      * Sets the language Froala's own texts are shown in, such as toolbar tooltips, popups and error messages. Froala's
      * {@code language}, which takes a language file's name such as {@code de}, {@code pt_br} or {@code zh_cn}. The
-     * editor downloads that file from {@code js/languages/} before it is built. A name with no such file leaves the
-     * editor in English, which is built in and has no file of its own.
+     * editor loads that language file before it is built. A name with no such file leaves the editor in English, which
+     * is built in and has no file of its own.
      *
      * <p>
      * Without this option the editor takes the language of the UI's locale, when it is built. It tries language and
@@ -183,9 +183,9 @@ public final class FroalaOptions implements Serializable {
      * Sets the reading direction of the edited text. Froala's {@code direction}.
      *
      * <p>
-     * This takes effect only without a language file, and the UI's locale picks one as well. See
-     * {@link #withLanguage(String)}. Every Froala language file names its own direction, and Froala lets it win over
-     * this option. So {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
+     * This takes effect only when no language file is loaded. Without {@link #withLanguage(String)} the UI's locale
+     * picks one. Every Froala language file names its own direction, and Froala lets it win over this option. So
+     * {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
      * {@code withLanguage("de").withDirection(RTL)} a left-to-right one. For right-to-left text with English tooltips
      * under any locale, use {@code withLanguage("en").withDirection(RTL)}. English has no file.
      *
@@ -1193,7 +1193,7 @@ public final class FroalaOptions implements Serializable {
     /**
      * Decides whether an inserted emoji is an image or a character. Froala's {@code emoticonsUseImage}, which is
      * {@code true} by default and then fetches its icons from {@code cdnjs.cloudflare.com} and leaves a cdnjs URL in
-     * the stored HTML. Set it to false and Froala inserts the plain unicode character, which needs no third party and
+     * the stored HTML. Set it to false and Froala inserts the plain Unicode character, which needs no third party and
      * survives anywhere. Needs {@link FroalaPlugin#EMOTICONS}.
      *
      * @param emoticonsUseImage whether emoji are inserted as images from a CDN
@@ -1205,7 +1205,7 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets how many milliseconds after a change Froala's {@code save} plugin posts the content to its {@code saveURL}.
-     * Needs {@link FroalaPlugin#SAVE}. Froala's {@code saveInterval}. {@code 0} turns the plugin off.
+     * Froala's {@code saveInterval}. Needs {@link FroalaPlugin#SAVE}. {@code 0} turns the plugin off.
      *
      * <p>
      * {@link FroalaEditor} uses {@code 0} unless this is set. Froala's own default is 10000. A Flow application gets

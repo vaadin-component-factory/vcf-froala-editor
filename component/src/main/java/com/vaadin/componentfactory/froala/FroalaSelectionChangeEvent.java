@@ -32,7 +32,7 @@ public class FroalaSelectionChangeEvent extends ComponentEvent<FroalaEditor> {
 
     /**
      * Creates a new event.
-     * 
+     *
      * @param source the editor the selection changed in
      * @param fromClient whether the event originated in the browser
      * @param hasSelection whether something is selected in the editor now
@@ -46,7 +46,7 @@ public class FroalaSelectionChangeEvent extends ComponentEvent<FroalaEditor> {
     /**
      * Returns whether something is selected in the editor, as opposed to a bare caret or the selection being outside
      * the editor altogether.
-     * 
+     *
      * @return true if the editor holds a non-empty selection
      */
     public boolean hasSelection() {

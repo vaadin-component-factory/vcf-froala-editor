@@ -46,8 +46,9 @@ import com.vaadin.flow.dom.Element;
  * <p>
  * The icon is any Vaadin icon: a {@code VaadinIcon} or {@code LumoIcon}, an icon of an iconset of your own, an
  * {@code SvgIcon} with a URL or a {@code FontIcon}. The button draws a {@code <vaadin-icon>} with the icon's attributes
- * and properties, read when the command is added. An {@code SvgIcon} whose source is a {@code DownloadHandler} has no
- * URL before it is attached, so it draws nothing.
+ * and properties, read whenever the editor sends its commands to the browser, which happens when one is added or
+ * removed. An {@code SvgIcon} whose source is a {@code DownloadHandler} has no URL before it is attached, so it draws
+ * nothing.
  */
 public final class FroalaCommand implements Serializable {
 
@@ -222,10 +223,9 @@ public final class FroalaCommand implements Serializable {
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
      *            here are ignored.
      * @return a new command with the shortcut
-     * @throws NullPointerException if the key or a modifier is null
+     * @throws NullPointerException if the key, the modifiers or a modifier is null
      * @throws IllegalArgumentException if the key is not a letter, digit or function key from F1 to F12, or a modifier
      *             is not Shift, Alt, Ctrl or Cmd
-     * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
         Objects.requireNonNull(key, "key must not be null");
@@ -253,7 +253,7 @@ public final class FroalaCommand implements Serializable {
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
      *            here are ignored.
      * @return a new command with the shortcut
-     * @throws NullPointerException if the label or a modifier is null
+     * @throws NullPointerException if the label, the modifiers or a modifier is null
      * @throws IllegalArgumentException if the key code is below 1, the label is blank, or a modifier is not Shift, Alt,
      *             Ctrl or Cmd
      */

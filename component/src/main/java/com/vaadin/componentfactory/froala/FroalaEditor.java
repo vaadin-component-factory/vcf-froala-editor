@@ -60,12 +60,15 @@ import com.vaadin.flow.shared.Registration;
  *
  * <p>
  * Configure the editor with {@link #setOptions(FroalaOptions)}, its toolbar with {@link FroalaToolbar}, and its license
- * key with {@link #setLicenseKey(String)}. To render the value outside an editor, use {@link FroalaViewer}.
+ * key with {@link #setLicenseKey(String)}. To render the value outside an editor, use {@link FroalaViewer}. Without
+ * options of its own the editor enables only {@link FroalaPlugin#basics()}, so images, tables and the like need
+ * {@link FroalaOptions#withPluginsEnabled(java.util.Collection)}.
  *
  * <p>
  * The value is HTML. This component does not parse, escape or sanitize it on the server. Froala cleans the content it
  * is given, but only in the browser, so a value that reached the server by any other route was not cleaned at all.
- * Treat the value as untrusted input before storing it or rendering it.
+ * Treat the value as untrusted input before storing it or rendering it. The value is never null, so
+ * {@code setValue(null)} throws a {@link NullPointerException}. Use {@link #clear()} instead.
  */
 @Tag("vcf-froala-editor")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
@@ -450,8 +453,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Returns the JSON the editor is configured with, whichever {@code setOptions} overload was used. Null if none was
-     * called or the last call passed null, in which case the editor uses the add-on's defaults.
+     * Returns the JSON last given to {@code setOptions}, whichever overload was used. The add-on's own defaults and
+     * what setters such as {@link #setLicenseKey(String)} add are not part of it. Null if none was called or the last
+     * call passed null, in which case the editor uses the add-on's defaults.
      *
      * @return the options as JSON, or null
      */
@@ -793,6 +797,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * Clicking a button outside the editor leaves the selection in place, so an action in the view still finds it.
+     * Detaching the editor while it has a selection also reports that the selection is gone, with
+     * {@code isFromClient()} false.
      *
      * @param listener the listener, not null
      * @return a handle to remove the listener

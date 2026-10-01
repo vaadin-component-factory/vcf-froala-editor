@@ -138,7 +138,7 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param buttons command names in the order they should appear, none of them null
      * @return a new instance
-     * @throws NullPointerException if any button name is null
+     * @throws NullPointerException if the buttons or any button name is null
      */
     public static FroalaToolbar of(String... buttons) {
         Objects.requireNonNull(buttons, "buttons must not be null");
@@ -207,7 +207,7 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws NullPointerException if any group is null
+     * @throws NullPointerException if the groups or any group is null
      * @throws IllegalArgumentException under the same conditions as {@link #ofGroups(Collection)}
      */
     public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
@@ -220,7 +220,7 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws NullPointerException if any group is null
+     * @throws NullPointerException if the groups or any group is null
      * @throws IllegalArgumentException if two groups share a name, since Froala keys its groups by name and the second
      *             would replace the first. Also thrown if a group with a name of its own shows fewer buttons than it
      *             holds, since Froala draws no button to open its overflow panel. See {@link FroalaToolbarGroup}.

@@ -35,6 +35,7 @@ public class FroalaCommandEvent extends ComponentEvent<FroalaEditor> {
      * @param source the editor the command was triggered in
      * @param fromClient whether the event originated in the browser
      * @param command the command that was triggered
+     * @throws NullPointerException if the command is null
      */
     public FroalaCommandEvent(FroalaEditor source, boolean fromClient, FroalaCommand command) {
         super(source, fromClient);

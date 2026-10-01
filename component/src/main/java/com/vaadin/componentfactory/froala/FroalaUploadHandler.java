@@ -22,7 +22,7 @@ import com.vaadin.flow.server.streams.UploadEvent;
 
 /**
  * Takes a file the user uploaded in the editor and returns the link the editor puts into the document.
- * 
+ *
  * @see FroalaEditor#setImageUploadHandler(FroalaUploadHandler)
  * @see FroalaEditor#setFileUploadHandler(FroalaUploadHandler)
  * @see FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)

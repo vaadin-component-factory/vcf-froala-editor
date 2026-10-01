@@ -96,7 +96,7 @@ public final class FroalaToolbarGroup implements Serializable {
      * @param name the group's name, which is also its overflow button's command name. See the class documentation.
      * @param buttons command names in the order they should appear, none of them null
      * @return a new instance
-     * @throws NullPointerException if the name or any button name is null
+     * @throws NullPointerException if the name, the buttons or any button name is null
      * @throws IllegalArgumentException if the name is blank
      */
     public static FroalaToolbarGroup named(String name, String... buttons) {

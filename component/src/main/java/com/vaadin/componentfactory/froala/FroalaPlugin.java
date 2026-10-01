@@ -38,7 +38,7 @@ import java.util.Set;
  *
  * <p>
  * Six of them need a server endpoint or an account that neither Froala nor this add-on provides, and do nothing without
- * it. These are {@link #AI_ASSIST}, {@link #COLLABORATIVE}, {@link #FILESTACK}, {@link #IMAGE_MANAGER}, {@link #SAVE},
+ * one. These are {@link #AI_ASSIST}, {@link #COLLABORATIVE}, {@link #FILESTACK}, {@link #IMAGE_MANAGER}, {@link #SAVE},
  * and {@link #FILES_MANAGER} for uploading, though its by-URL tab works without one. {@link #IMPORT_FROM_WORD} needs
  * the third-party mammoth.js script in the page instead, and the five plugins under {@code js/third_party/} each need a
  * library or a service of their own. The documentation of each names what it needs, and most of the options they read
@@ -289,9 +289,9 @@ public final class FroalaPlugin {
 
     /**
      * Posts the content to the endpoint in Froala's {@code saveURL} option on a timer. Requires that endpoint, which
-     * has no method on {@link FroalaOptions} and is set with {@link FroalaEditor#setOptions(String)}. The timer is
-     * {@link FroalaOptions#withSaveInterval(int)}, which the add-on sets to 0, so nothing is posted until it is set to
-     * a positive value.
+     * has no method on {@link FroalaOptions} and is set with {@link FroalaEditor#setOptions(String)}. The timer is set
+     * with {@link FroalaOptions#withSaveInterval(int)}, which the add-on sets to 0, so nothing is posted until it is
+     * set to a positive value.
      */
     public static final String SAVE = "save";
 
