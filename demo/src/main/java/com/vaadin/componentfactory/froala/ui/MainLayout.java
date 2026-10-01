@@ -15,13 +15,22 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import java.util.Optional;
+
+import org.springframework.boot.info.BuildProperties;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
+import com.vaadin.flow.component.html.AnchorTarget;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.dom.ThemeList;
@@ -36,7 +45,10 @@ import com.vaadin.flow.theme.lumo.Lumo;
 @Layout
 public class MainLayout extends AppLayout {
 
-    public MainLayout() {
+    private static final String DIRECTORY_URL = "https://vaadin.com/directory/component/froala-editor";
+
+    /** The build info is missing when the demo runs from an IDE without a Maven build, so the version is left out. */
+    public MainLayout(Optional<BuildProperties> buildProperties) {
         Button darkMode = new Button(VaadinIcon.ADJUST.create(), _unused -> {
             ThemeList themeList = UI.getCurrent().getElement().getThemeList();
 
@@ -57,6 +69,20 @@ public class MainLayout extends AppLayout {
 
         MenuConfiguration.getMenuEntries().forEach(entry -> nav.addItem(new SideNavItem(entry.title(), entry.path())));
 
-        addToDrawer(nav);
+        Div footer = new Div();
+        buildProperties.map(build -> build.get("addon.version"))
+                .ifPresent(version -> footer.add(new Div("Version " + version)));
+        footer.add(new Anchor(DIRECTORY_URL, "Vaadin Directory", AnchorTarget.BLANK));
+        footer.getStyle().setFontSize("var(--lumo-font-size-s)").setColor("var(--lumo-secondary-text-color)")
+                .setPadding("var(--lumo-space-m)");
+
+        VerticalLayout drawer = new VerticalLayout(nav, footer);
+        drawer.setSizeFull();
+        drawer.setPadding(false);
+        drawer.setSpacing(false);
+        drawer.setAlignItems(FlexComponent.Alignment.STRETCH);
+        drawer.setFlexGrow(1, nav);
+
+        addToDrawer(drawer);
     }
 }

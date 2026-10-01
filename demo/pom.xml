@@ -17,6 +17,10 @@
     <name>Froala Editor for Vaadin Flow Demo</name>
     <packaging>jar</packaging>
 
+    <properties>
+        <vcf-froala-editor.version>1.0.0-SNAPSHOT</vcf-froala-editor.version>
+    </properties>
+
     <repositories>
         <repository>
             <id>vaadin-addons</id>
@@ -28,7 +32,7 @@
         <dependency>
             <groupId>org.vaadin.addons.componentfactory</groupId>
             <artifactId>vcf-froala-editor</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${vcf-froala-editor.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
@@ -68,6 +72,19 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <!-- META-INF/build-info.properties, so the drawer can show the add-on's version -->
+                    <execution>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <additionalProperties>
+                                <addon.version>${vcf-froala-editor.version}</addon.version>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>com.vaadin</groupId>
