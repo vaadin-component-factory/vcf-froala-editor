@@ -27,9 +27,10 @@ jobs:
     - name: Install Playwright system dependencies
       run: npx --yes playwright@1.62.0 install-deps chromium
 
-    # Unit and browserless tests in component, the Playwright tests in e2e.
+    # Unit and browserless tests in component, the Playwright tests in e2e. Vaadin removes node_modules after a
+    # production build that created it, and the theme check below reads froala-editor from there.
     - name: Build and test
-      run: mvn -B clean verify
+      run: mvn -B clean verify -Dvaadin.clean.build.frontend.files=false
 
     # The rules file is generated from Froala's stylesheet and committed (ADR-0007). The e2e build has just
     # installed the froala-editor package it was generated from, so running the generator again must change nothing.
