@@ -187,7 +187,7 @@ FroalaOptions options = FroalaOptions.defaults()
   `options.withPluginsEnabled(FroalaPlugin.all())`. Some plugins need a server, a second
   library or a paid service, such as `IMAGE_MANAGER` or `SPELL_CHECKER`. The Javadoc of each
   constant says which.
-- `FroalaPlugin` covers every plugin file of the npm package. Its constants hold the name
+- `FroalaPlugin` covers every plugin of the npm package. Its constants hold the name
   each plugin registers itself under, which is what Froala expects. For example the file
   `find_and_replace.min.js` registers `findReplace`, and that is what
   `FroalaPlugin.FIND_REPLACE` holds.
@@ -345,7 +345,9 @@ which `FroalaPlugin.basics()` does not contain:
 
 ```java
 // the image popup with replace, align, remove, alternative text and size only
-FroalaOptions options = FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.IMAGE).withImageEditButtons(List.of(
+Set<String> plugins = FroalaPlugin.basics();
+plugins.add(FroalaPlugin.IMAGE);
+FroalaOptions options = FroalaOptions.defaults().withPluginsEnabled(plugins).withImageEditButtons(List.of(
         FroalaButton.IMAGE_REPLACE, FroalaButton.IMAGE_ALIGN, FroalaButton.IMAGE_REMOVE,
         FroalaButton.HORIZONTAL_SEPARATOR, FroalaButton.IMAGE_ALT, FroalaButton.IMAGE_SIZE));
 ```
@@ -365,7 +367,8 @@ FroalaOptions.defaults()
 A `FroalaCommand` is an action of your own with a name, a title, an icon and optionally a
 keyboard shortcut. `addCommand` adds it to an editor and runs the listener on the server
 whenever the user triggers it in that editor. The command's name decides where its button
-appears, in the toolbar or in a popup's button list, like any of Froala's commands:
+appears, in the toolbar or in a popup's button list, like any of Froala's commands. A name that
+no list holds gets no button, only its shortcut:
 
 ```java
 FroalaCommand insertTemplate = new FroalaCommand("insertTemplate", "Insert template", VaadinIcon.FILE_TEXT.create())
@@ -548,8 +551,8 @@ the UI. A `FroalaViewer` opens such a link only after `setRouterIgnorePaths`, se
 [Viewer](#viewer).
 
 A Spring controller serves them, or without Spring a Vaadin `RequestHandler`. A
-`VaadinServiceInitListener` registers the handler. It runs before Flow's router and gets the
-user's `VaadinSession`, so the application can check who asks:
+`VaadinServiceInitListener` registers the request handler. The request handler runs before
+Flow's router and gets the user's `VaadinSession`, so the application can check who asks:
 
 ```java
 public class ImageServing implements VaadinServiceInitListener {
@@ -636,7 +639,7 @@ track changes. The field states look as they do on a Vaadin text field.
 The heights and spacing of the toolbar and popups stay Froala's, because Froala places parts of
 them at fixed offsets.
 
-The editor provides a set of variants for the Vaadin theme:
+The editor provides a set of variants for the `vaadin` theme:
 
 | Variant | What it does |
 |---|---|
@@ -716,10 +719,9 @@ viewer.setContent(editor.getValue());
 ```
 
 It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base text
-takes font, color and size from the page, which under Lumo matches the editor. The
-`--vcf-froala-*` properties of the base text, such as `--vcf-froala-value-color`, change the
-editor only. The colors of other content, such as tracked changes, follow the properties in the
-viewer too.
+takes font, color and size from the page, which under Lumo matches the editor. The base text
+properties, such as `--vcf-froala-value-color`, apply to the editor only. The viewer follows the
+other `--vcf-froala-*` properties, such as the colors of tracked changes.
 
 The viewer carries the class `vaadin-theme` for the editor's default theme. Remove it when your
 editors use another Froala theme:
