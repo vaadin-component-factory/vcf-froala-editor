@@ -37,7 +37,7 @@ jobs:
     - name: Check the generated theme is up to date
       run: |
         node component/src/theme-generator/generate-vaadin-theme.js e2e/node_modules/froala-editor
-        git diff --exit-code component/src/main/resources/META-INF/resources/frontend/vcf-froala-editor/vcf-froala-theme-vaadin-rules.css
+        git diff --exit-code component/src/main/resources/META-INF/frontend/vcf-froala-editor/vcf-froala-theme-vaadin-rules.css
 
     - name: Upload test reports
       if: failure()
