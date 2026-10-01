@@ -82,6 +82,7 @@ public final class FroalaCommand implements Serializable {
      * @param title the button's tooltip and accessible name
      * @param icon the button's icon
      * @throws IllegalArgumentException if the name is not a valid command name
+     * @throws NullPointerException if the name, title or icon is null
      */
     public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
         this(name, title, icon, 0, null, Set.of(), false);
@@ -161,8 +162,8 @@ public final class FroalaCommand implements Serializable {
     }
 
     /**
-     * Returns the key code that triggers the command together with Ctrl, or Cmd on a Mac, the keyboard event's
-     * {@code keyCode} Froala matches.
+     * Returns the key code that triggers the command together with Ctrl, or Cmd on a Mac. Froala matches it against the
+     * keyboard event's {@code keyCode}.
      *
      * @return the key code, or 0 for no shortcut
      */
@@ -180,7 +181,8 @@ public final class FroalaCommand implements Serializable {
     }
 
     /**
-     * Returns the modifiers on top of Ctrl or Cmd, {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}.
+     * Returns the modifiers on top of Ctrl or Cmd. {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} are the only
+     * possible entries.
      *
      * @return the modifiers, empty for none
      */
@@ -189,7 +191,7 @@ public final class FroalaCommand implements Serializable {
     }
 
     /**
-     * Returns whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}.
+     * Returns whether the button shows a pressed state. See {@link FroalaEditor#setCommandActive}.
      *
      * @return whether the command is a toggle
      */
@@ -207,10 +209,11 @@ public final class FroalaCommand implements Serializable {
      * derives it from the key.
      *
      * <p>
-     * Other keys throw, e.g. {@link Key#SLASH}. Their code depends on the keyboard layout. The slash is a key of its
-     * own on a US layout but Shift+7 on a German one, so the same {@link Key} leads to different key codes on different
-     * layouts, and this method cannot map it to one code. Where such a shortcut is needed, define the key codes for the
-     * layouts your users have with {@link #withShortcut(int, String, KeyModifier...)}.
+     * Other keys throw an {@link IllegalArgumentException}, e.g. {@link Key#SLASH}. Their code depends on the keyboard
+     * layout. The slash is a key of its own on a US layout but Shift+7 on a German one, so the same {@link Key} leads
+     * to different key codes on different layouts, and this method cannot map it to one code. Where such a shortcut is
+     * needed, define the key codes for the layouts your users have with
+     * {@link #withShortcut(int, String, KeyModifier...)}.
      *
      * @param key a letter, digit or function key from F1 to F12, e.g. {@link Key#KEY_T}, {@link Key#DIGIT_4} or
      *            {@link Key#F10}
@@ -219,6 +222,7 @@ public final class FroalaCommand implements Serializable {
      * @return a new command with the shortcut
      * @throws IllegalArgumentException if the key is not a letter, digit or function key from F1 to F12, or a modifier
      *             is not Shift, Alt, Ctrl or Cmd
+     * @throws NullPointerException if the key or a modifier is null
      * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {

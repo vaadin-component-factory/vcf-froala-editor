@@ -20,8 +20,9 @@ package com.vaadin.componentfactory.froala;
  * {@link FroalaEditor#setValueChangeMode(FroalaValueChangeMode)}.
  *
  * <p>
- * Not to be confused with Vaadin's {@link com.vaadin.flow.data.value.ValueChangeMode}. There is no equivalent of
- * Vaadin's {@code EAGER} or {@code LAZY}. See {@link #INTERVAL}.
+ * Not to be confused with Vaadin's {@link com.vaadin.flow.data.value.ValueChangeMode}. {@link #ON_CHANGE} behaves like
+ * Vaadin's {@code LAZY} while the user types, not like Vaadin's {@code ON_CHANGE}. {@link #INTERVAL} matches Vaadin's
+ * {@code TIMEOUT}. There is no equivalent of Vaadin's {@code EAGER}.
  */
 public enum FroalaValueChangeMode {
 

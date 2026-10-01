@@ -36,7 +36,7 @@ import elemental.json.JsonValue;
  * unchanged. One configured object can therefore be shared between editors.
  *
  * <pre>
- * FroalaOptions options = FroalaOptions.defaults().withPlaceholderText("Write something").withCharCounterMax(2000);
+ * FroalaOptions options = FroalaOptions.defaults().withPlaceholderText("Write something");
  *
  * FroalaEditor editor = new FroalaEditor(options);
  * </pre>
@@ -48,7 +48,13 @@ import elemental.json.JsonValue;
  *
  * <p>
  * Only options that were set appear in the JSON sent to the browser. Every other option keeps Froala's default, as
- * documented at <a href="https://froala.com/wysiwyg-editor/docs/options/">froala.com</a>.
+ * documented at <a href="https://froala.com/wysiwyg-editor/docs/options/">froala.com</a>. A few have defaults of the
+ * add-on's own, described on their methods: {@link #withPluginsEnabled(Collection)}, {@link #withTheme(String)},
+ * {@link #withLanguage(String)} and {@link #withSaveInterval(int)}. Without an upload target the editor also switches
+ * image, file and video upload off, as {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)} describes.
+ *
+ * <p>
+ * A list with a null element, or a map with a null value, throws a {@link NullPointerException}.
  *
  * <p>
  * Not every Froala option is typed here. Untyped options can be passed as raw JSON through
@@ -81,8 +87,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Returns an object that sets nothing, so the editor runs on Froala's own defaults. Every configuration starts
-     * here.
+     * Returns an object that sets nothing, so the editor runs on Froala's defaults and the few of the add-on's own
+     * listed in the class description. Every configuration starts here.
      *
      * @return options that set nothing
      */
@@ -177,7 +183,7 @@ public final class FroalaOptions implements Serializable {
      * Sets the reading direction of the edited text. Froala's {@code direction}.
      *
      * <p>
-     * This takes effect only without a language file, and the UI's locale picks one as well, see
+     * This takes effect only without a language file, and the UI's locale picks one as well. See
      * {@link #withLanguage(String)}. Every Froala language file names its own direction, and Froala lets it win over
      * this option. So {@code withLanguage("ar").withDirection(LTR)} builds a right-to-left editor, and
      * {@code withLanguage("de").withDirection(RTL)} a left-to-right one. For right-to-left text with English tooltips
@@ -197,12 +203,12 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets the look of the editor. Froala's {@code theme}. Without it the add-on uses {@link FroalaTheme#VAADIN}. A
-     * theme of your own is its name. Froala puts the class {@code <theme>-theme} on the editor and on its popups, and
-     * the stylesheet for it is yours to load.
+     * theme of your own is given by its name. Froala puts the class {@code <theme>-theme} on the editor and on its
+     * popups, and the stylesheet for it is yours to load.
      *
      * <pre>
-     * options.withTheme(FroalaTheme.NONE);
-     * options.withTheme("brand"); // the class brand-theme
+     * options = options.withTheme(FroalaTheme.NONE);
+     * options = options.withTheme("brand"); // the class brand-theme
      * </pre>
      *
      * @param theme a {@link FroalaTheme} or the name of your own, {@link FroalaTheme#NONE} for no theme, or null for
@@ -741,7 +747,8 @@ public final class FroalaOptions implements Serializable {
     // -----------------------------------------------------------------------------------------------------------
 
     /**
-     * Shows or hides the character count below the editing area. Froala's {@code charCounterCount}, on by default.
+     * Shows or hides the character count below the editing area. Froala's {@code charCounterCount}. Needs
+     * {@link FroalaPlugin#CHAR_COUNTER}, and with it the count shows by default.
      *
      * @param charCounterCount whether the character count is shown
      * @return a new instance
@@ -751,7 +758,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Limits how many characters the editor accepts. Froala's {@code charCounterMax}, {@code -1} for no limit.
+     * Limits how many characters the editor accepts. Froala's {@code charCounterMax}, {@code -1} for no limit. Needs
+     * {@link FroalaPlugin#CHAR_COUNTER}.
      *
      * <p>
      * This is a hard input limit, not a validation. At the limit Froala swallows further keystrokes, truncates what is
@@ -766,7 +774,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Shows or hides the word count below the editing area. Froala's {@code wordCounterCount}, on by default.
+     * Shows or hides the word count below the editing area. Froala's {@code wordCounterCount}. Needs
+     * {@link FroalaPlugin#WORD_COUNTER}, and with it the count shows by default.
      *
      * @param wordCounterCount whether the word count is shown
      * @return a new instance
@@ -776,8 +785,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Limits how many words the editor accepts. Froala's {@code wordCounterMax}, {@code -1} for no limit. A hard input
-     * limit, like {@link #withCharCounterMax(int)}.
+     * Limits how many words the editor accepts. Froala's {@code wordCounterMax}, {@code -1} for no limit. Needs
+     * {@link FroalaPlugin#WORD_COUNTER}. A hard input limit, like {@link #withCharCounterMax(int)}.
      *
      * @param wordCounterMax maximum number of words, or -1 for no limit
      * @return a new instance
@@ -815,7 +824,7 @@ public final class FroalaOptions implements Serializable {
      * <pre>
      * Set&lt;String&gt; plugins = FroalaPlugin.basics();
      * plugins.add("myPlugin");
-     * options.withPluginsEnabled(plugins);
+     * options = options.withPluginsEnabled(plugins);
      * </pre>
      *
      * @param plugins the plugins the editor may use, or null for {@link FroalaPlugin#basics()}
@@ -1125,8 +1134,9 @@ public final class FroalaOptions implements Serializable {
      * Sets the URL images are uploaded to. Froala's {@code imageUploadURL}.
      *
      * <p>
-     * For an endpoint of the application's own. {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)} needs
-     * none and takes precedence over this URL. Without either the editor switches image upload off, see there.
+     * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#IMAGE}.
+     * {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
+     * URL. Without either the editor switches image upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1143,8 +1153,9 @@ public final class FroalaOptions implements Serializable {
      * Sets the URL files are uploaded to. Froala's {@code fileUploadURL}.
      *
      * <p>
-     * For an endpoint of the application's own. {@link FroalaEditor#setFileUploadHandler(FroalaUploadHandler)} needs
-     * none and takes precedence over this URL. Without either the editor switches file upload off, see there.
+     * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#FILE}.
+     * {@link FroalaEditor#setFileUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
+     * URL. Without either the editor switches file upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1161,8 +1172,9 @@ public final class FroalaOptions implements Serializable {
      * Sets the URL videos are uploaded to. Froala's {@code videoUploadURL}.
      *
      * <p>
-     * For an endpoint of the application's own. {@link FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)} needs
-     * none and takes precedence over this URL. Without either the editor switches video upload off, see there.
+     * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#VIDEO}.
+     * {@link FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
+     * URL. Without either the editor switches video upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1179,7 +1191,7 @@ public final class FroalaOptions implements Serializable {
      * Decides whether an inserted emoji is an image or a character. Froala's {@code emoticonsUseImage}, which is
      * {@code true} by default and then fetches its icons from {@code cdnjs.cloudflare.com} and leaves a cdnjs URL in
      * the stored HTML. Set it to false and Froala inserts the plain unicode character, which needs no third party and
-     * survives anywhere.
+     * survives anywhere. Needs {@link FroalaPlugin#EMOTICONS}.
      *
      * @param emoticonsUseImage whether emoji are inserted as images from a CDN
      * @return a new instance
@@ -1227,8 +1239,8 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Two option sets are equal when they set the same options to the same values. The order they were set in does not
-     * count. Inside a value it does, e.g. the order of the keys in JSON given to {@link #withImageTuiOptions(String)},
-     * because Froala reads some of them in order, such as the groups of a toolbar.
+     * count. The order inside a value does count, because Froala reads some values in order, such as the groups of a
+     * toolbar. This includes the order of the keys in JSON given to {@link #withImageTuiOptions(String)}.
      */
     @Override
     public boolean equals(Object other) {

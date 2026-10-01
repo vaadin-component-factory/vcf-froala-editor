@@ -21,11 +21,11 @@ import com.vaadin.flow.component.shared.ThemeVariant;
  * Theme variants of {@link FroalaEditor}. They apply to the vaadin theme ({@link FroalaTheme#VAADIN}) only. Without a
  * variant the editor is filled like a Vaadin text field.
  *
- * @see FroalaEditor#addThemeVariants(FroalaEditorVariant...)
+ * @see FroalaEditor#addThemeVariants
  */
 public enum FroalaEditorVariant implements ThemeVariant {
 
-    /** Froala's look, the background colour with a border around the box, instead of a filled field without one. */
+    /** Froala's look, the background color with a border around the box, instead of a filled field without one. */
     OUTLINED("outlined"),
 
     /** No highlight of the editing area while the mouse is over the editor. */

@@ -38,8 +38,8 @@ import com.vaadin.flow.shared.Registration;
  *
  * <p>
  * The viewer also carries the class {@code vaadin-theme}, so the content rules of {@link FroalaTheme#VAADIN}, such as
- * the colours of tracked changes, apply as they do in the editor. An application whose editors use another Froala theme
- * removes it with {@code removeClassName("vaadin-theme")}. The base text, i.e. font, colour, size, weight and line
+ * the colors of tracked changes, apply as they do in the editor. An application whose editors use another Froala theme
+ * removes it with {@code removeClassName("vaadin-theme")}. The base text, i.e. font, color, size, weight and line
  * height, comes from the page, which under Lumo gives the same values as the editor by default. Overriding the
  * {@code --vcf-froala-*} or input field properties changes the editor only.
  */
@@ -119,16 +119,18 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
     }
 
     /**
-     * Sets the paths whose links in the content open with a page load instead of Vaadin's router, see
-     * {@link #applyRouterIgnore(Component, Collection)} for the patterns. The router takes a link inside the
-     * application as a route, so a link to an uploaded file shows "Couldn't find route" without this. The paths replace
-     * the ones set before. With no paths, every link goes to the router again.
+     * Sets the paths whose links in the content open with a page load instead of Vaadin's router. The patterns are
+     * described at {@link #applyRouterIgnore(Component, Collection)}. The router takes a link inside the application as
+     * a route, so a link to an uploaded file shows "Couldn't find route" without this. The paths replace the ones set
+     * before. With no paths, every link goes to the router again.
      *
      * <pre>
      * viewer.setRouterIgnorePaths("/froala-upload");
      * </pre>
      *
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     * @throws NullPointerException if the paths or one of them is null
+     * @throws IllegalArgumentException if a path is blank, in which case the paths set before stay in place
      */
     public void setRouterIgnorePaths(String... paths) {
         Objects.requireNonNull(paths, "paths must not be null");
@@ -136,10 +138,12 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
     }
 
     /**
-     * Sets the paths whose links in the content open with a page load instead of Vaadin's router, see
+     * Sets the paths whose links in the content open with a page load instead of Vaadin's router. See
      * {@link #setRouterIgnorePaths(String...)}.
      *
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
+     * @throws NullPointerException if the paths or one of them is null
+     * @throws IllegalArgumentException if a path is blank, in which case the paths set before stay in place
      */
     public void setRouterIgnorePaths(Collection<String> paths) {
         Objects.requireNonNull(paths, "paths must not be null");
@@ -158,12 +162,14 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
 
     /**
      * Lets the links inside the given component open with a page load instead of Vaadin's router when their path
-     * matches one of the patterns, see {@link #applyRouterIgnore(Component, Collection)}. For HTML displayed without a
-     * {@link FroalaViewer}, like in an {@code Html} component or a {@code Div}.
+     * matches one of the patterns. See {@link #applyRouterIgnore(Component, Collection)}. Meant for HTML displayed
+     * without a {@link FroalaViewer}, like in an {@code Html} component or a {@code Div}.
      *
      * @param component the component whose links are concerned
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
      * @return a registration that leaves the links to the router again
+     * @throws NullPointerException if the component, the paths or one of them is null
+     * @throws IllegalArgumentException if a path is blank
      */
     public static Registration applyRouterIgnore(Component component, String... paths) {
         Objects.requireNonNull(paths, "paths must not be null");
@@ -192,6 +198,8 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @param component the component whose links are concerned
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
      * @return a registration that leaves the links to the router again
+     * @throws NullPointerException if the component, the paths or one of them is null
+     * @throws IllegalArgumentException if a path is blank
      */
     public static Registration applyRouterIgnore(Component component, Collection<String> paths) {
         Objects.requireNonNull(component, "component must not be null");
@@ -215,13 +223,13 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
         };
     }
 
+    /** The printable ASCII characters a browser may percent-encode in a URL's path. */
+    private static final String PATH_PERCENT_ENCODED = " \"<>^`{|}";
+
     /**
      * Turns a path pattern into a regular expression that JavaScript and Java read alike. A backslash before a
      * character other than a letter or a digit makes it literal in both.
      */
-    /** The printable ASCII characters a browser may percent-encode in a URL's path. */
-    private static final String PATH_PERCENT_ENCODED = " \"<>^`{|}";
-
     static String toRegex(String path) {
         Objects.requireNonNull(path, "A router-ignore path must not be null");
         String pattern = path.trim();

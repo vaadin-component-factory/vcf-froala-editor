@@ -81,7 +81,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /** The value change mode of a new editor. */
     public static final FroalaValueChangeMode DEFAULT_VALUE_CHANGE_MODE = FroalaValueChangeMode.ON_CHANGE;
 
-    /** The lowest accepted value change timeout. */
+    /** The lowest accepted value change timeout in milliseconds. */
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
 
     /** The default value change timeout in milliseconds. Same as Froala's {@code typingTimer} default. */
@@ -136,7 +136,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Creates a new instance with the given label and initial value.
      *
      * @param label the label shown above the editor, or null for none
-     * @param initialValue the HTML the editor starts with
+     * @param initialValue the HTML the editor starts with, not null
+     * @throws NullPointerException if the initial value is null
      */
     public FroalaEditor(String label, String initialValue) {
         this();
@@ -148,9 +149,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Creates a new instance with the given label, initial value and value change listener.
      *
      * @param label the label shown above the editor, or null for none
-     * @param initialValue the HTML the editor starts with
+     * @param initialValue the HTML the editor starts with, not null
      * @param valueChangeListener notified of every later change, but not of the initial value, which is set before the
      *            listener is added
+     * @throws NullPointerException if the initial value is null
      */
     public FroalaEditor(String label, String initialValue,
             ValueChangeListener<? super ComponentValueChangeEvent<FroalaEditor, String>> valueChangeListener) {
@@ -187,7 +189,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /**
      * Creates a new instance configured with the given options.
      *
-     * @param options Froala options, or null for Froala's defaults
+     * @param options Froala options, or null for the add-on's defaults
      */
     public FroalaEditor(FroalaOptions options) {
         this();
@@ -198,7 +200,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Creates a new instance with the given label, configured with the given options.
      *
      * @param label the label shown above the editor, or null for none
-     * @param options Froala options, or null for Froala's defaults
+     * @param options Froala options, or null for the add-on's defaults
      */
     public FroalaEditor(String label, FroalaOptions options) {
         this();
@@ -373,9 +375,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Two options are applied after the given ones and take precedence over them, whichever {@code setOptions} overload
      * was used: {@code key} while {@link #setLicenseKey(String)} holds a key, and {@code typingTimer} once
      * {@link #setValueChangeTimeout(int)} has been called. An option given here is used only while the matching setter
-     * was not.
+     * was not. An upload handler likewise takes precedence over the matching upload URL. See
+     * {@link #setImageUploadHandler(FroalaUploadHandler)}.
      *
-     * @param options Froala options, or null for Froala's defaults
+     * @param options Froala options, or null for the add-on's defaults
      */
     public void setOptions(FroalaOptions options) {
         applyOptions(options == null ? null : options.toJson());
@@ -433,7 +436,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Configures the underlying Froala editor from raw JSON, for options {@link FroalaOptions} has no method for.
      * Identical to {@link #setOptions(FroalaOptions)} in every other respect.
      *
-     * @param options Froala options as a JSON object literal, or null for Froala's defaults
+     * @param options Froala options as a JSON object literal, or null for the add-on's defaults
      * @throws IllegalArgumentException if the given string is not parseable as a JSON object, or if it contains
      *             Froala's {@code events} option
      */
@@ -448,7 +451,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Returns the JSON the editor is configured with, whichever {@code setOptions} overload was used. Null if none was
-     * called, in which case Froala uses its defaults.
+     * called or the last call passed null, in which case the editor uses the add-on's defaults.
      *
      * @return the options as JSON, or null
      */
@@ -457,7 +460,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Inserts an HTML snippet at the caret, replacing the selected content if there is any. Maps onto Froala's
+     * Inserts an HTML snippet at the caret, replacing the selected content if there is any. Maps to Froala's
      * {@code html.insert}.
      *
      * <p>
@@ -480,7 +483,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Selects the whole content of the editor. Maps onto Froala's {@code commands.selectAll}. The selection change
+     * Selects the whole content of the editor. Maps to Froala's {@code commands.selectAll}. The selection change
      * listener reports the selection as it does one the user makes. A call that arrives before the editor is
      * initialized, e.g. in the same round trip as the attach, is applied once it is.
      */
@@ -490,7 +493,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Lets users upload images in the editor. The handler stores each uploaded image and returns the link the editor
-     * puts into the document. Covers the upload button, dropping an image onto the editor and pasting one.
+     * puts into the document. Covers the upload button, dropping an image onto the editor and pasting one. Needs
+     * {@link FroalaPlugin#IMAGE}, which {@link FroalaPlugin#basics()} does not contain, and the upload button needs
+     * {@link FroalaButton#INSERT_IMAGE} in the toolbar.
      *
      * <pre>
      * editor.setImageUploadHandler(event -&gt; {
@@ -507,7 +512,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
-     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * read-only. Setting or removing a handler on an attached editor rebuilds it. See
      * {@link #setOptions(FroalaOptions)}.
      *
      * @param handler the handler, or null to remove it
@@ -520,7 +525,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Lets users upload files in the editor, which inserts a link to each one. The handler stores each uploaded file
      * and returns the link the editor puts into the document. Covers the upload button in the file popup and dropping a
      * file that is no image onto the editor. A dropped image goes to
-     * {@link #setImageUploadHandler(FroalaUploadHandler)}.
+     * {@link #setImageUploadHandler(FroalaUploadHandler)}. Needs {@link FroalaPlugin#FILE}, which
+     * {@link FroalaPlugin#basics()} does not contain, and the upload button needs {@link FroalaButton#INSERT_FILE} in
+     * the toolbar.
      *
      * <pre>
      * editor.setFileUploadHandler(event -&gt; {
@@ -537,7 +544,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
-     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * read-only. Setting or removing a handler on an attached editor rebuilds it. See
      * {@link #setOptions(FroalaOptions)}.
      *
      * @param handler the handler, or null to remove it
@@ -548,7 +555,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Lets users upload videos in the editor. The handler stores each uploaded video and returns the link the editor
-     * puts into the document. Covers the upload button in the video popup and dropping a video onto the editor.
+     * puts into the document. Covers the upload button in the video popup and dropping a video onto the editor. Needs
+     * {@link FroalaPlugin#VIDEO}, which {@link FroalaPlugin#basics()} does not contain, and the upload button needs
+     * {@link FroalaButton#INSERT_VIDEO} in the toolbar.
      *
      * <pre>
      * editor.setVideoUploadHandler(event -&gt; {
@@ -565,7 +574,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * The upload goes through Flow, so it needs no endpoint of its own and is refused while the editor is disabled or
-     * read-only. Setting or removing a handler on an attached editor builds it again, see
+     * read-only. Setting or removing a handler on an attached editor rebuilds it. See
      * {@link #setOptions(FroalaOptions)}.
      *
      * @param handler the handler, or null to remove it
@@ -597,8 +606,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * Froala builds its toolbar and popups once, when the editor is built. Adding or removing a command on an attached
-     * editor therefore builds it again, with the same losses as {@link #setOptions(FroalaOptions)}. Several calls
-     * within one server round trip cause one rebuild.
+     * editor therefore rebuilds it, with the same losses as {@link #setOptions(FroalaOptions)}. Several calls within
+     * one server round trip cause one rebuild.
      *
      * <p>
      * Froala keeps a command's title, icon, shortcut and whether it is a toggle for the whole page, not per editor. Two
@@ -635,7 +644,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * The popover opens and closes on a click on the button, as its own settings say. The command's shortcut opens it
      * too. The editor never closes it, so how it closes is up to the popover's configuration. Example: a popover with
      * {@code setCloseOnOutsideClick(false)} and {@code setCloseOnEsc(false)} stays open until its button is clicked
-     * again, also while the editor is built again.
+     * again, also while the editor is rebuilt.
      *
      * <p>
      * The editor takes the popover as its own. It becomes the popover's {@link Popover#setTarget(Component) target} on
@@ -771,9 +780,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Adds a listener that learns when something gets selected in the editor and when the selection is gone again --
-     * collapsed to a caret, or moved outside the editor. Useful to enable an action that works on the selection, such
-     * as one calling {@link #replaceSelectionContent(String)}, only while there is one.
+     * Adds a listener that learns when something gets selected in the editor and when the selection is gone again,
+     * because it collapsed to a caret or moved outside the editor. Useful to enable an action that works on the
+     * selection, such as one calling {@link #replaceSelectionContent(String)}, only while there is one.
      *
      * <p>
      * Clicking a button outside the editor leaves the selection in place, so an action in the view still finds it.
@@ -786,13 +795,13 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the license key of this instance. Maps onto Froala's {@code key} option.
+     * Sets the license key of this instance. Maps to Froala's {@code key} option.
      *
      * <p>
      * The add-on ships no key. Without one, Froala shows its unlicensed watermark.
      *
      * <p>
-     * The key is read when the editor is built, on attach and on every rebuild caused by
+     * The key is read when the editor is built, on attach and on every rebuild, such as one caused by
      * {@link #setOptions(FroalaOptions)}. Calling this on an attached instance has no effect until then.
      *
      * @param licenseKey license key or null to unset
@@ -816,8 +825,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Sets the value change mode of this instance. By default the editor uses {@link FroalaValueChangeMode#ON_CHANGE}.
+     * Takes effect at once on an attached editor, without a rebuild.
      *
      * @param valueChangeMode the new value change mode, not null
+     * @throws NullPointerException if the value change mode is null
      */
     public void setValueChangeMode(FroalaValueChangeMode valueChangeMode) {
         Objects.requireNonNull(valueChangeMode, "valueChangeMode must not be null");
@@ -840,11 +851,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * is why {@link FroalaValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
      *
      * <p>
-     * The default is 500, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala reports changes after at least that
-     * long whatever the option says, so a smaller value would silently have no effect. This setter throws instead.
+     * The default is {@value #DEFAULT_VALUE_CHANGE_TIMEOUT}, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala
+     * reports changes after at least that long whatever the option says, so a smaller value would silently have no
+     * effect. This setter throws instead. Takes effect at once on an attached editor, without a rebuild.
      *
      * <p>
-     * Froala uses the option for more than the value sync. It is also the delay before the inline toolbar is shown
+     * Froala uses the option for more than reporting changes. It is also the delay before the inline toolbar is shown
      * again after a keystroke, so a long timeout delays that as well.
      *
      * <p>
@@ -865,7 +877,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Returns the idle time in milliseconds that has to pass after the last keystroke before the editor reports the
-     * change. Default is 500.
+     * change. The default is {@value #DEFAULT_VALUE_CHANGE_TIMEOUT}.
      *
      * <p>
      * This returns what {@link #setValueChangeTimeout(int)} was given, not what the editor runs on. A
@@ -879,13 +891,14 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the time in milliseconds between two value syncs in {@link FroalaValueChangeMode#INTERVAL}. Also the time
-     * before the first one. Has no effect in any other mode.
+     * Sets how many milliseconds pass between two sends of the value in {@link FroalaValueChangeMode#INTERVAL}. Also
+     * the time before the first one. Has no effect in any other mode. Takes effect at once on an attached editor,
+     * without a rebuild.
      *
      * <p>
-     * The default is 2000. The value must be greater than zero.
+     * The default is {@value #DEFAULT_INTERVAL_PERIOD}. The value must be greater than zero.
      *
-     * @param periodInMilliseconds time between two value syncs, greater than zero
+     * @param periodInMilliseconds time between two sends of the value, greater than zero
      * @throws IllegalArgumentException if the given period is zero or negative
      */
     public void setIntervalPeriod(int periodInMilliseconds) {
@@ -897,10 +910,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Returns the time in milliseconds between two value syncs in {@link FroalaValueChangeMode#INTERVAL}. Default is
-     * 2000.
+     * Returns how many milliseconds pass between two sends of the value in {@link FroalaValueChangeMode#INTERVAL}. The
+     * default is {@value #DEFAULT_INTERVAL_PERIOD}.
      *
-     * @return time between two value syncs
+     * @return time between two sends of the value
      */
     public int getIntervalPeriod() {
         return getElement().getProperty(INTERVAL_PERIOD_PROPERTY, DEFAULT_INTERVAL_PERIOD);

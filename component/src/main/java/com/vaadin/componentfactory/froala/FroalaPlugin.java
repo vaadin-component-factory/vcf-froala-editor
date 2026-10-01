@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The names of Froala's plugins, for {@link FroalaOptions#withPluginsEnabled(String...)}. These are all plugin files of
+ * The names of Froala's plugins, for {@link FroalaOptions#withPluginsEnabled(String...)}. These are all plugins of
  * froala-editor 5.4.0, the ones under {@code js/plugins/} and the five under {@code js/third_party/}. The browser
  * downloads a plugin's file only when an editor enables it. An editor without {@code pluginsEnabled} gets
  * {@link #basics()}. Passing a list disables every plugin not in it, and the toolbar buttons of a disabled plugin
@@ -40,9 +40,9 @@ import java.util.Set;
  * Six of them need a server endpoint or an account that neither Froala nor this add-on provides, and do nothing without
  * it. These are {@link #AI_ASSIST}, {@link #COLLABORATIVE}, {@link #FILESTACK}, {@link #IMAGE_MANAGER}, {@link #SAVE},
  * and {@link #FILES_MANAGER} for uploading, though its by-URL tab works without one. {@link #IMPORT_FROM_WORD} needs
- * the third-party mammoth.js script in the page instead, and the five under {@code js/third_party/} each need a library
- * or a service of their own. The documentation of each names what it needs, and the options they read have no methods
- * on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
+ * the third-party mammoth.js script in the page instead, and the five plugins under {@code js/third_party/} each need a
+ * library or a service of their own. The documentation of each names what it needs, and the options they read have no
+ * methods on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
  *
  * <p>
  * {@code edit_in_popup} ships as a plugin file but registers a module, not a plugin, so {@code pluginsEnabled} has no
@@ -58,7 +58,7 @@ public final class FroalaPlugin {
     public static final String AI_ASSIST = "aiAssist";
 
     /**
-     * Left, centre, right and justify alignment for the current block.
+     * Left, center, right and justify alignment for the current block.
      */
     public static final String ALIGN = "align";
 
@@ -89,7 +89,7 @@ public final class FroalaPlugin {
     public static final String COLLABORATIVE = "collaborative";
 
     /**
-     * Text and background colour for the selection.
+     * Text and background color for the selection.
      */
     public static final String COLORS = "colors";
 
@@ -126,7 +126,7 @@ public final class FroalaPlugin {
     public static final String EXPORT_TO_WORD = "exportToWord";
 
     /**
-     * Uploads a file and inserts a link to it. See {@link FroalaOptions#withFileUploadUrl(String)}.
+     * Uploads a file and inserts a link to it. See {@link FroalaEditor#setFileUploadHandler(FroalaUploadHandler)}.
      */
     public static final String FILE = "file";
 
@@ -182,7 +182,7 @@ public final class FroalaPlugin {
     public static final String HELP = "help";
 
     /**
-     * Inserting, uploading and editing images. See {@link FroalaOptions#withImageUploadUrl(String)}.
+     * Inserting, uploading and editing images. See {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)}.
      */
     public static final String IMAGE = "image";
 
@@ -276,7 +276,8 @@ public final class FroalaPlugin {
     public static final String PRINT = "print";
 
     /**
-     * A shortcut shown on an empty line for inserting an image, video, table or list.
+     * A shortcut shown on an empty line for inserting content such as an image, a video, a table or a list. See
+     * {@link FroalaQuickInsertButton}.
      */
     public static final String QUICK_INSERT = "quickInsert";
 
@@ -327,7 +328,7 @@ public final class FroalaPlugin {
 
     /**
      * Inserting and uploading videos, and embedding them from a URL. See
-     * {@link FroalaOptions#withVideoUploadUrl(String)}.
+     * {@link FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)}.
      */
     public static final String VIDEO = "video";
 
@@ -342,15 +343,15 @@ public final class FroalaPlugin {
     public static final String WORD_PASTE = "wordPaste";
 
     /**
-     * Returns the plugins an editor gets when its options name none. A basic rich-text editor: text and paragraph
-     * formats, lists, quotes, links, find and replace, the keyboard shortcut dialog, links typed as URLs, and cleaning
-     * of text pasted from Word. Nothing that inserts other content, such as images or tables, and no menu that only
-     * offers Froala's sample styles. To add a plugin, change the returned set and pass it on:
+     * Returns the plugins an editor gets when its options name none. They make a basic rich-text editor with text and
+     * paragraph formats, lists, quotes, links, find and replace, the keyboard shortcut dialog, links typed as URLs, and
+     * cleaning of text pasted from Word. Nothing that inserts other content, such as images or tables, and no menu that
+     * only offers Froala's sample styles. To add a plugin, change the returned set and pass it on:
      *
      * <pre>
      * Set&lt;String&gt; plugins = FroalaPlugin.basics();
      * plugins.add(FroalaPlugin.TABLE);
-     * options.withPluginsEnabled(plugins);
+     * options = options.withPluginsEnabled(plugins);
      * </pre>
      *
      * @return a new set on every call, free to change

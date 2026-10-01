@@ -28,7 +28,7 @@ package com.vaadin.componentfactory.froala;
 public final class FroalaTheme {
 
     /**
-     * Follows the Vaadin theme, including its dark variant. The add-on's default. The colours come from the
+     * Follows the Vaadin theme, including its dark variant. The add-on's default. The colors come from the
      * {@code --vcf-froala-*} custom properties, which are set from Lumo and can be overridden.
      */
     public static final String VAADIN = "vaadin";
