@@ -158,7 +158,7 @@ FroalaOptions options = FroalaOptions.defaults()
 ```
 
 - Without `withPluginsEnabled` an editor gets `FroalaPlugin.basics()`, a basic rich-text
-  editor. These are `ALIGN`, `COLORS`, `FIND_AND_REPLACE`, `FONT_FAMILY`, `FONT_SIZE`, `HELP`,
+  editor. These are `ALIGN`, `COLORS`, `FIND_REPLACE`, `FONT_FAMILY`, `FONT_SIZE`, `HELP`,
   `LINE_HEIGHT`, `LINK`, `LINK_TO_ANCHOR`, `LISTS`, `PARAGRAPH_FORMAT`, `QUOTE`, `URL` and
   `WORD_PASTE`. Anything that inserts other content is off, and so are the style menus that
   only offer Froala's samples.
@@ -177,7 +177,7 @@ FroalaOptions options = FroalaOptions.defaults()
 - `FroalaPlugin` covers every plugin file of the npm package. Its constants hold the name
   each plugin registers itself under, which is what Froala expects. For example the file
   `find_and_replace.min.js` registers `findReplace`, and that is what
-  `FroalaPlugin.FIND_AND_REPLACE` holds.
+  `FroalaPlugin.FIND_REPLACE` holds.
 - A plugin of your own goes into the same list by its registered name. The add-on only loads
   Froala's plugin files, so your application loads the file that registers yours, for example
   with `@JsModule`:

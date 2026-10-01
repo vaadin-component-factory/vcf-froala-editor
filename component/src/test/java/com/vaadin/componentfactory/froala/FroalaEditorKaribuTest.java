@@ -234,7 +234,7 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void valueChangeMode_roundTripsAndDefaults() {
+    void valueChangeMode_roundTripsAndRejectsNull() {
         FroalaEditor editor = attachedEditor();
 
         // the strings the client compares against
@@ -245,8 +245,7 @@ class FroalaEditorKaribuTest {
                     assertEquals(clientValue, editor.getElement().getProperty("valueChangeMode"));
                 });
 
-        editor.setValueChangeMode(null);
-        assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_MODE, editor.getValueChangeMode());
+        assertThrows(NullPointerException.class, () -> editor.setValueChangeMode(null));
     }
 
     @Test
@@ -563,6 +562,11 @@ class FroalaEditorKaribuTest {
         stale.remove();
 
         assertTrue(later.isAttached());
+    }
+
+    @Test
+    void commandEvent_needsItsCommand() {
+        assertThrows(NullPointerException.class, () -> new FroalaCommandEvent(new FroalaEditor(), false, null));
     }
 
     @Test

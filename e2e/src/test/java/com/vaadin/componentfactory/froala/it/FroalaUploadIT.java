@@ -205,6 +205,32 @@ class FroalaUploadIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void uploadOffInOneEditor_leavesTheButtonsOfAnotherAlone() {
+        // Froala builds a popup's buttons the first time it opens, and cuts the upload button out of the list when the
+        // upload is off. Opened in the editor without handlers first, then in one with a handler.
+        openPopup("#without-handlers", "insertImage", "image.insert");
+        openPopup("#editor", "insertImage", "image.insert");
+
+        assertEquals(List.of("imageBack", "|", "imageUpload", "imageByURL"), option("#editor", "imageInsertButtons"));
+
+        // The file plugin's cut finds no fileUpload in Froala's list and takes the last button at index -1, a fault of
+        // its own that only stays harmless while each editor cuts a list of its own
+        for (String list : new String[] { "imageInsertButtons", "videoInsertButtons", "fileInsertButtons" }) {
+            assertEquals(false, page.evaluate("""
+                    (list) => document.querySelector('#without-handlers').editor.opts[list]
+                            === document.querySelector('#limited').editor.opts[list]
+                    """, list), list);
+        }
+    }
+
+    private void openPopup(String editor, String button, String popup) {
+        page.locator(editor + " .fr-element").waitFor();
+        page.locator(editor + " [data-cmd='" + button + "']").click();
+        page.waitForFunction("([editor, popup]) => document.querySelector(editor).editor.popups.isVisible(popup)",
+                new Object[] { editor, popup });
+    }
+
+    @Test
     void filesManagerWithoutUrl_losesItsUploadTab() {
         page.locator("#files-without-url .fr-element").waitFor();
         page.locator("#files-with-own-tabs .fr-element").waitFor();

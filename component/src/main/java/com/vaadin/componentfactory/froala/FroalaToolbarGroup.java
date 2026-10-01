@@ -97,9 +97,14 @@ public final class FroalaToolbarGroup implements Serializable {
      * @param buttons command names in the order they should appear, none of them null
      * @return a new instance
      * @throws NullPointerException if the name or any button name is null
+     * @throws IllegalArgumentException if the name is blank
      */
     public static FroalaToolbarGroup named(String name, String... buttons) {
         Objects.requireNonNull(name, "A toolbar group needs a name");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("A toolbar group needs a name that is not blank");
+        }
+        Objects.requireNonNull(buttons, "buttons must not be null");
 
         for (String button : buttons) {
             Objects.requireNonNull(button, "A toolbar button needs a command name");

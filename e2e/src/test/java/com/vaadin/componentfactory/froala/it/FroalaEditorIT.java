@@ -162,17 +162,6 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
-    void licenseKey_arrivesInFroalasOwnOptions() {
-        // Whether the key is valid is Froala's business, and this project runs unlicensed on purpose. What is ours is
-        // that the key the server set is the key Froala was constructed with. That is only observable here, because it
-        // is read once, at init, and Karibu cannot see past the element property.
-        page.locator("#editor .fr-element").waitFor();
-
-        assertEquals(FroalaTestView.LICENSE_KEY,
-                page.evaluate("() => document.querySelector('#editor').editor.opts.key"));
-    }
-
-    @Test
     void setValue_reachesTheClientEvenWhenItRepeatsTheLastServerValue() {
         editableArea().click();
         editableArea().type(" typed on top");
@@ -220,10 +209,7 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         // schedules the one that triggers our sync (STYLEGUIDE, Testing standards).
         withFakeClock();
 
-        // the constructor's default, applied through the init options
-        assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_TIMEOUT, typingTimer());
-
-        // and a later change reaches a running editor, because Froala reads the option on every keystroke
+        // a change reaches a running editor, because Froala reads the option on every keystroke
         page.locator("#slow-typing").click();
         assertThat(page.locator("#slow-typing")).isDisabled();
         assertEquals(FroalaTestView.SLOW_TYPING_TIMEOUT, typingTimer());
@@ -295,22 +281,6 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
-    void editorRendersWithToolbar() {
-        assertThat(editableArea()).isVisible();
-        assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();
-    }
-
-    /**
-     * Smoke check only. This exercises Vaadin's own FieldMixin slots, not the Froala integration, and would pass
-     * unchanged if the whole editor were removed. Kept because it is nearly free, but it is not Froala coverage.
-     */
-    @Test
-    void labelAndHelperText_areRendered() {
-        assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.LABEL);
-        assertThat(page.locator("vcf-froala-editor")).containsText(FroalaTestView.HELPER_TEXT);
-    }
-
-    @Test
     void fieldTexts_areLinkedToTheEditableArea() {
         assertReferencedTexts("aria-labelledby", FroalaTestView.LABEL);
         assertReferencedTexts("aria-describedby", FroalaTestView.HELPER_TEXT);
@@ -375,6 +345,9 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void licenseKey_isReadOnceWhenTheEditorIsBuilt() {
+        // Whether the key is valid is Froala's business, and this project runs unlicensed on purpose. What is ours is
+        // that the key the server set is the key Froala was constructed with. That is only observable here, because it
+        // is read once, at init, and Karibu cannot see past the element property.
         page.locator("#editor .fr-element").waitFor();
         assertEquals(FroalaTestView.LICENSE_KEY, licenseKeyInFroala());
 

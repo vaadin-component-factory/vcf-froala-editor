@@ -120,6 +120,14 @@ class FroalaViewerTest {
     }
 
     @Test
+    void asciiCharacterABrowserMayEncode_matchesBothForms() {
+        // A space is held as %20. Chromium encodes "|" as well, the URL class of Node leaves it.
+        assertTrue(matches(FroalaViewer.toRegex("/my files"), "/my%20files/1"));
+        assertTrue(matches(FroalaViewer.toRegex("/a|b"), "/a%7Cb/1"));
+        assertTrue(matches(FroalaViewer.toRegex("/a|b"), "/a|b/1"));
+    }
+
+    @Test
     void removingAnEarlierRegistration_keepsThePatternsOfALaterOne() {
         FroalaViewer viewer = new FroalaViewer();
         Registration earlier = FroalaViewer.applyRouterIgnore(viewer, "/a");

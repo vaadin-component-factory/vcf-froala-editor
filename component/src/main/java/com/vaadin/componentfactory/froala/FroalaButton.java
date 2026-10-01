@@ -265,10 +265,10 @@ public final class FroalaButton {
     public static final String OPEN_FILE_PICKER_FILE = "openFilePickerFile";
 
     // -----------------------------------------------------------------------------------------------------------
-    // FroalaPlugin.FIND_AND_REPLACE
+    // FroalaPlugin.FIND_REPLACE
     // -----------------------------------------------------------------------------------------------------------
 
-    /** Find and Replace. Needs {@link FroalaPlugin#FIND_AND_REPLACE}. In Froala's default toolbar. */
+    /** Find and Replace. Needs {@link FroalaPlugin#FIND_REPLACE}. In Froala's default toolbar. */
     public static final String FIND_REPLACE_BUTTON = "findReplaceButton";
 
     // -----------------------------------------------------------------------------------------------------------

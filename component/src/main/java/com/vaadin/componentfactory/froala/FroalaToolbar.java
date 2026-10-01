@@ -141,6 +141,7 @@ public final class FroalaToolbar implements Serializable {
      * @throws NullPointerException if any button name is null
      */
     public static FroalaToolbar of(String... buttons) {
+        Objects.requireNonNull(buttons, "buttons must not be null");
         for (String button : buttons) {
             Objects.requireNonNull(button, "A toolbar button needs a command name");
         }
@@ -208,6 +209,7 @@ public final class FroalaToolbar implements Serializable {
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
+        Objects.requireNonNull(groups, "groups must not be null");
         return ofGroups(Arrays.asList(groups));
     }
 
@@ -285,6 +287,7 @@ public final class FroalaToolbar implements Serializable {
     }
 
     private FroalaToolbar withGroup(String name, UnaryOperator<FroalaToolbarGroup> change) {
+        Objects.requireNonNull(name, "group must not be null");
         if (groups == null) {
             throw new IllegalStateException("A flat toolbar has no groups, and it shows every button anyway.");
         }

@@ -88,6 +88,9 @@ function registerCommands(commands) {
 // the kinds of file Froala uploads, each with its own options such as imageUploadURL and imageUpload
 const UPLOAD_KINDS = ['image', 'file', 'video'];
 
+// The popup button lists a plugin edits in place, see _initEditor. The files manager edits imageInsertButtons.
+const INSERT_BUTTON_LISTS = ['imageInsertButtons', 'videoInsertButtons', 'fileInsertButtons'];
+
 class FroalaEditorElement extends SlotStylesMixin(
   FieldMixin(ThemableMixin(ElementMixin(FocusMixin(DisabledMixin(PolylitMixin(LitElement))))))
 ) {
@@ -447,6 +450,16 @@ class FroalaEditorElement extends SlotStylesMixin(
       options[`${kind}UploadURL`] = this[`${kind}UploadUrl`];
     });
     this._filesUploadWithoutUrlOff(options);
+
+    // Froala copies the options flat, so these lists are the very arrays of FroalaEditor.DEFAULTS, or the server's,
+    // which outlive a rebuild. With its upload off a plugin cuts the upload button out of them in place, and the file
+    // plugin cuts the last button on a second go. Lists of its own keep that inside this build.
+    INSERT_BUTTON_LISTS.forEach((name) => {
+      const buttons = options[name] ?? FroalaEditor.DEFAULTS[name];
+      if (buttons) {
+        options[name] = [...buttons];
+      }
+    });
 
     // Froala builds asynchronously, so an options change can arrive while the editor being replaced is still
     // bootstrapping. See _editorGeneration.

@@ -15,6 +15,8 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.Objects;
+
 import com.vaadin.flow.component.ComponentEvent;
 
 /**
@@ -35,7 +37,7 @@ public class FroalaCommandEvent extends ComponentEvent<FroalaEditor> {
      */
     public FroalaCommandEvent(FroalaEditor source, boolean fromClient, FroalaCommand command) {
         super(source, fromClient);
-        this.command = command;
+        this.command = Objects.requireNonNull(command, "command must not be null");
     }
 
     /**

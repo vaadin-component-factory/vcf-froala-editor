@@ -34,7 +34,7 @@ class FroalaPluginTest {
 
     @Test
     void basics_areExactlyTheAgreedList() {
-        assertEquals(Set.of(FroalaPlugin.ALIGN, FroalaPlugin.COLORS, FroalaPlugin.FIND_AND_REPLACE,
+        assertEquals(Set.of(FroalaPlugin.ALIGN, FroalaPlugin.COLORS, FroalaPlugin.FIND_REPLACE,
                 FroalaPlugin.FONT_FAMILY, FroalaPlugin.FONT_SIZE, FroalaPlugin.HELP, FroalaPlugin.LINE_HEIGHT,
                 FroalaPlugin.LINK, FroalaPlugin.LINK_TO_ANCHOR, FroalaPlugin.LISTS, FroalaPlugin.PARAGRAPH_FORMAT,
                 FroalaPlugin.QUOTE, FroalaPlugin.URL, FroalaPlugin.WORD_PASTE), FroalaPlugin.basics());

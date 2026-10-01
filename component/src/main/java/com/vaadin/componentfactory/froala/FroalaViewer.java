@@ -131,6 +131,7 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
      */
     public void setRouterIgnorePaths(String... paths) {
+        Objects.requireNonNull(paths, "paths must not be null");
         setRouterIgnorePaths(Arrays.asList(paths));
     }
 
@@ -165,6 +166,7 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @return a registration that leaves the links to the router again
      */
     public static Registration applyRouterIgnore(Component component, String... paths) {
+        Objects.requireNonNull(paths, "paths must not be null");
         return applyRouterIgnore(component, Arrays.asList(paths));
     }
 
@@ -217,6 +219,9 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * Turns a path pattern into a regular expression that JavaScript and Java read alike. A backslash before a
      * character other than a letter or a digit makes it literal in both.
      */
+    /** The printable ASCII characters a browser may percent-encode in a URL's path. */
+    private static final String PATH_PERCENT_ENCODED = " \"<>^`{|}";
+
     static String toRegex(String path) {
         Objects.requireNonNull(path, "A router-ignore path must not be null");
         String pattern = path.trim();
@@ -237,11 +242,14 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
         pattern.codePoints().forEach(c -> {
             if (c == '*') {
                 regex.append(".*");
-            } else if (c > 127) {
-                // the browser's pathname holds a character outside ASCII percent-encoded, as its UTF-8 bytes
+            } else if (c >= 127 || c < ' ') {
+                // the browser's pathname holds a character outside printable ASCII percent-encoded, as its UTF-8 bytes
                 for (byte b : Character.toString(c).getBytes(StandardCharsets.UTF_8)) {
                     regex.append(String.format("\\%%%02X", b));
                 }
+            } else if (PATH_PERCENT_ENCODED.indexOf(c) >= 0) {
+                // Browsers do not agree on which of these they encode, so both forms match
+                regex.append(String.format("(?:\\%c|\\%%%02X)", c, c));
             } else if (Character.isLetterOrDigit(c)) {
                 regex.appendCodePoint(c);
             } else {

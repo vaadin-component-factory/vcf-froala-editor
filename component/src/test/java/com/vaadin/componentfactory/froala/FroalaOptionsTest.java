@@ -201,7 +201,7 @@ class FroalaOptionsTest {
         // The file is font_family.min.js, but pluginsEnabled only understands fontFamily. A constant holding the file
         // name would switch the plugin off instead of on, silently. An application's own name goes through as given.
         assertEquals("{\"pluginsEnabled\":[\"fontFamily\",\"findReplace\",\"track_changes\"]}", FroalaOptions.defaults()
-                .withPluginsEnabled(FroalaPlugin.FONT_FAMILY, FroalaPlugin.FIND_AND_REPLACE, FroalaPlugin.TRACK_CHANGES)
+                .withPluginsEnabled(FroalaPlugin.FONT_FAMILY, FroalaPlugin.FIND_REPLACE, FroalaPlugin.TRACK_CHANGES)
                 .toString());
 
         assertEquals("{\"pluginsEnabled\":[\"align\",\"myPlugin\"]}",

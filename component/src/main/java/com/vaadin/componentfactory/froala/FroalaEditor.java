@@ -816,16 +816,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
     /**
      * Sets the value change mode of this instance. By default the editor uses {@link FroalaValueChangeMode#ON_CHANGE}.
-     * Null resets the mode to the default.
      *
-     * @param valueChangeMode the new value change mode, or null for the default
+     * @param valueChangeMode the new value change mode, not null
      */
     public void setValueChangeMode(FroalaValueChangeMode valueChangeMode) {
-        if (valueChangeMode == null) {
-            setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
-        } else {
-            getElement().setProperty(VALUE_CHANGE_MODE_PROPERTY, valueChangeMode.getClientValue());
-        }
+        Objects.requireNonNull(valueChangeMode, "valueChangeMode must not be null");
+        getElement().setProperty(VALUE_CHANGE_MODE_PROPERTY, valueChangeMode.getClientValue());
     }
 
     /**

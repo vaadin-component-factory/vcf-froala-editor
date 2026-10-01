@@ -149,6 +149,14 @@ class FroalaToolbarTest {
         assertThrows(NullPointerException.class, () -> FroalaToolbarGroup.named("myGroup", "bold", null));
         assertThrows(NullPointerException.class, () -> FroalaToolbar.of("bold", null));
         assertThrows(NullPointerException.class, () -> FroalaToolbar.ofGroups((FroalaToolbarGroup) null));
+        assertThrows(NullPointerException.class,
+                () -> FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold")).withAllButtonsVisible(null));
+    }
+
+    @Test
+    void blankGroupName_isRejected() {
+        // Froala keys its groups by name, and a blank one only goes wrong in the browser
+        assertThrows(IllegalArgumentException.class, () -> FroalaToolbarGroup.named(" ", "bold"));
     }
 
     @Test

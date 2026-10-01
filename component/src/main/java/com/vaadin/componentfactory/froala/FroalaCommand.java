@@ -254,6 +254,7 @@ public final class FroalaCommand implements Serializable {
     public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
         // The constructor reads 0 and null as "no shortcut", which this method must not silently produce
         Objects.requireNonNull(shortcutLabel, "shortcutLabel must not be null");
+        Objects.requireNonNull(modifiers, "modifiers must not be null");
         if (keyCode < 1) {
             throw new IllegalArgumentException("A shortcut key code must be 1 or more, but got " + keyCode);
         }

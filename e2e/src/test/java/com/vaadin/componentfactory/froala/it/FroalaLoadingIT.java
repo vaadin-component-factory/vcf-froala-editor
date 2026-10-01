@@ -100,8 +100,7 @@ class FroalaLoadingIT extends SpringPlaywrightIT {
         // A production chunk is named after its source file with a hash appended, such as align.min-BowZ32Ae.js. Of
         // the files the loader imports on demand only the plugin files end in .min, the language files do not
         // (de-jy2OPth8.js). The core and edit_in_popup.min.js are imported statically and sit in the main bundle.
-        // Should
-        // that change, the list below gets an extra name and the test fails rather than passing wrongly.
+        // Should that change, the list below gets an extra name and the test fails rather than passing wrongly.
         List<String> pluginFiles = downloadedScripts().stream().filter(script -> script.contains(".min-"))
                 .map(script -> script.substring(0, script.indexOf(".min-"))).toList();
 

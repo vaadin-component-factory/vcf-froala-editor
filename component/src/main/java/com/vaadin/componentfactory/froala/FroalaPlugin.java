@@ -148,7 +148,7 @@ public final class FroalaPlugin {
     /**
      * Search and replace inside the edited text.
      */
-    public static final String FIND_AND_REPLACE = "findReplace";
+    public static final String FIND_REPLACE = "findReplace";
 
     /**
      * A picker that inserts Font Awesome icons. Requires the Font Awesome stylesheet on the page, which neither Froala
@@ -188,7 +188,9 @@ public final class FroalaPlugin {
 
     /**
      * Opens an inserted image in the Filerobot image editor. Requires the Filerobot library on the page
-     * ({@code window.FilerobotImageEditor}). Ships under {@code js/third_party/}.
+     * ({@code window.FilerobotImageEditor}). Ships under {@code js/third_party/}. Needs an image upload handler as
+     * well. The edited image is uploaded, and without a handler it goes into the value as a {@code blob:} URL that is
+     * dead after a reload.
      */
     public static final String IMAGE_FILEROBOT = "imageFilerobot";
 
@@ -201,7 +203,8 @@ public final class FroalaPlugin {
 
     /**
      * Opens an inserted image in the Toast UI image editor. Requires that library on the page ({@code window.tui}).
-     * Ships under {@code js/third_party/}.
+     * Ships under {@code js/third_party/}. Needs an image upload handler as well. The edited image is uploaded, and
+     * without a handler it goes into the value as a {@code blob:} URL that is dead after a reload.
      */
     public static final String IMAGE_TUI = "imageTUI";
 
@@ -353,8 +356,8 @@ public final class FroalaPlugin {
      * @return a new set on every call, free to change
      */
     public static Set<String> basics() {
-        return new LinkedHashSet<>(List.of(ALIGN, COLORS, FIND_AND_REPLACE, FONT_FAMILY, FONT_SIZE, HELP, LINE_HEIGHT,
-                LINK, LINK_TO_ANCHOR, LISTS, PARAGRAPH_FORMAT, QUOTE, URL, WORD_PASTE));
+        return new LinkedHashSet<>(List.of(ALIGN, COLORS, FIND_REPLACE, FONT_FAMILY, FONT_SIZE, HELP, LINE_HEIGHT, LINK,
+                LINK_TO_ANCHOR, LISTS, PARAGRAPH_FORMAT, QUOTE, URL, WORD_PASTE));
     }
 
     /**
@@ -365,8 +368,8 @@ public final class FroalaPlugin {
     public static Set<String> all() {
         return new LinkedHashSet<>(List.of(AI_ASSIST, ALIGN, CHAR_COUNTER, CODE_BEAUTIFIER, CODE_SNIPPET, CODE_VIEW,
                 COLLABORATIVE, COLORS, CRYPTO_JS, DRAGGABLE, EMBEDLY, EMOTICONS, ENTITIES, EXPORT_TO_WORD, FILE,
-                FILES_MANAGER, FILESTACK, FIND_AND_REPLACE, FONT_AWESOME, FONT_FAMILY, FONT_SIZE, FORMS, FULLSCREEN,
-                HELP, IMAGE, IMAGE_FILEROBOT, IMAGE_MANAGER, IMAGE_TUI, IMPORT_FROM_WORD, INLINE_CLASS, INLINE_STYLE,
+                FILES_MANAGER, FILESTACK, FIND_REPLACE, FONT_AWESOME, FONT_FAMILY, FONT_SIZE, FORMS, FULLSCREEN, HELP,
+                IMAGE, IMAGE_FILEROBOT, IMAGE_MANAGER, IMAGE_TUI, IMPORT_FROM_WORD, INLINE_CLASS, INLINE_STYLE,
                 LINE_BREAKER, LINE_HEIGHT, LINK, LINK_TO_ANCHOR, LISTS, MARKDOWN, PAGE_BREAK, PARAGRAPH_FORMAT,
                 PARAGRAPH_STYLE, PRINT, QUICK_INSERT, QUOTE, SAVE, SPECIAL_CHARACTERS, SPELL_CHECKER, TABLE,
                 TRACK_CHANGES, TRIM_VIDEO, URL, VIDEO, WORD_COUNTER, WORD_PASTE));
