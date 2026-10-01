@@ -37,12 +37,12 @@ import com.vaadin.flow.shared.Registration;
  * content outside the editor</a>.
  *
  * <p>
- * The viewer also carries the class {@code vaadin-theme}, so the content rules of {@link FroalaTheme#VAADIN}, such as
- * the colors of tracked changes, apply as they do in the editor. An application whose editors use another Froala theme
- * removes it with {@code removeClassName("vaadin-theme")}. The base text (font, color, size, weight and line height)
- * comes from the page, which under Lumo gives the same values as the editor by default. Overriding the base text's
- * {@code --vcf-froala-*} properties, such as {@code --vcf-froala-value-color}, or the input field properties changes
- * the editor only.
+ * The viewer also carries the class {@code froala-vaadin-theme}, so the content rules of {@link FroalaTheme#VAADIN},
+ * such as the colors of tracked changes, apply as they do in the editor. An application whose editors use another
+ * Froala theme removes it with {@code removeClassName("froala-vaadin-theme")}. The base text (font, color, size, weight
+ * and line height) comes from the page, which under Lumo gives the same values as the editor by default. Overriding the
+ * base text's {@code --vcf-froala-*} properties, such as {@code --vcf-froala-value-color}, or the input field
+ * properties changes the editor only.
  */
 @Tag("vcf-froala-viewer")
 @NpmPackage(value = "froala-editor", version = "5.4.0")
@@ -88,12 +88,12 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
     private Registration routerIgnore;
 
     /**
-     * Creates a new instance and adds Froala's {@code fr-view} class and the {@code vaadin-theme} class to it.
+     * Creates a new instance and adds Froala's {@code fr-view} class and the {@code froala-vaadin-theme} class to it.
      * Replacing the class list with {@link HasStyle#setClassName(String)} removes both, and the content then loses
      * Froala's styling.
      */
     public FroalaViewer() {
-        addClassNames("fr-view", "vaadin-theme");
+        addClassNames("fr-view", "froala-vaadin-theme");
     }
 
     /**

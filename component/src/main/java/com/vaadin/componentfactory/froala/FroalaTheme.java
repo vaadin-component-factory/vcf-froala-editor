@@ -31,7 +31,7 @@ public final class FroalaTheme {
      * Follows the Vaadin theme, including its dark variant. The add-on's default. The colors come from the
      * {@code --vcf-froala-*} custom properties, which are set from Lumo and can be overridden.
      */
-    public static final String VAADIN = "vaadin";
+    public static final String VAADIN = "froala-vaadin";
 
     /**
      * Froala's dark theme. Its stylesheet {@code froala-editor/css/themes/dark.min.css} is not loaded by the add-on.

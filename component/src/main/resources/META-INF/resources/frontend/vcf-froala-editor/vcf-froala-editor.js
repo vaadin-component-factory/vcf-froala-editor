@@ -430,7 +430,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     registerCommands(commands);
     const options = {
       saveInterval: 0,
-      theme: 'vaadin',
+      theme: 'froala-vaadin',
       ...this._uploadsWithoutUrlOff(),
       ...this.options,
       pluginsEnabled: [...pluginsEnabled, ...commands.map(({ name }) => commandPlugin(name))],

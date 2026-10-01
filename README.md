@@ -126,7 +126,7 @@ editor.setOptions("{\"tabSpaces\": 4}");
 option has a `with…` method, but any option can be passed as JSON.
 
 `getOptionsJson()` returns the options set with `setOptions`, whichever way they were set. The
-add-on's own defaults, such as the `vaadin` theme, are not part of it.
+add-on's own defaults, such as the `froala-vaadin` theme, are not part of it.
 
 Limits of options:
 
@@ -621,7 +621,7 @@ FroalaOptions options = FroalaOptions.defaults()
 ### Theme
 
 The editor follows the Vaadin theme, including Lumo's dark variant. This is Froala's `theme`
-option set to `vaadin`, and it is on by default. Its look comes from custom properties of the
+option set to `froala-vaadin`, and it is on by default. Its look comes from custom properties of the
 add-on, which are set from Lumo. [Appendix: Theme properties](#appendix-theme-properties) lists
 them all. Override them to change the editor without touching Lumo:
 
@@ -639,7 +639,7 @@ track changes. The field states look as they do on a Vaadin text field.
 The heights and spacing of the toolbar and popups stay Froala's, because Froala places parts of
 them at fixed offsets.
 
-The editor provides a set of variants for the `vaadin` theme:
+The editor provides a set of variants for the `froala-vaadin` theme:
 
 | Variant | What it does |
 |---|---|
@@ -723,11 +723,11 @@ takes font, color and size from the page, which under Lumo matches the editor. T
 properties, such as `--vcf-froala-value-color`, apply to the editor only. The viewer follows the
 other `--vcf-froala-*` properties, such as the colors of tracked changes.
 
-The viewer carries the class `vaadin-theme` for the editor's default theme. Remove it when your
+The viewer carries the class `froala-vaadin-theme` for the editor's default theme. Remove it when your
 editors use another Froala theme:
 
 ```java
-viewer.removeClassName("vaadin-theme");
+viewer.removeClassName("froala-vaadin-theme");
 ```
 
 Vaadin's router takes a click on a link inside the application as navigation to a route. A link
@@ -838,7 +838,7 @@ Alternatively, leave enough room to the left of the editor inside its container,
 
 ## Appendix: Theme properties
 
-The custom properties of the `vaadin` theme. [Theme](#theme) explains how to use them.
+The custom properties of the `froala-vaadin` theme. [Theme](#theme) explains how to use them.
 
 | Property | What it is | Set from |
 |---|---|---|

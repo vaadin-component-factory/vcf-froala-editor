@@ -11,7 +11,7 @@
 :where(
     vcf-froala-editor,
     vcf-froala-viewer,
-    .vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal, .fr-overlay, .fr-tooltip)
+    .froala-vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal, .fr-overlay, .fr-tooltip)
   ) {
   --_vcf-froala-background-color: var(--vcf-froala-background-color, var(--lumo-base-color));
   --_vcf-froala-neutral-color: var(--vcf-froala-neutral-color, var(--lumo-contrast));
@@ -107,14 +107,14 @@
 
 /* The editable area, set like the value of a Vaadin text field. Froala sets neither of these through a colour, so the
    generated rules do not cover them. */
-vcf-froala-editor .vaadin-theme.fr-box .fr-element {
+vcf-froala-editor .froala-vaadin-theme.fr-box .fr-element {
   font-weight: var(--_vcf-froala-content-font-weight);
   line-height: var(--_vcf-froala-content-line-height);
 }
 
 /* Vaadin's focus ring around the box follows the box's corners, but only under this theme. Other themes keep Froala's
    10px, the element's default. */
-vcf-froala-editor:has(.vaadin-theme.fr-box) {
+vcf-froala-editor:has(.froala-vaadin-theme.fr-box) {
   --_vcf-froala-box-radius: var(--_vcf-froala-field-border-radius);
 }
 
@@ -138,12 +138,14 @@ vcf-froala-editor[invalid] {
   --_vcf-froala-fill: var(--_vcf-froala-invalid-background);
 }
 
-vcf-froala-editor .vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
+vcf-froala-editor .froala-vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
   background-image: linear-gradient(var(--_vcf-froala-fill, transparent), var(--_vcf-froala-fill, transparent));
 }
 
 /* The border turns transparent rather than going away, so nothing moves. The fill reaches under it. */
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
+vcf-froala-editor:not([theme~='outlined'])
+  .froala-vaadin-theme.fr-box
+  :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
   border-color: transparent;
   background-clip: border-box;
 }
@@ -153,62 +155,65 @@ vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box :is(.fr-toolbar,
    generated shades of the toolbar's second row, row divider and separators. Dropdown menus are not inside the
    buttons and keep their background colour. Popups that Froala places in the toolbar are left out, because they are
    opaque themselves. A collaborator's avatar needs the real background colour for its initials and ring. */
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar {
   --_vcf-froala-toolbar-background-color: var(--_vcf-froala-background-color);
 }
 
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn:not(.fr-popup .fr-btn) {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar .fr-btn:not(.fr-popup .fr-btn) {
   --_vcf-froala-background-color: transparent;
 }
 
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-btn .fr-collab-avatar {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar .fr-btn .fr-collab-avatar {
   --_vcf-froala-background-color: var(--_vcf-froala-toolbar-background-color);
 }
 
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-more-toolbar {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar .fr-more-toolbar {
   background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 4%, transparent);
 }
 
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-newline {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar .fr-newline {
   background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 6%, transparent);
 }
 
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar .fr-separator {
+vcf-froala-editor:not([theme~='outlined']) .froala-vaadin-theme.fr-box .fr-toolbar .fr-separator {
   background-color: color-mix(in srgb, var(--_vcf-froala-neutral-color) 8%, transparent);
 }
 
 /* A bottom toolbar with its second row open pads the divider, and Froala paints it like the toolbar */
-vcf-froala-editor:not([theme~='outlined']) .vaadin-theme.fr-box .fr-toolbar.fr-bottom.fr-toolbar-open .fr-newline {
+vcf-froala-editor:not([theme~='outlined'])
+  .froala-vaadin-theme.fr-box
+  .fr-toolbar.fr-bottom.fr-toolbar-open
+  .fr-newline {
   background-color: transparent;
 }
 
 /* Only the outer edge turns to the error colour, not the line between the editing area and the bottom bar */
-vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box :is(.fr-toolbar, .fr-second-toolbar) {
+vcf-froala-editor[theme~='outlined'][invalid] .froala-vaadin-theme.fr-box :is(.fr-toolbar, .fr-second-toolbar) {
   border-color: var(--_vcf-froala-invalid-border-color);
 }
 
-vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box .fr-wrapper {
+vcf-froala-editor[theme~='outlined'][invalid] .froala-vaadin-theme.fr-box .fr-wrapper {
   border-left-color: var(--_vcf-froala-invalid-border-color);
   border-right-color: var(--_vcf-froala-invalid-border-color);
 }
 
-vcf-froala-editor[theme~='outlined'][invalid] .vaadin-theme.fr-box .fr-wrapper:not(:has(~ .fr-second-toolbar)) {
+vcf-froala-editor[theme~='outlined'][invalid] .froala-vaadin-theme.fr-box .fr-wrapper:not(:has(~ .fr-second-toolbar)) {
   border-bottom-color: var(--_vcf-froala-invalid-border-color);
 }
 
 /* Read-only has no frame colour and no background, but a border of its own. An outline draws it without moving
    anything. A sticky toolbar is then see-through as well, like the read-only Vaadin text field. */
-vcf-froala-editor[readonly] .vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
+vcf-froala-editor[readonly] .froala-vaadin-theme.fr-box :is(.fr-toolbar, .fr-wrapper, .fr-second-toolbar) {
   border-color: transparent;
   background-color: transparent;
 }
 
-vcf-froala-editor[readonly] .vaadin-theme.fr-box {
+vcf-froala-editor[readonly] .froala-vaadin-theme.fr-box {
   outline: var(--_vcf-froala-readonly-border);
   outline-offset: -1px;
 }
 
-vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholder {
+vcf-froala-editor:is([readonly], [disabled]) .froala-vaadin-theme.fr-box .fr-placeholder {
   opacity: 0;
 }
 
@@ -216,7 +221,7 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
    fields, and neither does the no-hover-highlight variant. */
 @media not (pointer: coarse) {
   vcf-froala-editor:hover:not([readonly], [focused], [disabled], [theme~='no-hover-highlight'])
-    .vaadin-theme.fr-box
+    .froala-vaadin-theme.fr-box
     .fr-wrapper {
     --_vcf-froala-hover: color-mix(
       in srgb,
@@ -228,7 +233,7 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
   }
 
   vcf-froala-editor[invalid]:hover:not([readonly], [focused], [disabled], [theme~='no-hover-highlight'])
-    .vaadin-theme.fr-box
+    .froala-vaadin-theme.fr-box
     .fr-wrapper {
     --_vcf-froala-hover: color-mix(
       in srgb,
@@ -241,10 +246,10 @@ vcf-froala-editor:is([readonly], [disabled]) .vaadin-theme.fr-box .fr-placeholde
 /* The icon of an own command is a <vaadin-icon>, which draws its svg in its shadow root, where the rules for Froala's
    `svg path` do not reach. It takes its fill from the element, so the element gets the colours Froala's icons get,
    the accent colour while a toggle is active. */
-.vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn vaadin-icon {
+.froala-vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn vaadin-icon {
   fill: color-mix(in srgb, var(--_vcf-froala-neutral-color) 80%, var(--_vcf-froala-background-color));
 }
 
-.vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn.fr-active:not(.fr-dropdown) vaadin-icon {
+.froala-vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal) .fr-command.fr-btn.fr-active:not(.fr-dropdown) vaadin-icon {
   fill: var(--_vcf-froala-accent-color);
 }

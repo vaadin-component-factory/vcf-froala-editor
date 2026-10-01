@@ -61,7 +61,7 @@ const target = path.join(
   'vcf-froala-theme-vaadin-rules.css'
 );
 
-const THEME = 'vaadin-theme';
+const THEME = 'froala-vaadin-theme';
 const BASE = 'var(--vcf-froala-background-color)';
 const ON_TONE = 'var(--vcf-froala-accent-contrast-color)';
 const BORDER = 'var(--vcf-froala-border-color)';

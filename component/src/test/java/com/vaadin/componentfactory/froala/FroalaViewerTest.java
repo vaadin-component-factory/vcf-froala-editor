@@ -36,7 +36,7 @@ class FroalaViewerTest {
 
     @Test
     void viewer_carriesFroalasViewClassAndTheVaadinTheme() {
-        assertEquals(Set.of("fr-view", "vaadin-theme"), new FroalaViewer().getClassNames());
+        assertEquals(Set.of("fr-view", "froala-vaadin-theme"), new FroalaViewer().getClassNames());
     }
 
     @Test

@@ -101,9 +101,9 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         // THM-1, THM-3, THM-5
         waitForEditors();
 
-        assertEquals("vaadin", page.evaluate("() => document.querySelector('#themed').editor.opts.theme"));
-        assertTrue(page.locator("#themed .fr-box.vaadin-theme").isVisible());
-        assertTrue(page.locator("#themed .fr-toolbar.vaadin-theme").isVisible());
+        assertEquals("froala-vaadin", page.evaluate("() => document.querySelector('#themed').editor.opts.theme"));
+        assertTrue(page.locator("#themed .fr-box.froala-vaadin-theme").isVisible());
+        assertTrue(page.locator("#themed .fr-toolbar.froala-vaadin-theme").isVisible());
     }
 
     @Test
@@ -112,7 +112,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
         waitForEditors();
 
         assertEquals("", page.evaluate("() => document.querySelector('#plain').editor.opts.theme"));
-        assertEquals(0, page.locator("#plain .vaadin-theme").count());
+        assertEquals(0, page.locator("#plain .froala-vaadin-theme").count());
     }
 
     @Test
@@ -363,7 +363,7 @@ class FroalaThemeIT extends SpringPlaywrightIT {
 
         @SuppressWarnings("unchecked")
         List<String> light = (List<String>) page.evaluate("""
-                () => [...document.querySelectorAll('.vaadin-theme, .vaadin-theme *')]
+                () => [...document.querySelectorAll('.froala-vaadin-theme, .froala-vaadin-theme *')]
                   .filter(element => element.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
                   .map(element => [element, getComputedStyle(element).backgroundColor])
                   .filter(([, color]) => {

@@ -6,7 +6,7 @@ no custom properties to hook into. Froala's own `dark.css` does not cover all of
 no template either. Overrides written by hand would drift with every Froala release.
 
 So `component/src/theme-generator/generate-vaadin-theme.js` repeats every rule that sets one of
-these under `.vaadin-theme`, with the value expressed through the add-on's own `--vcf-froala-*`
+these under `.froala-vaadin-theme`, with the value expressed through the add-on's own `--vcf-froala-*`
 properties. Every value Lumo has a property for gets one of ours, unless a technical reason
 speaks against it (maintainer, 2026-09-28). Each colour is read as a full tone mixed with white.
 A grey is the neutral colour mixed with white, a light blue is the accent colour mixed with
