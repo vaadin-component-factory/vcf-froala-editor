@@ -47,10 +47,11 @@ public class EditorView extends VerticalLayout {
 }
 ```
 
-The value is the editor's HTML as a `String`. It is not sanitized, see [Sanitizing](#sanitizing).
+The value is the editor's HTML as a `String`. It is not sanitized. See [Sanitizing](#sanitizing).
 
 Label, helper text and error message work as in Vaadin's other fields. They are linked to
-Froala's editable area with `aria-labelledby` and `aria-describedby`.
+Froala's editable area with `aria-labelledby` and `aria-describedby`. Read-only, disabled,
+invalid and the size methods work as on other fields too.
 
 ### License key
 
@@ -102,7 +103,7 @@ ways to write them:
 // typed
 FroalaOptions options = FroalaOptions.defaults()
         .withPlaceholderText("Write something")
-        .withCharCounterMax(2000);
+        .withSpellcheck(false);
 editor.setOptions(options);
 
 // raw JSON, for options without a with… method
@@ -122,13 +123,13 @@ Limits of options:
 
   ```java
   editor.setOptions(options.withPlaceholderText("Write something"));
-  editor.setOptions(FroalaOptions.defaults().withCharCounterMax(2000)); // the placeholder is gone
-  editor.setOptions(options.withCharCounterMax(2000));                 // both are set
+  editor.setOptions(FroalaOptions.defaults().withSpellcheck(false)); // the placeholder is gone
+  editor.setOptions(options.withSpellcheck(false));                 // both are set
   ```
 - Froala cannot change options on a running editor. Calling `setOptions` with other options
   on an attached editor destroys it and builds a new one. The value is kept, but caret,
   selection, scroll position and undo history are lost. The same options again change
-  nothing.
+  nothing, unless the UI's locale has changed since.
 - `key`, `height` and `width` have no `with…` method. Use `setLicenseKey` and the Vaadin
   size methods.
 - The add-on sets Froala's `saveInterval` to 0 unless your options set it, so the save
@@ -216,9 +217,9 @@ FroalaOptions options = FroalaOptions.defaults()
   ```
 
   This builds the editor again, which keeps the value but loses caret, selection and undo
-  history. A build without a language reads the locale again. Only options that differ from
-  the current ones cause a build, though. For example `setOptions` with the same options after
-  `UI.setLocale` leaves the editor in its old language.
+  history. A build without a language reads the locale again. So after `UI.setLocale` the next
+  `setOptions` or `addCommand` builds the editor in the new language, even with the same
+  options.
 - Track changes marks insertions and deletions in the HTML. That markup reaches the server with
   the value unless the changes are accepted or rejected first. For example a deletion stays in
   the value as a `<span data-tracking-deleted="true">`.
@@ -313,8 +314,8 @@ FroalaToolbar.of(FroalaButton.BOLD).withAllButtonsVisible(FroalaToolbarGroup.MOR
 
 Setting a toolbar also replaces Froala's narrower variants, which show fewer buttons per group.
 For example `froalaDefault()` on a phone still shows four insert buttons, where Froala's own
-default shows none. Set the narrow ones yourself where they should differ. For example, to hide
-the insert buttons on phones as Froala does:
+default shows none. Set the narrow ones yourself where they should differ. To hide the insert
+buttons on phones as Froala does:
 
 ```java
 FroalaOptions options = FroalaOptions.defaults()
@@ -356,14 +357,14 @@ FroalaCommand insertTemplate = new FroalaCommand("insertTemplate", "Insert templ
 
 // the command's name places its button, here in the toolbar after bold
 editor.setOptions(FroalaOptions.defaults()
-        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.name())));
+        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.getName())));
 Registration registration = editor.addCommand(insertTemplate,
         event -> editor.replaceSelectionContent("<p>Dear customer,</p>"));
 
-// you can also add the command at multiple places, here in the toolbar and in the popup that opens on a link
+// the same name can place buttons in several places, here in the toolbar and in the popup that opens on a link
 editor.setOptions(FroalaOptions.defaults()
-        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.name()))
-        .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, insertTemplate.name())));
+        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, insertTemplate.getName()))
+        .withLinkEditButtons(List.of(FroalaButton.LINK_OPEN, insertTemplate.getName())));
 
 registration.remove(); // the command and its buttons are gone from this editor
 ```
@@ -382,16 +383,16 @@ The label is what the button's tooltip shows for the key. Which code a key has o
 layout, and whether the browser takes the combination first, is up to Froala and the browser:
 
 ```java
-insertTemplate.withShortcut(Key.F2);                           // Ctrl+F2
-insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL);   // Ctrl+T (CONTROL is ignored)
-insertTemplate.withShortcut(191, "/");                         // Ctrl+/ on a US layout, the tooltip shows "Ctrl+/"
+insertTemplate = insertTemplate.withShortcut(Key.F2);                         // Ctrl+F2
+insertTemplate = insertTemplate.withShortcut(Key.KEY_T, KeyModifier.CONTROL); // Ctrl+T (CONTROL is ignored)
+insertTemplate = insertTemplate.withShortcut(191, "/");                       // Ctrl+/ on a US layout, the tooltip shows "Ctrl+/"
 ```
 
 These throw an `IllegalArgumentException`:
 
 - a `Key` that is no letter, digit or function key from F1 to F12
 - Alt Graph as a modifier
-- a key code below 1, or a missing label
+- a key code below 1, or a blank label
 - a second command of the same name on one editor
 
 ```java
@@ -504,8 +505,17 @@ editor.setImageUploadHandler(event -> {
     String id = storage.save(event.getInputStream()); // an id of its own, never the client's file name
     return "/images/" + id;
 });
-editor.setFileUploadHandler(...);
-editor.setVideoUploadHandler(...);
+```
+
+The file and video handlers work the same way, with `setFileUploadHandler` and
+`setVideoUploadHandler`. Every handler needs the plugin of its kind, which `FroalaPlugin.basics()` does
+not contain. Froala's default toolbar then shows the insert button. A toolbar of your own has to
+list `FroalaButton.INSERT_IMAGE`, `INSERT_FILE` or `INSERT_VIDEO`:
+
+```java
+Set<String> plugins = FroalaPlugin.basics();
+plugins.add(FroalaPlugin.IMAGE);
+editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins));
 ```
 
 The upload goes through Flow, so it needs no endpoint of its own. It is refused while the
@@ -633,6 +643,13 @@ FroalaOptions.defaults().withTheme(FroalaTheme.DARK);
 FroalaOptions.defaults().withTheme("brand");
 ```
 
+The add-on does not load the stylesheets of Froala's `DARK`, `GRAY` and `ROYAL` themes. The
+application loads the one it uses:
+
+```java
+@CssImport("froala-editor/css/themes/dark.min.css")
+```
+
 ### Selection
 
 `replaceSelectionContent` inserts HTML at the caret, replacing the selection if there is
@@ -679,7 +696,7 @@ viewer.setContent(editor.getValue());
 ```
 
 It loads the add-on's stylesheets itself, so it needs no editor on the same page. The base text
-takes font, colour and size from the page, which under Lumo matches the editor. The
+takes font, color and size from the page, which under Lumo matches the editor. The
 `--vcf-froala-*` properties change the editor only.
 
 The viewer carries the class `vaadin-theme` for the editor's default theme. Remove it when your
@@ -755,9 +772,9 @@ FroalaOptions options = FroalaOptions.defaults()
 
 ## Known issues
 
-### The quick-insert button is hidden by the AppLayout drawer or cut off in a Dialog
+### The quick insert button is hidden by the AppLayout drawer or cut off in a Dialog
 
-Froala's quick-insert button (the `+` on an empty line) goes to the left of the editor box
+Froala's quick insert button (the `+` on an empty line) goes to the left of the editor box
 whenever there is at least its own width of room between the editor and the page edge.
 Froala does not check whether an ancestor of the editor clips that spot. So inside an
 `AppLayout` with the drawer open, a `Dialog`, a `Popover`, or any scroll container with
