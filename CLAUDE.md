@@ -200,6 +200,11 @@ stale jar. The e2e module always builds with `forceProductionBuild`. No profile 
 needed, and the e2e run exercises the true optimized bundle rather than a precompiled
 one.
 
+After switching between main and `v1`, delete the generated frontend files in `e2e/` and
+`demo/` (`node_modules`, `package.json`, `package-lock.json`, `src/main/frontend/generated`
+and the other files `.gitignore` lists for them). npm keeps the other line's half-installed
+packages, and the Vite build then fails on imports it cannot resolve.
+
 ## Release
 
 The demo server deploys from the branch `v-herd-demo` with the root `Dockerfile`, and it
