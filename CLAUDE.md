@@ -100,11 +100,11 @@ Spring Boot 3.5.14 is not "the latest 3.5.x" — it is the version
 `com.vaadin:vaadin-spring:24.10.7` is built against. Derive it from the Vaadin
 release when bumping instead of taking the newest 3.5.x.
 
-Vaadin stays on 24.10.7 on purpose (maintainer, 2026-09-30). With the Vaadin plugin on a
-24.10.10 base, a production frontend build asks for a Vaadin license key even with core
-components only, and the e2e build, CI and the demo server then fail without one. 24.10.7
-builds without a key. Before raising the 24.10.x version, build `e2e` with an empty
-`user.home` and check that it still passes.
+Vaadin stays on 24.10.7 on purpose (maintainer, 2026-09-30). From 24.10.8 on, a production
+frontend build asks for a Vaadin license key even with core components only, and the e2e
+build, CI and the demo server then fail without one. 24.10.7 builds without a key. Before
+raising the 24.10.x version, build `e2e` with an empty `user.home` and check that it still
+passes.
 
 Java 17 and Vaadin 24 are the deliberate floor (ADR-0005). Do not raise them
 without writing the reason down as an ADR first.
