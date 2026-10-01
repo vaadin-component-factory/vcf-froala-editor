@@ -25,7 +25,7 @@ import com.vaadin.flow.component.shared.ThemeVariant;
  */
 public enum FroalaEditorVariant implements ThemeVariant {
 
-    /** Froala's look, the background color with a border around the box, instead of a filled field without one. */
+    /** Froala's own look, with a border around the box, instead of the filled field without one. */
     OUTLINED("outlined"),
 
     /** No highlight of the editing area while the mouse is over the editor. */

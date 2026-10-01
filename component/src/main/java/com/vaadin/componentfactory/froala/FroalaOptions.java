@@ -231,7 +231,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets extra form fields sent along with every image upload. Froala's {@code imageUploadParams}.
+     * Sets extra form fields sent along with every image upload. Froala's {@code imageUploadParams}. Needs
+     * {@link FroalaPlugin#IMAGE}.
      *
      * @param imageUploadParams parameter name to value, or null to leave Froala's default
      * @return a new instance
@@ -253,7 +254,7 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets the configuration Froala passes straight through to the Toast UI image editor. Froala's
-     * {@code imageTUIOptions}.
+     * {@code imageTUIOptions}. Needs {@link FroalaPlugin#IMAGE_TUI}.
      *
      * <p>
      * The shape is defined by Toast UI, not by Froala, so it is passed as JSON.
@@ -381,8 +382,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Turns the inline editing mode on. There is no toolbar until text is selected, and selecting some pops one up next
-     * to it. Froala's {@code toolbarInline}.
+     * Switches the inline editing mode on or off. In it there is no toolbar until text is selected, and selecting some
+     * pops one up next to it. Froala's {@code toolbarInline}.
      *
      * @param toolbarInline whether the toolbar appears on selection instead of above the editor
      * @return a new instance
@@ -392,8 +393,8 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Turns the document editing mode on. The editing area is laid out as a page, with margins and a page width, the
-     * way a word processor shows a document. Froala's {@code documentReady}.
+     * Switches the document editing mode on or off. In it the editing area is laid out as a page, with margins and a
+     * page width, the way a word processor shows a document. Froala's {@code documentReady}.
      *
      * @param documentReady whether the editing area is laid out as a page
      * @return a new instance
@@ -439,9 +440,11 @@ public final class FroalaOptions implements Serializable {
     }
 
     /**
-     * Sets the buttons of the small popup Froala shows on a text selection. Froala leaves out {@code aiImproveWriting}
-     * until {@code aiSupplementalTermsAccepted} is set, and {@code collabAddComment} without a {@code collabConfig}.
-     * Froala's {@code selectionActionButtons}. Default {@code aiImproveWriting}, {@code collabAddComment}.
+     * Sets the buttons of the small popup Froala shows on a text selection. Froala's {@code selectionActionButtons}.
+     * Default {@code aiImproveWriting}, {@code collabAddComment}. {@code aiImproveWriting} needs
+     * {@link FroalaPlugin#AI_ASSIST}, and Froala leaves it out until {@code aiSupplementalTermsAccepted} is set.
+     * {@code collabAddComment} needs {@link FroalaPlugin#COLLABORATIVE}, and Froala leaves it out without a
+     * {@code collabConfig}.
      *
      * @param selectionActionButtons names from {@link FroalaButton}, or null to leave Froala's default
      * @return a new instance
@@ -1081,9 +1084,9 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Decides what happens to text pasted from Word when {@link #withWordPasteModal(boolean)} is off. Froala's
-     * {@code wordPasteKeepFormatting}, on by default. On keeps the CSS properties of
-     * {@link #withWordAllowedStyleProps(Collection)}. Off keeps only {@code list-style-type} and {@code margin-left},
-     * which is what "Clean" in the dialog does.
+     * {@code wordPasteKeepFormatting}, on by default. When on, Froala keeps the CSS properties of
+     * {@link #withWordAllowedStyleProps(Collection)}. When off, it keeps only {@code list-style-type} and
+     * {@code margin-left}, which is what "Clean" in the dialog does.
      *
      * @param wordPasteKeepFormatting whether text pasted from Word keeps its formatting
      * @return a new instance
@@ -1136,7 +1139,7 @@ public final class FroalaOptions implements Serializable {
      * <p>
      * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#IMAGE}.
      * {@link FroalaEditor#setImageUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
-     * URL. Without either the editor switches image upload off.
+     * URL. Without either, and without an S3 or Azure target, the editor switches image upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1155,7 +1158,7 @@ public final class FroalaOptions implements Serializable {
      * <p>
      * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#FILE}.
      * {@link FroalaEditor#setFileUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
-     * URL. Without either the editor switches file upload off.
+     * URL. Without either, and without an S3 or Azure target, the editor switches file upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1174,7 +1177,7 @@ public final class FroalaOptions implements Serializable {
      * <p>
      * The URL points at an endpoint of the application's own. Needs {@link FroalaPlugin#VIDEO}.
      * {@link FroalaEditor#setVideoUploadHandler(FroalaUploadHandler)} needs no endpoint and takes precedence over this
-     * URL. Without either the editor switches video upload off.
+     * URL. Without either, and without an S3 or Azure target, the editor switches video upload off.
      *
      * <p>
      * The endpoint receives a multipart POST with the file under the parameter name {@code file} and has to answer
@@ -1202,11 +1205,11 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Sets how many milliseconds after a change Froala's {@code save} plugin posts the content to its {@code saveURL}.
-     * Froala's {@code saveInterval}. {@code 0} turns the plugin off.
+     * Needs {@link FroalaPlugin#SAVE}. Froala's {@code saveInterval}. {@code 0} turns the plugin off.
      *
      * <p>
-     * {@link FroalaEditor} uses {@code 0} unless this is set, where Froala's own default is 10000. A Flow application
-     * gets the content through the value change listener, so the save plugin is normally not what saves anything, and
+     * {@link FroalaEditor} uses {@code 0} unless this is set. Froala's own default is 10000. A Flow application gets
+     * the content through the value change listener, so the save plugin is normally not what saves anything, and
      * without a {@code saveURL} it only reports a failed save after every edit.
      *
      * @param saveInterval milliseconds between two saves, or 0 to switch the save plugin off

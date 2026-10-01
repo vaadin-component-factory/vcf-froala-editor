@@ -20,7 +20,8 @@ import java.util.Objects;
 import com.vaadin.flow.component.ComponentEvent;
 
 /**
- * Fired when the user triggers one of the editor's own commands, from a button or its keyboard shortcut.
+ * Fired when the user triggers a command the application added with {@code addCommand}, from a button or its keyboard
+ * shortcut. Froala's own commands fire no such event.
  *
  * @see FroalaEditor#addCommand(FroalaCommand, com.vaadin.flow.component.ComponentEventListener)
  */

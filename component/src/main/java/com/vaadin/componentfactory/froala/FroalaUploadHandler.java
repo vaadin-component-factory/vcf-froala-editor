@@ -42,7 +42,7 @@ public interface FroalaUploadHandler extends Serializable {
      * Runs outside the UI's lock, like any Flow upload. Changes to components go through {@code UI.access}.
      *
      * @param event the upload, with the file's name, content type and content
-     * @return the link to the stored file, not null
+     * @return the link to the stored file, not null. A null link fails the upload.
      * @throws IOException if reading or storing the file fails. The editor then shows Froala's upload error.
      */
     String upload(UploadEvent event) throws IOException;

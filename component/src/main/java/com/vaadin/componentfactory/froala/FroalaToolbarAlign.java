@@ -36,7 +36,7 @@ public enum FroalaToolbarAlign {
     /**
      * Returns the value Froala's {@code align} option expects.
      *
-     * @return the option value, for example {@code "right"}
+     * @return the option value, e.g. {@code "right"}
      */
     String getOptionValue() {
         return optionValue;

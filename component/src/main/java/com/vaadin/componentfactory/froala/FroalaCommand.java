@@ -44,10 +44,10 @@ import com.vaadin.flow.dom.Element;
  * </pre>
  *
  * <p>
- * The icon is any Vaadin icon: a {@code VaadinIcon} or {@code LumoIcon}, an icon of an own iconset, an {@code SvgIcon}
- * with a URL or a {@code FontIcon}. The button draws a {@code <vaadin-icon>} with the icon's attributes and properties,
- * read when the command is added. An {@code SvgIcon} whose source is a {@code DownloadHandler} has no URL before it is
- * attached, so it draws nothing.
+ * The icon is any Vaadin icon: a {@code VaadinIcon} or {@code LumoIcon}, an icon of an iconset of your own, an
+ * {@code SvgIcon} with a URL or a {@code FontIcon}. The button draws a {@code <vaadin-icon>} with the icon's attributes
+ * and properties, read when the command is added. An {@code SvgIcon} whose source is a {@code DownloadHandler} has no
+ * URL before it is attached, so it draws nothing.
  */
 public final class FroalaCommand implements Serializable {
 
@@ -81,8 +81,8 @@ public final class FroalaCommand implements Serializable {
      * @param name the command name, letters, digits and underscores, starting with a letter
      * @param title the button's tooltip and accessible name
      * @param icon the button's icon
-     * @throws IllegalArgumentException if the name is not a valid command name
      * @throws NullPointerException if the name, title or icon is null
+     * @throws IllegalArgumentException if the name is not a valid command name
      */
     public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
         this(name, title, icon, 0, null, Set.of(), false);
@@ -193,7 +193,7 @@ public final class FroalaCommand implements Serializable {
     /**
      * Returns whether the button shows a pressed state. See {@link FroalaEditor#setCommandActive}.
      *
-     * @return whether the command is a toggle
+     * @return true if the button shows a pressed state
      */
     public boolean isToggle() {
         return toggle;
@@ -201,7 +201,9 @@ public final class FroalaCommand implements Serializable {
 
     /**
      * Returns a copy of this command triggered by Ctrl, or Cmd on a Mac, plus the given key. Froala adds Ctrl or Cmd
-     * itself, and Ctrl and Cmd given as modifiers are ignored. Froala shows the shortcut in the button's tooltip.
+     * itself, and Ctrl and Cmd given as modifiers are ignored. Froala shows the shortcut in the button's tooltip. The
+     * shortcut works only while the command is listed in Froala's {@code shortcutsEnabled} option. See
+     * {@link FroalaEditor#addCommand(FroalaCommand, com.vaadin.flow.component.ComponentEventListener)}.
      *
      * <p>
      * Froala finds a shortcut by the keyboard event's numeric {@code keyCode}, not by the {@link Key}. A letter, a
@@ -220,9 +222,9 @@ public final class FroalaCommand implements Serializable {
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
      *            here are ignored.
      * @return a new command with the shortcut
+     * @throws NullPointerException if the key or a modifier is null
      * @throws IllegalArgumentException if the key is not a letter, digit or function key from F1 to F12, or a modifier
      *             is not Shift, Alt, Ctrl or Cmd
-     * @throws NullPointerException if the key or a modifier is null
      * @see #withShortcut(int, String, KeyModifier...) for any other key
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
@@ -251,9 +253,9 @@ public final class FroalaCommand implements Serializable {
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
      *            here are ignored.
      * @return a new command with the shortcut
+     * @throws NullPointerException if the label or a modifier is null
      * @throws IllegalArgumentException if the key code is below 1, the label is blank, or a modifier is not Shift, Alt,
      *             Ctrl or Cmd
-     * @throws NullPointerException if the label or a modifier is null
      */
     public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
         // The constructor reads 0 and null as "no shortcut", which this method must not silently produce

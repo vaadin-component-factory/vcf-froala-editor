@@ -155,12 +155,13 @@ public final class FroalaToolbar implements Serializable {
      * overflow panel, are those of Froala's default:
      *
      * <ul>
-     * <li>{@link FroalaToolbarGroup#MORE_TEXT}: bold, italic, underline, strikeThrough, subscript, superscript,
-     * fontFamily, fontSize, textColor, backgroundColor, clearFormatting</li>
-     * <li>{@link FroalaToolbarGroup#MORE_PARAGRAPH}: alignLeft, alignCenter, formatOLSimple, alignRight, alignJustify,
-     * formatOL, formatUL, paragraphFormat, lineHeight, outdent, indent, quote</li>
-     * <li>{@link FroalaToolbarGroup#MORE_RICH}: insertAnchor, insertLink, insertHR</li>
-     * <li>{@link FroalaToolbarGroup#MORE_MISC}: undo, redo, selectAll, help, findReplaceButton</li>
+     * <li>{@link FroalaToolbarGroup#MORE_TEXT}, 3 shown: bold, italic, underline, strikeThrough, subscript,
+     * superscript, fontFamily, fontSize, textColor, backgroundColor, clearFormatting</li>
+     * <li>{@link FroalaToolbarGroup#MORE_PARAGRAPH}, 3 shown: alignLeft, alignCenter, formatOLSimple, alignRight,
+     * alignJustify, formatOL, formatUL, paragraphFormat, lineHeight, outdent, indent, quote</li>
+     * <li>{@link FroalaToolbarGroup#MORE_RICH}, all shown: insertAnchor, insertLink, insertHR</li>
+     * <li>{@link FroalaToolbarGroup#MORE_MISC}, 2 shown, on the right: undo, redo, selectAll, help,
+     * findReplaceButton</li>
      * </ul>
      *
      * @return the toolbar, the same on every call
@@ -206,8 +207,8 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
-     * @throws IllegalArgumentException under the same conditions as {@link #ofGroups(Collection)}
      * @throws NullPointerException if any group is null
+     * @throws IllegalArgumentException under the same conditions as {@link #ofGroups(Collection)}
      */
     public static FroalaToolbar ofGroups(FroalaToolbarGroup... groups) {
         Objects.requireNonNull(groups, "groups must not be null");
@@ -219,10 +220,10 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param groups the button groups, none of them null and no two of them sharing a name
      * @return a new instance
+     * @throws NullPointerException if any group is null
      * @throws IllegalArgumentException if two groups share a name, since Froala keys its groups by name and the second
      *             would replace the first. Also thrown if a group with a name of its own shows fewer buttons than it
      *             holds, since Froala draws no button to open its overflow panel. See {@link FroalaToolbarGroup}.
-     * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(Collection<FroalaToolbarGroup> groups) {
         Objects.requireNonNull(groups, "groups must not be null");
@@ -263,9 +264,9 @@ public final class FroalaToolbar implements Serializable {
      *
      * @param group the group's name, such as {@link FroalaToolbarGroup#MORE_RICH}
      * @return a new instance
+     * @throws NullPointerException if the group name is null
      * @throws IllegalArgumentException if no group has that name
      * @throws IllegalStateException if this is a flat toolbar, which has no groups
-     * @throws NullPointerException if the group name is null
      */
     public FroalaToolbar withAllButtonsVisible(String group) {
         return withGroup(group, found -> found.withButtonsVisible(found.countButtons()));
@@ -278,12 +279,12 @@ public final class FroalaToolbar implements Serializable {
      * @param group the group's name, such as {@link FroalaToolbarGroup#MORE_TEXT}
      * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest
      * @return a new instance
+     * @throws NullPointerException if the group name is null
      * @throws IllegalArgumentException if no group has that name, if the count is negative, or under the same
      *             conditions as {@link #ofGroups(Collection)}. That includes Froala's own groups
      *             {@code versionControl}, {@code collab} and {@code trackChanges} of {@link #froalaDefault()}, whose
      *             names the check does not know, at a count below their size.
      * @throws IllegalStateException if this is a flat toolbar, which has no groups
-     * @throws NullPointerException if the group name is null
      */
     public FroalaToolbar withButtonsVisible(String group, int buttonsVisible) {
         return withGroup(group, found -> found.withButtonsVisible(buttonsVisible));

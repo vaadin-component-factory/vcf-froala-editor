@@ -438,13 +438,16 @@ public final class FroalaButton {
     // FroalaPlugin.LISTS
     // -----------------------------------------------------------------------------------------------------------
 
-    /** Ordered List. Needs {@link FroalaPlugin#LISTS}. In Froala's default toolbar. */
+    /** Ordered List, a plain button. Needs {@link FroalaPlugin#LISTS}. In Froala's default toolbar. */
     public static final String FORMAT_OL_SIMPLE = "formatOLSimple";
 
     /** Unordered List. Needs {@link FroalaPlugin#LISTS}. In Froala's default toolbar. */
     public static final String FORMAT_UL = "formatUL";
 
-    /** Ordered List. Needs {@link FroalaPlugin#LISTS}. In Froala's default toolbar. */
+    /**
+     * Ordered List, with a menu of list styles while Froala's {@code listAdvancedTypes} is on, as it is by default.
+     * Needs {@link FroalaPlugin#LISTS}. In Froala's default toolbar.
+     */
     public static final String FORMAT_OL = "formatOL";
 
     // -----------------------------------------------------------------------------------------------------------

@@ -27,8 +27,8 @@ public enum FroalaTextDirection {
     RTL("rtl"),
 
     /**
-     * Writes {@code dir="auto"} into the markup and lets the browser determine the direction per paragraph from the
-     * characters it contains. Intended for mixed-language documents. This is Froala's default.
+     * Writes {@code dir="auto"} on the editing area and lets the browser pick one direction for it from the first
+     * strongly directional character of the content. This is Froala's default.
      */
     AUTO("auto");
 
@@ -41,7 +41,7 @@ public enum FroalaTextDirection {
     /**
      * Returns the value Froala's {@code direction} option expects.
      *
-     * @return the option value, for example {@code "rtl"}
+     * @return the option value, e.g. {@code "rtl"}
      */
     String getOptionValue() {
         return optionValue;

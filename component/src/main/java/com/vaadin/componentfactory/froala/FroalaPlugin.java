@@ -41,8 +41,8 @@ import java.util.Set;
  * it. These are {@link #AI_ASSIST}, {@link #COLLABORATIVE}, {@link #FILESTACK}, {@link #IMAGE_MANAGER}, {@link #SAVE},
  * and {@link #FILES_MANAGER} for uploading, though its by-URL tab works without one. {@link #IMPORT_FROM_WORD} needs
  * the third-party mammoth.js script in the page instead, and the five plugins under {@code js/third_party/} each need a
- * library or a service of their own. The documentation of each names what it needs, and the options they read have no
- * methods on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
+ * library or a service of their own. The documentation of each names what it needs, and most of the options they read
+ * have no methods on {@link FroalaOptions}. Pass them with {@link FroalaEditor#setOptions(String)}.
  *
  * <p>
  * {@code edit_in_popup} ships as a plugin file but registers a module, not a plugin, so {@code pluginsEnabled} has no
@@ -116,7 +116,8 @@ public final class FroalaPlugin {
     public static final String EMOTICONS = "emoticons";
 
     /**
-     * Writes non-ASCII characters as HTML entities when the value is read.
+     * Writes the characters listed in Froala's {@code entities} option, such as accented and Greek letters, as named
+     * HTML entities when the value is read.
      */
     public static final String ENTITIES = "entities";
 
@@ -289,7 +290,8 @@ public final class FroalaPlugin {
     /**
      * Posts the content to the endpoint in Froala's {@code saveURL} option on a timer. Requires that endpoint, which
      * has no method on {@link FroalaOptions} and is set with {@link FroalaEditor#setOptions(String)}. The timer is
-     * {@link FroalaOptions#withSaveInterval(int)}.
+     * {@link FroalaOptions#withSaveInterval(int)}, which the add-on sets to 0, so nothing is posted until it is set to
+     * a positive value.
      */
     public static final String SAVE = "save";
 
@@ -343,10 +345,11 @@ public final class FroalaPlugin {
     public static final String WORD_PASTE = "wordPaste";
 
     /**
-     * Returns the plugins an editor gets when its options name none. They make a basic rich-text editor with text and
-     * paragraph formats, lists, quotes, links, find and replace, the keyboard shortcut dialog, links typed as URLs, and
-     * cleaning of text pasted from Word. Nothing that inserts other content, such as images or tables, and no menu that
-     * only offers Froala's sample styles. To add a plugin, change the returned set and pass it on:
+     * Returns the plugins an editor gets when its options name none. They make a basic rich-text editor with text
+     * styles, fonts, colors, alignment, line height, paragraph formats, lists, quotes, links and anchors, find and
+     * replace, the keyboard shortcut dialog, links typed as URLs, and cleaning of text pasted from Word. Nothing that
+     * inserts other content, such as images or tables, and no menu that only offers Froala's sample styles. To add a
+     * plugin, change the returned set and pass it on:
      *
      * <pre>
      * Set&lt;String&gt; plugins = FroalaPlugin.basics();

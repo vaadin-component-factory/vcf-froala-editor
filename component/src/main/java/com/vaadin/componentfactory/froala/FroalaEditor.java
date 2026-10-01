@@ -472,9 +472,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * Nothing is inserted while the editor is read-only or disabled. Both lock the value against changes from the
-     * client, and the snippet would reach the server as such a change.
+     * client, and the snippet would reach the server as such a change. A call that arrives before the editor is
+     * initialized, e.g. in the same round trip as the attach, is applied once it is.
      *
      * @param html the HTML snippet to insert, not null
+     * @throws NullPointerException if the HTML is null
      */
     public void replaceSelectionContent(String html) {
         Objects.requireNonNull(html, "html must not be null");
@@ -505,9 +507,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * </pre>
      *
      * <p>
-     * Without a handler, and without Froala's {@code imageUploadURL} in the options, image upload is switched off.
-     * Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the
-     * stored HTML points at nothing after a reload. A handler takes precedence over
+     * Without a handler, and without Froala's {@code imageUploadURL} or an S3 or Azure target in the options, image
+     * upload is switched off. Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab
+     * that created it, so the stored HTML points at nothing after a reload. A handler takes precedence over
      * {@link FroalaOptions#withImageUploadUrl(String)}.
      *
      * <p>
@@ -537,9 +539,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * </pre>
      *
      * <p>
-     * Without a handler, and without Froala's {@code fileUploadURL} in the options, file upload is switched off. Froala
-     * would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the stored
-     * HTML points at nothing after a reload. A handler takes precedence over
+     * Without a handler, and without Froala's {@code fileUploadURL} or an S3 or Azure target in the options, file
+     * upload is switched off. Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab
+     * that created it, so the stored HTML points at nothing after a reload. A handler takes precedence over
      * {@link FroalaOptions#withFileUploadUrl(String)}.
      *
      * <p>
@@ -567,9 +569,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * </pre>
      *
      * <p>
-     * Without a handler, and without Froala's {@code videoUploadURL} in the options, video upload is switched off.
-     * Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab that created it, so the
-     * stored HTML points at nothing after a reload. A handler takes precedence over
+     * Without a handler, and without Froala's {@code videoUploadURL} or an S3 or Azure target in the options, video
+     * upload is switched off. Froala would otherwise insert a {@code blob:} URL, which is valid only in the browser tab
+     * that created it, so the stored HTML points at nothing after a reload. A handler takes precedence over
      * {@link FroalaOptions#withVideoUploadUrl(String)}.
      *
      * <p>
@@ -612,8 +614,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * <p>
      * Froala keeps a command's title, icon, shortcut and whether it is a toggle for the whole page, not per editor. Two
      * editors that add a command of the same name with a different definition show the definition of the editor built
-     * last in both. A command name that is also one of Froala's own, e.g. {@code bold}, replaces Froala's command in
-     * every editor on the page, and a shortcut replaces one of Froala's with the same keys.
+     * last in both. A command name that is also one of Froala's own, e.g. {@code bold}, replaces Froala's command on
+     * the whole page, so editors that did not add it lose that button. A shortcut likewise replaces one of Froala's
+     * with the same keys.
      *
      * <p>
      * A shortcut works only while the command is listed in the {@code shortcutsEnabled} option. Froala lists it there
@@ -622,6 +625,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @param command the command, not null
      * @param listener runs when the user triggers the command in this editor, not null
      * @return a handle that removes the command from this editor again
+     * @throws NullPointerException if the command or the listener is null
      * @throws IllegalArgumentException if this editor already has a command of the same name
      */
     public Registration addCommand(FroalaCommand command, ComponentEventListener<FroalaCommandEvent> listener) {
@@ -658,6 +662,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @param command the command, not null
      * @param popover opens at the command's toolbar button in this editor, not null
      * @return a handle that removes the command from this editor again, and takes the popover out of the UI
+     * @throws NullPointerException if the command or the popover is null
      * @throws IllegalArgumentException if this editor already has a command of the same name, or the popover already
      *             has a target, for example because it belongs to another command
      */
@@ -712,11 +717,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * </pre>
      *
      * <p>
-     * The state belongs to this editor, so two editors with the same command show their own. Setting it does not build
-     * the editor again, and a rebuild or a detach and re-attach keeps it. Removing the command drops it.
+     * The state belongs to this editor, so two editors with the same command show their own. Setting it does not
+     * rebuild the editor, and a rebuild or a detach and re-attach keeps it. Removing the command drops it.
      *
      * @param command a toggle command of this editor, matched by its name, not null
      * @param active whether the button shows as pressed
+     * @throws NullPointerException if the command is null
      * @throws IllegalArgumentException if this editor has no command of that name, or it is not a
      *             {@link FroalaCommand#withToggle() toggle}
      */
@@ -732,6 +738,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * @param command a toggle command of this editor, matched by its name, not null
      * @return whether the button shows as pressed
+     * @throws NullPointerException if the command is null
      * @throws IllegalArgumentException if this editor has no command of that name, or it is not a
      *             {@link FroalaCommand#withToggle() toggle}
      */
@@ -851,7 +858,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * is why {@link FroalaValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
      *
      * <p>
-     * The default is {@value #DEFAULT_VALUE_CHANGE_TIMEOUT}, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala
+     * The default is {@value #DEFAULT_VALUE_CHANGE_TIMEOUT}. The minimum is {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala
      * reports changes after at least that long whatever the option says, so a smaller value would silently have no
      * effect. This setter throws instead. Takes effect at once on an attached editor, without a rebuild.
      *
