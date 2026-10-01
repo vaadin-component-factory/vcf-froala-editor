@@ -42,7 +42,7 @@ public class ThemeView extends VerticalLayout {
         froalaDefault.setValue(HTML);
         froalaDefault.setWidthFull();
 
-        // every plugin that needs no service, in both, so that the theme can be compared on most of what Froala draws
+        // the plugins of DemoPlugins.full(), in both, so that the theme can be compared on most of what Froala draws
         FroalaEditor vaadinTheme = new FroalaEditor("Vaadin theme",
                 FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full()));
         vaadinTheme.setValue(HTML);

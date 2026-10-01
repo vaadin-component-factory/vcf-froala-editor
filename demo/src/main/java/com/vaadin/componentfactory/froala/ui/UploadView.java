@@ -32,8 +32,8 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.Route;
 
 /**
- * Uploads through the add-on's upload handlers, with the two ways the demo serves the stored files. Both tabs look the
- * same, and only the code behind them differs.
+ * Uploads through the add-on's upload handlers, with the two ways the demo serves the stored files. The first two tabs
+ * look the same, and only the code behind them differs. The third shows an editor without an upload handler.
  */
 @Route("upload")
 @Menu(title = "Upload / Files", order = 8)

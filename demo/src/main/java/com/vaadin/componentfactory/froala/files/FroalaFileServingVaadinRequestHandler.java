@@ -94,9 +94,7 @@ public class FroalaFileServingVaadinRequestHandler implements VaadinServiceInitL
     /**
      * Where an application checks whether the user may see the file. The user is known from
      * {@code request.getUserPrincipal()}, or from what the application keeps in the session. The handler runs without
-     * the session's lock, so it reads the session under it, for example
-     * {@code session.accessSynchronously(() -> session.getAttribute(User.class))}. The demo has no login and lets
-     * everyone in.
+     * the session's lock, so ensure to obtain the lock before reading the session's content.
      */
     private static boolean mayRead(VaadinSession session, VaadinRequest request) {
         return true;
