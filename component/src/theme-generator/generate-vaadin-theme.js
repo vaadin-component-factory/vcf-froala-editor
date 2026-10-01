@@ -55,7 +55,6 @@ const target = path.join(
   'main',
   'resources',
   'META-INF',
-  'resources',
   'frontend',
   'vcf-froala-editor',
   'vcf-froala-theme-vaadin-rules.css'
