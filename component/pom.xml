@@ -41,7 +41,8 @@
         <prettier.version>2.8.8</prettier.version>
         <eclipse.formatter.version>4.40</eclipse.formatter.version>
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-        <checkstyle.version>13.10.0</checkstyle.version>
+        <!-- 12.x, because Checkstyle 13 needs Java 21 and this line builds on Java 17 (ADR-0005). -->
+        <checkstyle.version>12.3.1</checkstyle.version>
         <spotless.ratchetFrom></spotless.ratchetFrom>
         <!-- Where the shared eclipse/ + checkstyle/ config lives. Relative to this
              module rather than ${maven.multiModuleProjectDirectory}, because that
