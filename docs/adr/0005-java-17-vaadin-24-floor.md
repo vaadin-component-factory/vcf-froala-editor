@@ -1,5 +1,7 @@
 # Java 17 and Vaadin 24 are the floor
 
+Applies to the `v1` line only since 2026-10-01. main targets Vaadin 25 (ADR-0010).
+
 The add-on targets Java 17 and Vaadin 24 deliberately, not because newer versions are
 unavailable. They are the platform's floor, so the published artifact excludes as few
 consumers as possible. Raising either narrows the audience and needs a written reason.

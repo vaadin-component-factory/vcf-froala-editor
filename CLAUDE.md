@@ -38,8 +38,7 @@ are in `docs/adr/`.
   committing, and don't commit on the user's behalf unless asked. `/implement`
   closes out with `/code-review` before the commit is offered.
 - **README:** a change that users of the add-on notice (new or changed API, changed
-  behaviour, a new limitation) updates `README.md` in the same commit. #20 stays open
-  as the release reminder, but the content lives in the README, not in the ticket.
+  behaviour, a new limitation) updates `README.md` in the same commit.
 - **No customer names, anywhere** — files, commit messages, issues. And no customer
   information in the README, the code or the issues: the add-on is published in the
   Vaadin Component Factory. Write requirements and decisions as the add-on's own, e.g.
@@ -202,10 +201,15 @@ one.
 ## Release
 
 The demo server deploys from the branch `v-herd-demo` with the root `Dockerfile`, and it
-shows the released version, not the work that follows it. The build would run with a
-snapshot too, because the `Dockerfile` builds the add-on from `component/` itself. The
-order of the steps keeps the branch on the release all the same. Until the first release
-the branch carries the snapshot.
+shows the released version of the newest add-on line, not the work that follows it. The
+build would run with a snapshot too, because the `Dockerfile` builds the add-on from
+`component/` itself. The order of the steps keeps the branch on the release all the same.
+
+There is one add-on line per Vaadin major (ADR-0010): main for Vaadin 25 (add-on 2.x) and
+`v1` for Vaadin 24 (add-on 1.x). Fixes are made on main and ported back to `v1` where they
+apply. Whether a new feature goes to `v1` as well is decided per feature. A release from `v1`
+runs steps 1, 2, 4 and 5 on `v1` and skips step 3, so `v-herd-demo` keeps showing the newest
+line.
 
 1. Remove `-SNAPSHOT` from every version in the four poms (root, `component`, `demo`,
    `e2e`), the parent references and the add-on dependencies included. In `README.md`, set
@@ -215,9 +219,9 @@ the branch carries the snapshot.
    `git tag -a <version> -m "Release <version>"`.
 3. Bring `v-herd-demo` to the tagged state by merging main into it with
    `git merge main -X theirs`. `git diff <version> HEAD` must come back empty.
-4. The maintainer pushes main, the tag and `v-herd-demo` together, and creates the GitHub
-   release.
-5. Only then bump main to the next snapshot, usually the next patch (`1.0.0` becomes
+4. The maintainer pushes the line's branch, the tag and `v-herd-demo` together, and
+   creates the GitHub release.
+5. Only then bump the line to the next snapshot, usually the next patch (`1.0.0` becomes
    `1.0.1-SNAPSHOT`), and commit as `Bump to <next>-SNAPSHOT`. Bumping earlier would carry
    the snapshot into `v-herd-demo` with the merge.
 
