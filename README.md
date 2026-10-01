@@ -21,7 +21,7 @@ as a Java component.
 
 ```xml
 <dependency>
-    <groupId>com.vaadin.componentfactory</groupId>
+    <groupId>org.vaadin.addons.componentfactory</groupId>
     <artifactId>vcf-froala-editor</artifactId>
     <version>1.0.0</version>
 </dependency>
