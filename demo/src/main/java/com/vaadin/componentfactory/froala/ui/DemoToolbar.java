@@ -54,8 +54,8 @@ public class DemoToolbar extends ToolbarLayout {
     private static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
 
     /**
-     * Deliberately not well-formed -- it closes an {@code <em>} it never opened and leaves {@code <strong>} and
-     * {@code <span>} open -- to show that Froala's HTML cleaning repairs a snippet on the way in.
+     * Deliberately not well-formed. It closes an {@code <em>} it never opened and leaves {@code <strong>} and
+     * {@code <span>} open, to show that Froala's HTML cleaning repairs a snippet on the way in.
      */
     private static final String REPLACE_SELECTION_SNIPPET = "Hello, </em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;";
 
@@ -109,7 +109,8 @@ public class DemoToolbar extends ToolbarLayout {
         editor.addSelectionChangeListener(event -> replaceSelection.setEnabled(event.hasSelection()));
 
         menu.add(new Hr());
-        // the underscore has to go first, capitalizeFully only splits on whitespace -- ON_BLUR would read "On_blur"
+        // the underscore has to go first, because capitalizeFully only splits on whitespace and ON_BLUR would read
+        // "On_blur"
         choice(menu.addItem("Value change mode").getSubMenu(), List.of(FroalaValueChangeMode.values()),
                 editor.getValueChangeMode(), mode -> WordUtils.capitalizeFully(mode.name().replace('_', ' ')),
                 editor::setValueChangeMode);
@@ -188,7 +189,7 @@ public class DemoToolbar extends ToolbarLayout {
         return item;
     }
 
-    /** Adds one checkable item per value, of which exactly one is checked: a radio group, as far as a menu has one. */
+    /** Adds one checkable item per value and keeps exactly one checked, like a radio group. */
     private static <T> void choice(SubMenu menu, List<T> values, T selected, Function<T, String> label,
             Consumer<T> onChoose) {
         List<MenuItem> items = new ArrayList<>();
@@ -203,8 +204,8 @@ public class DemoToolbar extends ToolbarLayout {
     }
 
     /**
-     * Detaches the editor from its layout, or re-attaches it below this toolbar. Exercises the round trip the delta
-     * design depends on: the value the client accumulated has to survive the rebuild.
+     * Detaches the editor from its layout, or re-attaches it below this toolbar. The value the editor holds survives
+     * the rebuild.
      */
     private void toggleAttached(FroalaEditor editor) {
         if (editor.getParent().isPresent()) {

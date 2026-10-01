@@ -16,8 +16,6 @@
 package com.vaadin.componentfactory.froala.ui;
 
 import com.vaadin.componentfactory.froala.FroalaViewer;
-import com.vaadin.componentfactory.froala.files.FroalaFileServingRestController;
-import com.vaadin.componentfactory.froala.files.FroalaFileServingVaadinRequestHandler;
 import com.vaadin.flow.dom.Style;
 
 /**
@@ -29,8 +27,5 @@ public class DemoFroalaViewer extends FroalaViewer {
         getStyle().setBorder("2px dashed gray").setBorderRadius("5px").setAlignSelf(Style.AlignSelf.STRETCH);
 
         setMinHeight("250px");
-
-        // The router would take a click on an uploaded file's link as a route, which it is not.
-        setRouterIgnorePaths(FroalaFileServingVaadinRequestHandler.PATH, FroalaFileServingRestController.PATH);
     }
 }

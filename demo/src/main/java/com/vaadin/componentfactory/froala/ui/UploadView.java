@@ -54,11 +54,11 @@ public class UploadView extends VerticalLayout {
                 + "the files with a Vaadin RequestHandler. It runs inside Vaadin's request handling and gets the "
                 + "user's VaadinSession, so it can check the user without Spring."));
         tabs.add("Spring Rest Controller", createSample(springRestHandler, "FroalaFileServingRestController serves "
-                + "the files with a Spring REST controller. Its path is covered by the application's Spring Security "
-                + "rules like any other."));
+                + "the files with a Spring REST controller. In an application with Spring Security, its path is "
+                + "covered by the security rules like any other."));
         tabs.add("No upload", createSample(null, "This sample shows the behavior of the Froala editor"
                 + " when no upload handler is defined. Images and videos are embedded with their original url instead of being uploaded "
-                + " to the server. The \"file-upload\" plugin has not been activated explicitly."));
+                + " to the server. The \"file\" plugin has not been activated explicitly."));
 
         add(new Paragraph("Upload an image, a file or a video through the popup, or drop or paste an image. The "
                 + "handler stores it and returns a link, which the viewer below shows."), tabs);
@@ -71,7 +71,7 @@ public class UploadView extends VerticalLayout {
         if (handler != null) {
             options = options.withPluginsEnabled(FroalaPlugin.IMAGE, FroalaPlugin.FILE, FroalaPlugin.VIDEO);
         } else {
-            // no file upload, so we disable the respective plugin and hide implicitly hide the toolbar button
+            // no file upload, so we disable the respective plugin and implicitly hide the toolbar button
             options = options.withPluginsEnabled(FroalaPlugin.IMAGE, FroalaPlugin.VIDEO);
         }
 
@@ -85,6 +85,9 @@ public class UploadView extends VerticalLayout {
         }
 
         FroalaViewer viewer = new DemoFroalaViewer();
+        // The router would take a click on an uploaded file's link as a route, which it is not.
+        viewer.setRouterIgnorePaths(FroalaFileServingVaadinRequestHandler.PATH, FroalaFileServingRestController.PATH);
+        // Demo only. The viewer shows the editor's HTML as it is. Sanitize it first when other users see it.
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
 
         VerticalLayout sample = new VerticalLayout(new Paragraph(description), editor, viewer);

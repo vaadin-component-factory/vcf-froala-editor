@@ -22,7 +22,7 @@ import com.vaadin.flow.router.Route;
 @Menu(title = "Long HTML", order = 2)
 public class LongHtmlView extends FroalaViewBase {
 
-    public static final String HTML = """
+    private static final String HTML = """
 
                <h1>Lorem Ipsum Documentation - Comprehensive Reference Guide</h1>
 

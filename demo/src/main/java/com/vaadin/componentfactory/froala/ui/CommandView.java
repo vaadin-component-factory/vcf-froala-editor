@@ -37,27 +37,32 @@ import com.vaadin.flow.router.Route;
 public class CommandView extends VerticalLayout {
 
     public CommandView() {
+        FroalaCommand selectAllText = new FroalaCommand("selectAllText", "Select all text",
+                VaadinIcon.ALIGN_JUSTIFY.create());
+        FroalaCommand showDialog = new FroalaCommand("showDialog", "Show dialog", VaadinIcon.MODAL.create())
+                .withShortcut(Key.KEY_L, KeyModifier.SHIFT);
+        // The button is a toggle that shows as pressed while the popover is open.
+        FroalaCommand showPopover = new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create())
+                .withToggle();
+        FroalaCommand showViewer = new FroalaCommand("showViewer", "Show viewer", VaadinIcon.EYE.create()).withToggle()
+                .withShortcut(Key.F10);
+
+        // The toolbar places each command's button by its name.
         FroalaEditor editor = new FroalaEditor("Letter",
-                FroalaOptions.defaults()
-                        .withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC,
-                                FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.VERTICAL_SEPARATOR,
-                                "selectAllText", "showDialog", "showPopover", "showViewer")));
+                FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.of(FroalaButton.BOLD, FroalaButton.ITALIC,
+                        FroalaButton.UNDERLINE, FroalaButton.STRIKE_THROUGH, FroalaButton.VERTICAL_SEPARATOR,
+                        selectAllText.getName(), showDialog.getName(), showPopover.getName(), showViewer.getName())));
         editor.setValue("<p>Thank you for your order. It will be shipped <b>tomorrow</b>.</p>");
         editor.setWidthFull();
 
-        editor.addCommand(new FroalaCommand("selectAllText", "Select all text", VaadinIcon.ALIGN_JUSTIFY.create()),
-                event -> editor.selectAll());
+        editor.addCommand(selectAllText, event -> editor.selectAll());
 
         Dialog dialog = new Dialog(new Paragraph("Opened by an own command of the editor."));
         dialog.setHeaderTitle("Own command");
         dialog.getFooter().add(new Button("Close", event -> dialog.close()));
-        editor.addCommand(new FroalaCommand("showDialog", "Show dialog", VaadinIcon.MODAL.create())
-                .withShortcut(Key.KEY_L, KeyModifier.SHIFT), event -> dialog.open());
+        editor.addCommand(showDialog, event -> dialog.open());
 
-        // The editor puts the popover into the UI and opens it at the button. The button is a toggle that shows as
-        // pressed while the popover is open.
-        FroalaCommand showPopover = new FroalaCommand("showPopover", "Show popover", VaadinIcon.INFO_CIRCLE.create())
-                .withToggle();
+        // The editor puts the popover into the UI and opens it at the button.
         Popover popover = new Popover(new Paragraph("A popover next to the button that opened it."));
         editor.addCommand(showPopover, popover);
         popover.addOpenedChangeListener(event -> editor.setCommandActive(showPopover, event.isOpened()));
@@ -66,10 +71,8 @@ public class CommandView extends VerticalLayout {
         FroalaViewer viewer = new FroalaViewer();
         viewer.setContent(editor.getValue());
         viewer.setVisible(false);
+        // Demo only. The viewer shows the editor's HTML as it is. Sanitize it first when other users see it.
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
-        FroalaCommand showViewer = new FroalaCommand("showViewer", "Show viewer", VaadinIcon.EYE.create()).withToggle()
-                .withShortcut(Key.F10);
-
         editor.addCommand(showViewer, event -> {
             boolean active = !editor.isCommandActive(showViewer);
             editor.setCommandActive(showViewer, active);

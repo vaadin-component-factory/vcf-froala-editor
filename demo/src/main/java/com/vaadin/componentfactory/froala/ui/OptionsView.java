@@ -81,27 +81,20 @@ public class OptionsView extends VerticalLayout {
         editor.setMinHeight("400px");
         setFlexGrow(1, editor);
 
-        add(new Paragraph(
-                "Pick options. Only what you set is passed on; everything else stays at " + "Froala's own default."),
-                new Details("Sample Options", form), new Details("JSON", optionsJson), editor);
+        add(new Paragraph("Pick options. The switches are always passed on. An empty text field or select is left out, "
+                + "so that option stays at Froala's own default."), new Details("Sample Options", form),
+                new Details("JSON", optionsJson), editor);
 
-        // After add(), so the editor has a position to be put back at. Without this the form and the JSON box describe
-        // options the editor was never built with -- two of the switches start out on.
+        // Without this the form and the JSON box describe options the editor was never built with. Two of the switches
+        // start out on.
         reload();
     }
 
-    /**
-     * Rebuilds the editor with the options the form describes. Detaching and re-attaching is a harder reset than
-     * {@code setOptions} needs -- it already rebuilds the editor on its own -- and it is the sequence an application
-     * would use to swap an editor out entirely, which is what this demo shows.
-     */
+    /** Rebuilds the editor with the options the form describes. {@code setOptions} rebuilds an attached editor. */
     private void reload() {
         FroalaOptions options = buildOptions();
-        int position = indexOf(editor);
 
-        remove(editor);
         editor.setOptions(options);
-        addComponentAtIndex(position, editor);
 
         showOptions(options);
     }

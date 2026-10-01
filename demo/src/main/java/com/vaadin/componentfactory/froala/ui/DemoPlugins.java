@@ -27,12 +27,12 @@ final class DemoPlugins {
 
     /**
      * Every plugin except those that need a server, a second library or a paid service, which this demo does not
-     * provide.
+     * provide. The file plugin is left out too, because without a file upload handler its popup has nothing to offer.
      */
     static Set<String> full() {
         Set<String> full = FroalaPlugin.all();
         full.removeAll(Set.of(FroalaPlugin.AI_ASSIST, FroalaPlugin.COLLABORATIVE, FroalaPlugin.EMBEDLY,
-                FroalaPlugin.FILESTACK, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT,
+                FroalaPlugin.FILE, FroalaPlugin.FILESTACK, FroalaPlugin.FONT_AWESOME, FroalaPlugin.IMAGE_FILEROBOT,
                 FroalaPlugin.IMAGE_MANAGER, FroalaPlugin.IMAGE_TUI, FroalaPlugin.IMPORT_FROM_WORD, FroalaPlugin.SAVE,
                 FroalaPlugin.SPELL_CHECKER, FroalaPlugin.TRIM_VIDEO));
 

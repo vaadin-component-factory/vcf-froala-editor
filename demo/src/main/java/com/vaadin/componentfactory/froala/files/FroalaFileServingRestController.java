@@ -28,8 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
  * has to be served by the application. {@link FroalaFileServingVaadinRequestHandler} does the same without Spring.
  * <p>
  * An application with Spring Security protects the path with its rules, and {@code VaadinSecurityConfigurer} lets only
- * authenticated users through by default. What is <b>not</b> optional even here: the content type a browser sees on the
- * way back is decided by the application, see {@link FroalaFileContentTypes}.
+ * authenticated users through by default. The demo has no Spring Security, so everyone can read every file. What is
+ * <b>not</b> optional even here: the content type a browser sees on the way back is decided by the application, see
+ * {@link FroalaFileContentTypes}.
  */
 @RestController
 @RequestMapping(FroalaFileServingRestController.PATH)

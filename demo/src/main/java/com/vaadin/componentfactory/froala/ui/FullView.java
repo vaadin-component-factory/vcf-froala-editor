@@ -15,8 +15,11 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import java.util.Set;
+
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
 import com.vaadin.componentfactory.froala.FroalaUploadHandler;
 import com.vaadin.componentfactory.froala.FroalaViewer;
@@ -34,7 +37,7 @@ public class FullView extends FroalaViewBase {
 
     public FullView(FroalaFileUploadService uploadedFiles) {
         getEditor().setHeight("500px");
-        getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full())
+        getEditor().setOptions(FroalaOptions.defaults().withPluginsEnabled(plugins())
                 .withToolbarButtons(FroalaToolbar.froalaDefault()));
 
         // the same handler as in UploadView's first tab
@@ -43,6 +46,8 @@ public class FullView extends FroalaViewBase {
         getEditor().setImageUploadHandler(handler);
         getEditor().setFileUploadHandler(handler);
         getEditor().setVideoUploadHandler(handler);
+        // The router would take a click on an uploaded file's link as a route, which it is not.
+        getViewer().setRouterIgnorePaths(FroalaFileServingVaadinRequestHandler.PATH);
 
         addComponentAtIndex(indexOf(getToolbar()) + 1,
                 new Paragraph("Every Froala plugin except those that need a server, a second library or a paid "
@@ -53,6 +58,14 @@ public class FullView extends FroalaViewBase {
 
     @Override
     protected Component createToolbar(FroalaEditor editor, FroalaViewer viewer) {
-        return new DemoToolbar(editor, DemoPlugins.full(), FroalaToolbar.froalaDefault());
+        return new DemoToolbar(editor, plugins(), FroalaToolbar.froalaDefault());
+    }
+
+    /** The demo's plugins plus the file plugin, which this view can offer because it has a file upload handler. */
+    private static Set<String> plugins() {
+        Set<String> plugins = DemoPlugins.full();
+        plugins.add(FroalaPlugin.FILE);
+
+        return plugins;
     }
 }

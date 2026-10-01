@@ -15,11 +15,17 @@
  */
 package com.vaadin.componentfactory.froala.ui;
 
+import com.vaadin.componentfactory.froala.FroalaEditor;
+import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaPlugin;
+import com.vaadin.componentfactory.froala.FroalaToolbar;
+import com.vaadin.componentfactory.froala.FroalaViewer;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -29,9 +35,12 @@ import com.vaadin.flow.router.Route;
 
 @Route("overlay")
 @Menu(title = "Overlays", order = 1)
-public class OverlayView extends BasicView {
+public class OverlayView extends FroalaViewBase {
 
     public OverlayView() {
+        getEditor().setHeight("500px");
+        getEditor().setOptions(FroalaOptions.defaults().withToolbarButtons(FroalaToolbar.basics()));
+
         addComponentAsFirst(new Hr());
 
         HorizontalLayout buttons = new HorizontalLayout();
@@ -78,8 +87,16 @@ public class OverlayView extends BasicView {
         });
         popover.setCloseOnEsc(false);
         popover.setOpenOnClick(true);
-        showInPopover.setId("show-in-dialog");
+        showInPopover.setId("show-in-popover");
         buttons.add(showInPopover);
+
+        addComponentAsFirst(new Paragraph("The buttons move the toolbar, the editor and the viewer into a dialog or a "
+                + "popover. Closing it puts them back here, and the editor keeps its value."));
+    }
+
+    @Override
+    protected Component createToolbar(FroalaEditor editor, FroalaViewer viewer) {
+        return new DemoToolbar(editor, FroalaPlugin.basics(), FroalaToolbar.basics());
     }
 
     private Component[] getOverlayContent() {

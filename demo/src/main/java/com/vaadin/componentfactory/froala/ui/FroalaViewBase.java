@@ -39,8 +39,8 @@ public abstract class FroalaViewBase extends VerticalLayout {
         toolbar = createToolbar(editor, viewer);
 
         add(toolbar, editor, viewer);
-        // setFlexGrow(1, editor, viewer);
 
+        // Demo only. The viewer shows the editor's HTML as it is. Sanitize it first when other users see it.
         editor.addValueChangeListener(event -> viewer.setContent(event.getValue()));
     }
 

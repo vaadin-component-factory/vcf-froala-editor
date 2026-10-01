@@ -127,8 +127,9 @@ Froala's stylesheet (ADR-0007):
   `target/vcf-froala-editor-<version>.zip`. It holds the jar, the sources jar, `LICENSE`,
   `README.md` and the Directory manifest from `component/assembly/`.
 - **`demo/`** — runnable Vaadin + Spring Boot app that depends on the add-on and shows
-  it off. Holds everything Spring-shaped (`Application`, `@Service` beans, the future
-  `@ConfigurationProperties` license-key binding) and **no tests at all**.
+  it off. Holds everything Spring-shaped (`Application`, `@Service` beans) and **no tests
+  at all**. It shows how to use the add-on, not how to configure Spring, so it binds no
+  license key (maintainer, 2026-10-01).
 - **`e2e/`** — Playwright tests in a real browser, run by failsafe on every `verify`,
   always against a production bundle. **Completely independent of `demo/`**
   (maintainer, 2026-09-28). It has no dependency on the demo, and its own app
@@ -143,7 +144,7 @@ The reactor root imports `spring-boot-dependencies` as a **BOM, not a parent**
 ### The license key
 
 `component/` exposes a plain `setLicenseKey(String)` per instance, with no global
-default; the Spring binding lives outside the module (ADR-0003, ADR-0004).
+default. Reading the key from configuration is the application's job (ADR-0003, ADR-0004).
 
 **This project itself never has a commercial key** — not locally, not in CI. Froala
 runs unlicensed here and shows its watermark, deliberately and permanently. Don't
@@ -234,7 +235,8 @@ Getting this wrong wastes the maintainer's time, so it is worth stating.
 
 ## Conventions
 
-- Vaadin views: `@Route` + access annotation (`@AnonymousAllowed` / `@PermitAll`).
+- Vaadin views: `@Route`. The project has no Spring Security and the demo shows none, so a
+  demo view needs no access annotation (maintainer, 2026-10-01).
 - The MCP `vaadin` server is the source of truth for Vaadin API — prefer it over
   memory when reaching for component APIs.
 - Don't pin dependency versions to a guessed "latest" — resolve the current

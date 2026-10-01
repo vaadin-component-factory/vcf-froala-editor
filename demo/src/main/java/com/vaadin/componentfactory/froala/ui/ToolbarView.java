@@ -43,7 +43,7 @@ import com.vaadin.flow.router.Route;
 
 /**
  * Compose Froala's toolbar out of the buttons it already ships, in either of the two shapes it understands, then
- * rebuild the editor with it. Custom buttons are a later phase; nothing here registers one.
+ * rebuild the editor with it.
  * <p>
  * The two shapes are not the same toolbar with different syntax. A flat list always shows every button it names. Named
  * groups get an overflow panel, and with it the two settings that only exist there: which end of the toolbar the group
@@ -59,9 +59,10 @@ public class ToolbarView extends VerticalLayout {
     private static final String GROUPED = "Named groups";
 
     /**
-     * Froala's own default groups, minus the buttons that need a service behind them -- AI, collaboration, Filestack,
-     * the spell checker and the Word conversion. A button whose plugin is not enabled is dropped without a word, so
-     * offering them here would only produce toolbars with holes in them.
+     * Froala's own default groups, minus the buttons whose plugin {@link DemoPlugins#full()} leaves out, such as AI,
+     * collaboration, the file upload, Filestack, Font Awesome, the spell checker and the Word conversion. A button
+     * whose plugin is not enabled is dropped without a word, so offering them here would only produce toolbars with
+     * holes in them.
      */
     private static final Map<String, List<String>> PALETTE = new LinkedHashMap<>();
 
@@ -76,10 +77,11 @@ public class ToolbarView extends VerticalLayout {
                         FroalaButton.ALIGN_JUSTIFY, FroalaButton.FORMAT_OL, FroalaButton.FORMAT_UL,
                         FroalaButton.PARAGRAPH_FORMAT, FroalaButton.PARAGRAPH_STYLE, FroalaButton.LINE_HEIGHT,
                         FroalaButton.OUTDENT, FroalaButton.INDENT, FroalaButton.QUOTE));
-        PALETTE.put(FroalaToolbarGroup.MORE_RICH, List.of(FroalaButton.INSERT_LINK, FroalaButton.INSERT_IMAGE,
-                FroalaButton.INSERT_VIDEO, FroalaButton.INSERT_TABLE, FroalaButton.INSERT_FILE, FroalaButton.EMOTICONS,
-                FroalaButton.FONT_AWESOME, FroalaButton.SPECIAL_CHARACTERS, FroalaButton.INSERT_HR,
-                FroalaButton.INSERT_ANCHOR, FroalaButton.PAGE_BREAK, FroalaButton.CODE_SNIPPET, FroalaButton.MARKDOWN));
+        PALETTE.put(FroalaToolbarGroup.MORE_RICH,
+                List.of(FroalaButton.INSERT_LINK, FroalaButton.INSERT_IMAGE, FroalaButton.INSERT_VIDEO,
+                        FroalaButton.INSERT_TABLE, FroalaButton.EMOTICONS, FroalaButton.SPECIAL_CHARACTERS,
+                        FroalaButton.INSERT_HR, FroalaButton.INSERT_ANCHOR, FroalaButton.PAGE_BREAK,
+                        FroalaButton.CODE_SNIPPET, FroalaButton.MARKDOWN));
         PALETTE.put(FroalaToolbarGroup.MORE_MISC,
                 List.of(FroalaButton.UNDO, FroalaButton.REDO, FroalaButton.FULLSCREEN, FroalaButton.PRINT,
                         FroalaButton.SELECT_ALL, FroalaButton.HTML, FroalaButton.HELP,
@@ -137,8 +139,8 @@ public class ToolbarView extends VerticalLayout {
                 new Details("Toolbar Options", shape, flatButtons, groupedForm, reload),
                 new Details("JSON", toolbarJson), editor);
 
-        // After add(), so the editor has a position to be put back at. Without this the form says "named groups" while
-        // the editor still runs on Froala's stock toolbar, which is a different toolbar than the one it describes.
+        // Without this the form says "named groups" while the editor still runs on Froala's stock toolbar, which is a
+        // different toolbar than the one it describes.
         reload();
     }
 
@@ -147,15 +149,12 @@ public class ToolbarView extends VerticalLayout {
         groupedForm.setVisible(GROUPED.equals(shape.getValue()));
     }
 
-    /** The same rebuild as the options view: detach, set, attach. See {@link OptionsView#reload()}. */
+    /** Rebuilds the editor with the toolbar the form describes. {@code setOptions} rebuilds an attached editor. */
     private void reload() {
         FroalaToolbar toolbar = buildToolbar();
-        int position = indexOf(editor);
 
-        remove(editor);
-        // every plugin that needs no service, so that nearly every button of the palette has the plugin it needs
+        // every plugin that needs no service, so that every button of the palette has the plugin it needs
         editor.setOptions(FroalaOptions.defaults().withPluginsEnabled(DemoPlugins.full()).withToolbarButtons(toolbar));
-        addComponentAtIndex(position, editor);
 
         toolbarJson.setValue(toolbar.toString());
     }
