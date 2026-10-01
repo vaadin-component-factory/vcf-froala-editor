@@ -68,7 +68,7 @@ class FroalaCommandToggleIT extends SpringPlaywrightIT {
         assertPressed("first", true);
 
         String accent = (String) icon.evaluate("icon => {" + " const probe = document.createElement('span');"
-                + " probe.style.color = 'var(--vcf-froala-accent-color)';" + " icon.after(probe);"
+                + " probe.style.color = 'var(--_vcf-froala-accent-color)';" + " icon.after(probe);"
                 + " const color = getComputedStyle(probe).color;" + " probe.remove();" + " return color;" + " }");
         assertNotEquals(boldFill, accent);
         // once the transition is over
