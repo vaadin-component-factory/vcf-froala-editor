@@ -16,6 +16,7 @@
 package com.vaadin.componentfactory.froala;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -139,6 +140,9 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
      */
     public void setRouterIgnorePaths(Collection<String> paths) {
+        // checked before the old paths are dropped, so an invalid one leaves them in place
+        paths.forEach(FroalaViewer::toRegex);
+
         if (routerIgnore != null) {
             routerIgnore.remove();
             routerIgnore = null;
@@ -225,15 +229,20 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
         }
 
         var regex = new StringBuilder("^");
-        for (char c : pattern.toCharArray()) {
+        pattern.codePoints().forEach(c -> {
             if (c == '*') {
                 regex.append(".*");
+            } else if (c > 127) {
+                // the browser's pathname holds a character outside ASCII percent-encoded, as its UTF-8 bytes
+                for (byte b : Character.toString(c).getBytes(StandardCharsets.UTF_8)) {
+                    regex.append(String.format("\\%%%02X", b));
+                }
             } else if (Character.isLetterOrDigit(c)) {
-                regex.append(c);
+                regex.appendCodePoint(c);
             } else {
-                regex.append('\\').append(c);
+                regex.append('\\').appendCodePoint(c);
             }
-        }
+        });
 
         return regex.append('$').toString();
     }

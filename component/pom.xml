@@ -73,6 +73,8 @@
          @ConfigurationProperties binding, services) lives in the demo — or later
          in a separate optional `-spring` module. -->
     <dependencies>
+        <!-- Also brings Jackson, which FroalaOptions parses JSON with. Not declared on its own,
+             because the Vaadin BOM does not manage its version and Flow's own has to win. -->
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-core</artifactId>

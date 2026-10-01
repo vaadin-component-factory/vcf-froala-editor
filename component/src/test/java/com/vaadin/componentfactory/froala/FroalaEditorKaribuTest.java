@@ -20,12 +20,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.github.mvysny.kaributesting.v10.ElementUtilsKt;
 import com.github.mvysny.kaributesting.v10.MockVaadin;
 import elemental.json.Json;
 import elemental.json.JsonArray;
 import elemental.json.JsonObject;
+import elemental.json.JsonValue;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -196,6 +199,28 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
+    void replaceSelectionContentAndSelectAll_callTheClient() {
+        FroalaEditor editor = attachedEditor();
+        drainPendingJavaScript();
+
+        editor.replaceSelectionContent("<b>x</b>");
+        assertTrue(hasPendingJavaScript("replaceSelectionContent"));
+        drainPendingJavaScript();
+
+        editor.selectAll();
+        assertTrue(hasPendingJavaScript("selectAll"));
+    }
+
+    @Test
+    void defaultPlugins_areTheBasics() {
+        // ADR-0008: options that name no plugins get the basic set, sent as a property of its own
+        JsonArray sent = (JsonArray) new FroalaEditor().getElement().getPropertyRaw("defaultPluginsEnabled");
+
+        assertEquals(FroalaPlugin.basics(),
+                IntStream.range(0, sent.length()).mapToObj(sent::getString).collect(Collectors.toSet()));
+    }
+
+    @Test
     void themeVariant_reachesTheThemeAttributeTheStylesheetSelectsOn() {
         FroalaEditor editor = attachedEditor();
 
@@ -237,6 +262,7 @@ class FroalaEditorKaribuTest {
 
         editor.setValueChangeTimeout(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT);
         assertEquals(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT, editor.getValueChangeTimeout());
+        assertEquals(FroalaEditor.MIN_VALUE_CHANGE_TIMEOUT, editor.getElement().getProperty("valueChangeTimeout", 0));
     }
 
     @Test
@@ -247,6 +273,8 @@ class FroalaEditorKaribuTest {
 
         editor.setIntervalPeriod(5000);
         assertEquals(5000, editor.getIntervalPeriod());
+        // the name the client reads it under
+        assertEquals(5000, editor.getElement().getProperty("intervalPeriod", 0));
 
         assertThrows(IllegalArgumentException.class, () -> editor.setIntervalPeriod(0));
         assertThrows(IllegalArgumentException.class, () -> editor.setIntervalPeriod(-1));
@@ -502,6 +530,8 @@ class FroalaEditorKaribuTest {
 
         assertEquals("[" + command.toJson().toJson() + "]", commandsOn(editor));
         assertTrue(popover.isAttached());
+        assertEquals(editor, popover.getTarget());
+        assertTrue(hasPendingJavaScript("_setCommandPopover"));
     }
 
     @Test
@@ -617,12 +647,14 @@ class FroalaEditorKaribuTest {
 
     /** Fires a DOM event from the client with one entry of event data, the way Flow delivers it. */
     private void fireClientEvent(FroalaEditor editor, String type, String key, String value) {
-        JsonObject data = Json.createObject();
-        data.put(key, value);
-        ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), type, data));
+        fireClientEvent(editor, type, key, Json.create(value));
     }
 
     private void fireClientEvent(FroalaEditor editor, String type, String key, boolean value) {
+        fireClientEvent(editor, type, key, Json.create(value));
+    }
+
+    private void fireClientEvent(FroalaEditor editor, String type, String key, JsonValue value) {
         JsonObject data = Json.createObject();
         data.put(key, value);
         ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), type, data));

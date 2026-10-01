@@ -51,6 +51,10 @@ class FroalaOptionsTest {
         assertEquals("{\"language\":\"de\"}", FroalaOptions.defaults().withLanguage("de").toString());
         assertEquals("{\"direction\":\"rtl\"}",
                 FroalaOptions.defaults().withDirection(FroalaTextDirection.RTL).toString());
+        assertEquals("{\"direction\":\"ltr\"}",
+                FroalaOptions.defaults().withDirection(FroalaTextDirection.LTR).toString());
+        assertEquals("{\"direction\":\"auto\"}",
+                FroalaOptions.defaults().withDirection(FroalaTextDirection.AUTO).toString());
         assertEquals("{\"toolbarInline\":true}", FroalaOptions.defaults().withToolbarInline(true).toString());
         assertEquals("{\"documentReady\":true}", FroalaOptions.defaults().withDocumentReady(true).toString());
         assertEquals("{\"toolbarSticky\":false}", FroalaOptions.defaults().withToolbarSticky(false).toString());
@@ -186,6 +190,9 @@ class FroalaOptionsTest {
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("[1]"));
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{"));
         assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{} {}"));
+        // elemental would write the infinite double Jackson reads as the string "Infinity"
+        assertThrows(IllegalArgumentException.class,
+                () -> FroalaOptions.defaults().withImageTuiOptions("{\"a\": {\"b\": [1e999]}}"));
         assertEquals("{}", FroalaOptions.defaults().withImageTuiOptions("{}").withImageTuiOptions(null).toString());
     }
 

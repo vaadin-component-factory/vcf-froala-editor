@@ -68,6 +68,35 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void blur_fromTheServer_takesTheFocusOutOfTheEditor() {
+        editableArea().click();
+        assertEquals(Boolean.TRUE,
+                page.evaluate("() => document.querySelector('#editor').contains(document.activeElement)"));
+
+        page.keyboard().press("Alt+B");
+
+        page.waitForFunction("() => !document.querySelector('#editor').contains(document.activeElement)");
+    }
+
+    @Test
+    void tabIndex_reachesTheEditableArea() {
+        page.locator("#editor .fr-element").waitFor();
+
+        page.locator("#untabbable").click();
+
+        assertThat(page.locator("#untabbable")).isDisabled();
+        assertThat(page.locator("#editor .fr-element")).hasAttribute("tabindex", "-1");
+    }
+
+    @Test
+    void typing_reachesTheInputListener() {
+        editableArea().click();
+        editableArea().type("x");
+
+        assertThat(page.locator("#input-log")).hasText("input");
+    }
+
+    @Test
     void undoRightAfterLoad_keepsTheServerValue() {
         // The value goes in through Froala once it is built. Undo must not take the editor back to the empty state
         // before that.

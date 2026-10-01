@@ -78,6 +78,15 @@ class FroalaLocaleIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void localeChange_reachesTheEditorWithTheNextSetOptions() {
+        assertBoldTitle("from-locale", "Fett");
+
+        page.locator("#to-french").click();
+
+        assertBoldTitle("from-locale", "Gras");
+    }
+
+    @Test
     void explicitLanguage_winsOverTheLocale() {
         assertBoldTitle("explicit", "Gras");
     }

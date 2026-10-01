@@ -49,6 +49,8 @@ import com.vaadin.flow.component.shared.HasThemeVariant;
 import com.vaadin.flow.component.shared.HasValidationProperties;
 import com.vaadin.flow.data.binder.HasValidator;
 import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.server.HttpStatusCode;
+import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.streams.UploadEvent;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.shared.Registration;
@@ -94,6 +96,10 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     private static final String LOCALE_LANGUAGES_PROPERTY = "localeLanguages";
     private static final String COMMANDS_PROPERTY = "commands";
     private static final String ACTIVE_COMMANDS_PROPERTY = "activeCommands";
+    private static final String LICENSE_KEY_PROPERTY = "licenseKey";
+    private static final String VALUE_CHANGE_MODE_PROPERTY = "valueChangeMode";
+    private static final String VALUE_CHANGE_TIMEOUT_PROPERTY = "valueChangeTimeout";
+    private static final String INTERVAL_PERIOD_PROPERTY = "intervalPeriod";
 
     private static final DiffMatchPatch DIFF_MATCH_PATCH = exactDiffMatchPatch();
 
@@ -316,9 +322,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             throw new DeltaMismatchException("Not a patch text: " + e.getMessage());
         }
 
-        Object[] results = DIFF_MATCH_PATCH
-                .patchApply(patches instanceof LinkedList<DiffMatchPatch.Patch> alreadyLinkedList ? alreadyLinkedList
-                        : new LinkedList<>(patches), oldValue);
+        Object[] results = DIFF_MATCH_PATCH.patchApply(new LinkedList<>(patches), oldValue);
 
         // patchApply answers with an untyped pair. Checking its shape keeps a library change from surfacing as a
         // ClassCastException from inside a value update.
@@ -789,9 +793,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public void setLicenseKey(String licenseKey) {
         if (licenseKey == null) {
-            getElement().removeProperty("licenseKey");
+            getElement().removeProperty(LICENSE_KEY_PROPERTY);
         } else {
-            getElement().setProperty("licenseKey", licenseKey);
+            getElement().setProperty(LICENSE_KEY_PROPERTY, licenseKey);
         }
     }
 
@@ -801,7 +805,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @return license key or null
      */
     public String getLicenseKey() {
-        return getElement().getProperty("licenseKey");
+        return getElement().getProperty(LICENSE_KEY_PROPERTY);
     }
 
     /**
@@ -814,7 +818,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         if (valueChangeMode == null) {
             setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         } else {
-            getElement().setProperty("valueChangeMode", valueChangeMode.getClientValue());
+            getElement().setProperty(VALUE_CHANGE_MODE_PROPERTY, valueChangeMode.getClientValue());
         }
     }
 
@@ -825,7 +829,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public FroalaValueChangeMode getValueChangeMode() {
         return FroalaValueChangeMode.fromClientValue(
-                getElement().getProperty("valueChangeMode", DEFAULT_VALUE_CHANGE_MODE.getClientValue()));
+                getElement().getProperty(VALUE_CHANGE_MODE_PROPERTY, DEFAULT_VALUE_CHANGE_MODE.getClientValue()));
     }
 
     /**
@@ -854,7 +858,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                     "valueChangeTimeout must be at least " + MIN_VALUE_CHANGE_TIMEOUT + " ms, the minimum Froala uses");
         }
 
-        getElement().setProperty("valueChangeTimeout", timeoutInMilliseconds);
+        getElement().setProperty(VALUE_CHANGE_TIMEOUT_PROPERTY, timeoutInMilliseconds);
     }
 
     /**
@@ -869,7 +873,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @return idle time in milliseconds
      */
     public int getValueChangeTimeout() {
-        return getElement().getProperty("valueChangeTimeout", DEFAULT_VALUE_CHANGE_TIMEOUT);
+        return getElement().getProperty(VALUE_CHANGE_TIMEOUT_PROPERTY, DEFAULT_VALUE_CHANGE_TIMEOUT);
     }
 
     /**
@@ -887,7 +891,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             throw new IllegalArgumentException("intervalPeriod must be greater than 0");
         }
 
-        getElement().setProperty("intervalPeriod", periodInMilliseconds);
+        getElement().setProperty(INTERVAL_PERIOD_PROPERTY, periodInMilliseconds);
     }
 
     /**
@@ -897,12 +901,13 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @return time between two value syncs
      */
     public int getIntervalPeriod() {
-        return getElement().getProperty("intervalPeriod", DEFAULT_INTERVAL_PERIOD);
+        return getElement().getProperty(INTERVAL_PERIOD_PROPERTY, DEFAULT_INTERVAL_PERIOD);
     }
 
     /**
      * Receives Froala's upload and answers with the {@code {"link": "…"}} JSON Froala expects. Flow already refuses an
-     * upload to a disabled editor. The status on success and failure is set by Flow's {@code responseHandled}.
+     * upload to a disabled editor. A refusal answers 403 for a read-only editor and 413 for a file over the handler's
+     * limit, without an exception, so that it is not logged as an error.
      */
     private final class LinkUpload implements UploadHandler {
 
@@ -926,19 +931,20 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
 
             // Flow runs an upload outside the session lock. Read-only locks the value against the client like disabled
             // does, and the uploaded file would reach the value as a change from the client.
-            event.getUI().accessSynchronously(() -> {
-                if (isReadOnly()) {
-                    throw new IllegalStateException("Upload refused, the editor is read-only");
-                }
-            });
+            boolean[] readOnly = new boolean[1];
+            event.getUI().accessSynchronously(() -> readOnly[0] = isReadOnly());
+            if (readOnly[0]) {
+                event.getResponse().setStatus(HttpStatusCode.FORBIDDEN.getCode());
+                return;
+            }
 
-            // Flow applies getFileSizeMax only when it parses the request itself. Where the servlet container has
-            // parsed
-            // it already, as under Spring Boot, the limit would otherwise not apply.
+            // Flow applies getFileSizeMax only when it parses a multipart request itself. Not where the servlet
+            // container has parsed it already, as under Spring Boot, and not for a body that is not multipart at all,
+            // whose size can be unknown. Froala always sends multipart with a known size.
             long max = handler.getFileSizeMax();
-            if (max >= 0 && event.getFileSize() > max) {
-                throw new IllegalStateException(
-                        "Upload refused, " + event.getFileSize() + " bytes is more than the limit of " + max);
+            if (max >= 0 && (event.getFileSize() < 0 || event.getFileSize() > max)) {
+                event.getResponse().setStatus(HttpStatusCode.REQUEST_ENTITY_TOO_LARGE.getCode());
+                return;
             }
 
             String link = Objects.requireNonNull(handler.upload(event), "The upload handler returned no link");
@@ -947,6 +953,17 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             body.put("link", link);
             event.getResponse().setContentType("application/json;charset=UTF-8");
             event.getResponse().getWriter().write(body.toJson());
+        }
+
+        /**
+         * Flow's default sets 200 on success, which would overwrite a refusal's status. The servlet's own default is
+         * 200 already, so only a failure needs one.
+         */
+        @Override
+        public void responseHandled(boolean success, VaadinResponse response) {
+            if (!success) {
+                response.setStatus(HttpStatusCode.INTERNAL_SERVER_ERROR.getCode());
+            }
         }
     }
 

@@ -19,6 +19,9 @@ import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaValueChangeMode;
 import com.vaadin.componentfactory.froala.FroalaViewer;
+import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.KeyModifier;
+import com.vaadin.flow.component.Shortcuts;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Span;
@@ -103,6 +106,20 @@ public class FroalaTestView extends VerticalLayout {
         focusLog.setId("focus-log");
         editor.addFocusListener(event -> focusLog.setText(focusLog.getText() + " focus"));
         editor.addBlurListener(event -> focusLog.setText(focusLog.getText() + " blur"));
+
+        // Alt+B blurs from the server without the keyboard focus leaving the editor first, as a button click would
+        Shortcuts.addShortcutListener(this, editor::blur, Key.KEY_B, KeyModifier.ALT).listenOn(editor);
+
+        Span inputLog = new Span();
+        inputLog.setId("input-log");
+        editor.addInputListener(event -> inputLog.setText("input"));
+
+        Button untabbable = new Button("Untabbable");
+        untabbable.addClickListener(event -> {
+            editor.setTabIndex(-1);
+            untabbable.setEnabled(false);
+        });
+        untabbable.setId("untabbable");
 
         Span selectionLog = new Span();
         selectionLog.setId("selection-log");
@@ -210,9 +227,10 @@ public class FroalaTestView extends VerticalLayout {
         });
         rebuild.setId("rebuild");
 
-        add(focus, focusLog, selectionLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue,
-                otherLicenseKey, toggleAttached, insertSnippet, insertSnippetOnce, emojiValue, hostileValue,
-                reattachAndInsert, selectAll, reattachAndSelectAll, otherFieldTexts, rebuild, editor, viewer);
+        add(focus, focusLog, inputLog, untabbable, selectionLog, valueChangeMode, readOnly, enabled, slowTyping,
+                resetValue, messyValue, otherLicenseKey, toggleAttached, insertSnippet, insertSnippetOnce, emojiValue,
+                hostileValue, reattachAndInsert, selectAll, reattachAndSelectAll, otherFieldTexts, rebuild, editor,
+                viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

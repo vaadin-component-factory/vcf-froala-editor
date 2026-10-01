@@ -13,6 +13,9 @@ import { diff_match_patch } from 'diff-match-patch';
 
 const DIFF_MATCH_PATCH = new diff_match_patch();
 
+// The shortest time between two syncs in ON_CHANGE, in milliseconds, see _onValueChangeThrottled
+const THROTTLE_MS = 50;
+
 // Froala draws an icon from a template string, filling in each [NAME] from the icon's definition. An own command's
 // icon is a <vaadin-icon> with the attributes the server sent, already escaped by registerCommands.
 FroalaEditor.DefineIconTemplate('vcfVaadinIcon', '<vaadin-icon [ATTRS]></vaadin-icon>');
@@ -130,6 +133,9 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   // what the server was last told about the selection, so that only a switch between "none" and "some" is reported
   _hasSelection = false;
+
+  // a tabindex the server set, moved from the host to the editable area, see attributeChangedCallback
+  _tabIndex = null;
 
   // whether the host's `dir` is one this element set from the editor's direction, and the `dir` it had before, which
   // may be null. See _mirrorDirection.
@@ -466,6 +472,8 @@ class FroalaEditorElement extends SlotStylesMixin(
           // editable area and the target has to move to it.
           this.ariaTarget = this.editor.el;
 
+          this._applyTabIndex();
+
           this._mirrorDirection();
 
           this._targetCommandPopovers();
@@ -503,7 +511,7 @@ class FroalaEditorElement extends SlotStylesMixin(
             this._startValueChangeInterval();
           }
 
-          this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
+          this._pendingInserts.splice(0).forEach((snippet) => this.replaceSelectionContent(snippet));
 
           if (this._pendingSelectAll) {
             this._pendingSelectAll = false;
@@ -590,6 +598,8 @@ class FroalaEditorElement extends SlotStylesMixin(
     return JSON.stringify([
       this.options ?? null,
       this.commands ?? [],
+      // the build picks its language from these when the options name none
+      this.localeLanguages ?? [],
       UPLOAD_KINDS.map((kind) => this[`${kind}UploadUrl`] ?? null),
     ]);
   }
@@ -650,9 +660,9 @@ class FroalaEditorElement extends SlotStylesMixin(
   _onValueChangeThrottled() {
     const sinceLastSync = Date.now() - this._lastSyncedValueTimestamp;
 
-    if (sinceLastSync < 50) {
+    if (sinceLastSync < THROTTLE_MS) {
       clearTimeout(this._throttleHandle);
-      this._throttleHandle = setTimeout(() => this._onValueChange(), 50 - sinceLastSync);
+      this._throttleHandle = setTimeout(() => this._onValueChange(), THROTTLE_MS - sinceLastSync);
       return;
     }
 
@@ -797,18 +807,18 @@ class FroalaEditorElement extends SlotStylesMixin(
    * A call that arrives while Froala is still building, typically in the same round trip as the attach, is held back
    * until the editor is initialized. The editor's modules do not exist before that.
    */
-  replaceSelectionContent(html) {
+  replaceSelectionContent(snippet) {
     // Both lock the value against the client, and the snippet would reach the server as a change from it
     if (this.disabled || this.readonly) {
       return;
     }
 
     if (!this._editorInitialized) {
-      this._pendingInserts.push(html);
+      this._pendingInserts.push(snippet);
       return;
     }
 
-    this.editor.html.insert(html);
+    this.editor.html.insert(snippet);
 
     // Reported at once rather than left to the value change mode, because the change came from the server.
     this._onValueChange();
@@ -837,6 +847,36 @@ class FroalaEditorElement extends SlotStylesMixin(
       this.editor.events.focus();
     } else {
       this._pendingFocus = true;
+    }
+  }
+
+  /** The focus sits in Froala's editable area, not on the host, so blurring the host alone would leave it there. */
+  blur() {
+    this.editor?.el?.blur();
+    super.blur();
+  }
+
+  static get observedAttributes() {
+    return [...super.observedAttributes, 'tabindex'];
+  }
+
+  /**
+   * Moves a `tabindex` the server sets on the host to Froala's editable area, which is what takes the focus. Left on
+   * the host, it would make the host a tab stop of its own next to the editable area.
+   */
+  attributeChangedCallback(name, oldValue, newValue) {
+    super.attributeChangedCallback(name, oldValue, newValue);
+
+    if (name === 'tabindex' && newValue !== null) {
+      this._tabIndex = newValue;
+      this.removeAttribute('tabindex');
+      this._applyTabIndex();
+    }
+  }
+
+  _applyTabIndex() {
+    if (this._tabIndex !== null && this._editorInitialized) {
+      this.editor.el.setAttribute('tabindex', this._tabIndex);
     }
   }
 

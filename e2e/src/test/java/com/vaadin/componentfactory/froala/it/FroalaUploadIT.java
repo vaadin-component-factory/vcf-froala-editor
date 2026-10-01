@@ -15,7 +15,13 @@
  */
 package com.vaadin.componentfactory.froala.it;
 
+import java.io.ByteArrayInputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Base64;
+import java.util.stream.Collectors;
 
 import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.options.FilePayload;
@@ -119,7 +125,7 @@ class FroalaUploadIT extends SpringPlaywrightIT {
         page.locator("#read-only").click();
         assertThat(page.locator("#read-only")).isDisabled();
 
-        assertEquals(500, postPixel().status());
+        assertEquals(403, postPixel().status());
     }
 
     @Test
@@ -129,7 +135,29 @@ class FroalaUploadIT extends SpringPlaywrightIT {
         page.locator("#limited .fr-element").waitFor();
 
         assertEquals(200, postTo("#limited", new FilePayload("small.png", "image/png", new byte[4])).status());
-        assertEquals(500, postTo("#limited", PIXEL).status());
+        assertEquals(413, postTo("#limited", PIXEL).status());
+    }
+
+    @Test
+    void handlersSizeLimit_refusesABodyOfUnknownSize() throws Exception {
+        // Not multipart, so Flow hands the raw body over, and a chunked one has no size the limit could be checked
+        // against. A browser streams a body only over HTTP/2, so this one goes out from the test with the page's
+        // session.
+        page.locator("#limited .fr-element").waitFor();
+        String url = (String) page.evaluate(
+                "() => new URL(document.querySelector('#limited').getAttribute('image-upload-url'), document.baseURI).href");
+        String cookies = page.context().cookies().stream().map(cookie -> cookie.name + "=" + cookie.value)
+                .collect(Collectors.joining("; "));
+
+        HttpResponse<Void> response = HttpClient
+                .newHttpClient().send(
+                        HttpRequest.newBuilder(URI.create(url)).header("Cookie", cookies)
+                                .POST(HttpRequest.BodyPublishers
+                                        .ofInputStream(() -> new ByteArrayInputStream(new byte[4])))
+                                .build(),
+                        HttpResponse.BodyHandlers.discarding());
+
+        assertEquals(413, response.statusCode());
     }
 
     /** Posts the pixel to the image handler's URL as Froala does, a multipart request with the file as {@code file}. */

@@ -101,6 +101,25 @@ class FroalaViewerTest {
     }
 
     @Test
+    void invalidPath_leavesTheEarlierOnesInPlace() {
+        FroalaViewer viewer = new FroalaViewer();
+        viewer.setRouterIgnorePaths("/a");
+
+        assertThrows(IllegalArgumentException.class, () -> viewer.setRouterIgnorePaths("/b", " "));
+
+        assertTrue(viewer.getElement().hasProperty("vcfRouterIgnorePatterns"));
+    }
+
+    @Test
+    void characterOutsideAscii_matchesTheBrowsersPercentEncodedPath() {
+        // URL.pathname, which the client matches against, holds "ä" as %C3%A4
+        String regex = FroalaViewer.toRegex("/dä");
+
+        assertTrue(matches(regex, "/d%C3%A4/1"));
+        assertFalse(matches(regex, "/dä/1"));
+    }
+
+    @Test
     void removingAnEarlierRegistration_keepsThePatternsOfALaterOne() {
         FroalaViewer viewer = new FroalaViewer();
         Registration earlier = FroalaViewer.applyRouterIgnore(viewer, "/a");

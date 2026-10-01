@@ -281,7 +281,26 @@ public final class FroalaOptions implements Serializable {
             throw new IllegalArgumentException(what + " must be a JSON object, but got: " + json);
         }
 
+        // Jackson reads 1e999 as an infinite double, which would reach Froala as the string "Infinity"
+        if (hasInfiniteNumber(node)) {
+            throw new IllegalArgumentException(what + " holds a number out of range: " + json);
+        }
+
         return Json.parse(node.toString());
+    }
+
+    private static boolean hasInfiniteNumber(JsonNode node) {
+        if (node.isNumber()) {
+            return Double.isInfinite(node.asDouble());
+        }
+
+        for (JsonNode child : node) {
+            if (hasInfiniteNumber(child)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static JsonObject toJsonObject(Map<String, String> entries) {
@@ -1208,7 +1227,8 @@ public final class FroalaOptions implements Serializable {
 
     /**
      * Two option sets are equal when they set the same options to the same values. The order they were set in does not
-     * count.
+     * count. Inside a value it does, e.g. the order of the keys in JSON given to {@link #withImageTuiOptions(String)},
+     * because Froala reads some of them in order, such as the groups of a toolbar.
      */
     @Override
     public boolean equals(Object other) {

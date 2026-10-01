@@ -20,6 +20,8 @@ import java.util.Locale;
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
@@ -48,7 +50,16 @@ public class FroalaLocaleTestView extends VerticalLayout implements HasUrlParame
                 FroalaOptions.defaults().withLanguage("en").withDirection(FroalaTextDirection.RTL));
         englishRtl.setId("english-rtl");
 
-        add(fromLocale, explicit, englishRtl);
+        // the same options again, so only the locale has changed for the build this triggers
+        Button toFrench = new Button("To French");
+        toFrench.addClickListener(event -> {
+            UI.getCurrent().setLocale(Locale.FRENCH);
+            fromLocale.setOptions((FroalaOptions) null);
+            toFrench.setEnabled(false);
+        });
+        toFrench.setId("to-french");
+
+        add(fromLocale, explicit, englishRtl, toFrench);
     }
 
     @Override

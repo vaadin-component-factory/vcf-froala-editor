@@ -122,6 +122,8 @@ class FroalaToolbarTest {
     @Test
     void with_leavesTheOriginalGroupAlone() {
         FroalaToolbarGroup base = FroalaToolbarGroup.named("myGroup", "bold");
+        assertEquals("myGroup: {\"buttons\":[\"bold\"],\"align\":\"left\"}",
+                base.withAlign(FroalaToolbarAlign.LEFT).toString());
         FroalaToolbarGroup derived = base.withAlign(FroalaToolbarAlign.RIGHT).withButtonsVisible(1);
 
         assertEquals("myGroup: {\"buttons\":[\"bold\"]}", base.toString());
