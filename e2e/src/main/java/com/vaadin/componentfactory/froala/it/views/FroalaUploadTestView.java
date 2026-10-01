@@ -17,6 +17,7 @@ package com.vaadin.componentfactory.froala.it.views;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
 
 import com.vaadin.componentfactory.froala.FroalaButton;
 import com.vaadin.componentfactory.froala.FroalaEditor;
@@ -50,6 +51,9 @@ public class FroalaUploadTestView extends VerticalLayout {
      * An endpoint of the application's own. Never called, because the tests only read it back out of Froala's options.
      */
     public static final String OWN_IMAGE_UPLOAD_URL = "/own/upload/image";
+
+    /** Another endpoint of the application's own, for the files manager. Never called either. */
+    public static final String OWN_FILES_MANAGER_UPLOAD_URL = "/own/upload/files";
 
     /** The largest file in bytes the limited editor's handler takes. */
     public static final long FILE_SIZE_MAX = 10;
@@ -107,6 +111,22 @@ public class FroalaUploadTestView extends VerticalLayout {
             }
         });
 
-        add(readOnly, removeHandlers, editor, viewer, withoutHandlers, withOwnUrl, limited);
+        // The files manager has no upload handler of ours, only Froala's own filesManagerUploadURL
+        FroalaEditor filesWithoutUrl = new FroalaEditor("Files manager without a URL",
+                FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.FILES_MANAGER));
+        filesWithoutUrl.setId("files-without-url");
+
+        FroalaEditor filesWithOwnTabs = new FroalaEditor("Files manager with own tabs",
+                FroalaOptions.defaults().withPluginsEnabled(FroalaPlugin.FILES_MANAGER)
+                        .withFilesInsertButtons(List.of(FroalaButton.FILES_UPLOAD, FroalaButton.FILES_BY_URL)));
+        filesWithOwnTabs.setId("files-with-own-tabs");
+
+        FroalaEditor filesWithUrl = new FroalaEditor("Files manager with an own URL");
+        filesWithUrl.setOptions("{\"pluginsEnabled\": [\"" + FroalaPlugin.FILES_MANAGER
+                + "\"], \"filesManagerUploadURL\": \"" + OWN_FILES_MANAGER_UPLOAD_URL + "\"}");
+        filesWithUrl.setId("files-with-url");
+
+        add(readOnly, removeHandlers, editor, viewer, withoutHandlers, withOwnUrl, limited, filesWithoutUrl,
+                filesWithOwnTabs, filesWithUrl);
     }
 }

@@ -247,14 +247,18 @@ public final class FroalaCommand implements Serializable {
      * @param modifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}, on top of Ctrl or Cmd. Ctrl and Cmd given
      *            here are ignored.
      * @return a new command with the shortcut
-     * @throws IllegalArgumentException if the key code is below 1, the label is null or blank, or a modifier is not
-     *             Shift, Alt, Ctrl or Cmd
+     * @throws IllegalArgumentException if the key code is below 1, the label is blank, or a modifier is not Shift, Alt,
+     *             Ctrl or Cmd
+     * @throws NullPointerException if the label or a modifier is null
      */
     public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
         // The constructor reads 0 and null as "no shortcut", which this method must not silently produce
-        if (keyCode < 1 || shortcutLabel == null) {
-            throw new IllegalArgumentException("A shortcut needs a key code of 1 or more and a label, but got "
-                    + keyCode + " and " + shortcutLabel);
+        Objects.requireNonNull(shortcutLabel, "shortcutLabel must not be null");
+        if (keyCode < 1) {
+            throw new IllegalArgumentException("A shortcut key code must be 1 or more, but got " + keyCode);
+        }
+        for (KeyModifier modifier : modifiers) {
+            Objects.requireNonNull(modifier, "modifiers must not contain null");
         }
 
         return new FroalaCommand(name, title, icon, keyCode, shortcutLabel, Set.copyOf(Arrays.asList(modifiers)),

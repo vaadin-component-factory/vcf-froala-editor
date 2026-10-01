@@ -144,10 +144,13 @@ class FroalaEditorKaribuTest {
         FroalaEditor editor = attachedEditor();
         editor.setValue("<p>locked</p>");
         editor.setReadOnly(true);
+        drainPendingJavaScript();
 
         fireDelta(editor, "<p>locked</p>", "<p>locked, edited anyway</p>");
 
         assertEquals("<p>locked</p>", editor.getValue());
+        // The property still holds the old value, so only the explicit push takes the edit back out of the browser
+        assertTrue(hasPendingValuePush());
     }
 
     @Test
@@ -560,6 +563,20 @@ class FroalaEditorKaribuTest {
         stale.remove();
 
         assertTrue(later.isAttached());
+    }
+
+    @Test
+    void popoverOfAnotherCommand_isRejectedAndLeftAlone() {
+        FroalaEditor editor = attachedEditor();
+        Popover popover = new Popover();
+        editor.addCommand(new FroalaCommand("first", "First", VaadinIcon.STAR.create()), popover);
+        FroalaEditor other = attachedEditor();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> other.addCommand(new FroalaCommand("second", "Second", VaadinIcon.STAR.create()), popover));
+
+        assertEquals(editor, popover.getTarget());
+        assertNull(other.getElement().getPropertyRaw("commands"));
     }
 
     @Test

@@ -110,11 +110,11 @@ class FroalaCommandTest {
         assertEquals(1, command.withShortcut(1, "X").getShortcutKeyCode());
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(0, "X"));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(-1, "X"));
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, null));
+        assertThrows(NullPointerException.class, () -> command.withShortcut(113, null));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, " "));
         assertThrows(IllegalArgumentException.class, () -> command.withShortcut(113, "F2", KeyModifier.ALT_GRAPH));
         // 0 and null together are how the constructor reads "no shortcut", which this method must not produce
-        assertThrows(IllegalArgumentException.class, () -> command.withShortcut(Key.KEY_T).withShortcut(0, null));
+        assertThrows(NullPointerException.class, () -> command.withShortcut(Key.KEY_T).withShortcut(0, null));
     }
 
     @Test

@@ -83,6 +83,9 @@ public class FroalaTestView extends VerticalLayout {
     /** Clearly above Froala's own 500 ms default, so a test can tell the two apart. */
     public static final int SLOW_TYPING_TIMEOUT = 1500;
 
+    /** Far below the 2000 ms default, so a test can tell the two apart. */
+    public static final int SHORT_INTERVAL_PERIOD = 300;
+
     public FroalaTestView() {
         setSizeFull();
 
@@ -157,6 +160,13 @@ public class FroalaTestView extends VerticalLayout {
         });
         slowTyping.setId("slow-typing");
 
+        Button shortInterval = new Button("Short interval");
+        shortInterval.addClickListener(event -> {
+            editor.setIntervalPeriod(SHORT_INTERVAL_PERIOD);
+            shortInterval.setEnabled(false);
+        });
+        shortInterval.setId("short-interval");
+
         Button resetValue = new Button("Reset value", event -> editor.setValue(INITIAL_VALUE));
         resetValue.setId("reset-value");
 
@@ -228,9 +238,9 @@ public class FroalaTestView extends VerticalLayout {
         rebuild.setId("rebuild");
 
         add(focus, focusLog, inputLog, untabbable, selectionLog, valueChangeMode, readOnly, enabled, slowTyping,
-                resetValue, messyValue, otherLicenseKey, toggleAttached, insertSnippet, insertSnippetOnce, emojiValue,
-                hostileValue, reattachAndInsert, selectAll, reattachAndSelectAll, otherFieldTexts, rebuild, editor,
-                viewer);
+                shortInterval, resetValue, messyValue, otherLicenseKey, toggleAttached, insertSnippet,
+                insertSnippetOnce, emojiValue, hostileValue, reattachAndInsert, selectAll, reattachAndSelectAll,
+                otherFieldTexts, rebuild, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

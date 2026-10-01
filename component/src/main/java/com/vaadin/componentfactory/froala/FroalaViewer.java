@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasSize;
@@ -140,6 +141,7 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @param paths the paths relative to the application's root, where a {@code *} matches any characters
      */
     public void setRouterIgnorePaths(Collection<String> paths) {
+        Objects.requireNonNull(paths, "paths must not be null");
         // checked before the old paths are dropped, so an invalid one leaves them in place
         paths.forEach(FroalaViewer::toRegex);
 
@@ -190,6 +192,8 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * @return a registration that leaves the links to the router again
      */
     public static Registration applyRouterIgnore(Component component, Collection<String> paths) {
+        Objects.requireNonNull(component, "component must not be null");
+        Objects.requireNonNull(paths, "paths must not be null");
         var element = component.getElement();
         element.setPropertyList(ROUTER_IGNORE_PROPERTY, paths.stream().map(FroalaViewer::toRegex).toList());
         Serializable patterns = element.getPropertyRaw(ROUTER_IGNORE_PROPERTY);
@@ -214,6 +218,7 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * character other than a letter or a digit makes it literal in both.
      */
     static String toRegex(String path) {
+        Objects.requireNonNull(path, "A router-ignore path must not be null");
         String pattern = path.trim();
 
         if (pattern.isEmpty()) {

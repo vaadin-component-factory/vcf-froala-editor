@@ -29,6 +29,13 @@ jobs:
     - name: Build and test
       run: mvn -B clean verify
 
+    # The rules file is generated from Froala's stylesheet and committed (ADR-0007). The e2e build has just
+    # installed the froala-editor package it was generated from, so running the generator again must change nothing.
+    - name: Check the generated theme is up to date
+      run: |
+        node component/src/theme-generator/generate-vaadin-theme.js e2e/node_modules/froala-editor
+        git diff --exit-code component/src/main/resources/META-INF/resources/frontend/vcf-froala-editor/vcf-froala-theme-vaadin-rules.css
+
     - name: Upload test reports
       if: failure()
       uses: actions/upload-artifact@v4
@@ -38,3 +45,24 @@ jobs:
           component/target/surefire-reports/
           e2e/target/failsafe-reports/
         retention-days: 7
+
+  # The add-on on its own, the way it is released: without the reactor root, on the Java 17 floor (ADR-0005),
+  # and with the Vaadin Directory package.
+  component:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build the add-on and its Directory package
+      run: mvn -B -f component/pom.xml clean install -Pdirectory
+
+    - name: Check the Directory package exists
+      run: ls component/target/vcf-froala-editor-*.zip

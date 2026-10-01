@@ -21,6 +21,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Base64;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.microsoft.playwright.APIResponse;
@@ -201,6 +202,23 @@ class FroalaUploadIT extends SpringPlaywrightIT {
         assertEquals(FroalaUploadTestView.OWN_IMAGE_UPLOAD_URL, option("#with-own-url", "imageUploadURL"));
         assertEquals(true, option("#with-own-url", "imageUpload"));
         assertEquals(true, option("#with-own-url", "imagePaste"));
+    }
+
+    @Test
+    void filesManagerWithoutUrl_losesItsUploadTab() {
+        page.locator("#files-without-url .fr-element").waitFor();
+        page.locator("#files-with-own-tabs .fr-element").waitFor();
+        page.locator("#files-with-url .fr-element").waitFor();
+
+        // Froala's default tabs, and tabs the server set itself, each without the upload
+        assertEquals(List.of("imageBack", "|", "filesByURL", "filesEmbed"),
+                option("#files-without-url", "filesInsertButtons"));
+        assertEquals(List.of("filesByURL"), option("#files-with-own-tabs", "filesInsertButtons"));
+
+        assertEquals(FroalaUploadTestView.OWN_FILES_MANAGER_UPLOAD_URL,
+                option("#files-with-url", "filesManagerUploadURL"));
+        assertEquals(List.of("imageBack", "|", "filesUpload", "filesByURL", "filesEmbed"),
+                option("#files-with-url", "filesInsertButtons"));
     }
 
     @Test

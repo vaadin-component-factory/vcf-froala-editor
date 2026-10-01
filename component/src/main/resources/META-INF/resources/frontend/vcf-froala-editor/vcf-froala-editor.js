@@ -446,6 +446,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     UPLOAD_KINDS.filter((kind) => this[`${kind}UploadUrl`]).forEach((kind) => {
       options[`${kind}UploadURL`] = this[`${kind}UploadUrl`];
     });
+    this._filesUploadWithoutUrlOff(options);
 
     // Froala builds asynchronously, so an options change can arrive while the editor being replaced is still
     // bootstrapping. See _editorGeneration.
@@ -625,6 +626,23 @@ class FroalaEditorElement extends SlotStylesMixin(
       off.imagePaste = false;
     }
     return off;
+  }
+
+  /**
+   * The files manager inserts a `blob:` URL as well when its upload has nowhere to go, but it has no switch like
+   * `imageUpload`. Its upload tab is taken out of the popup instead, and the by-URL and embed tabs stay. Applied to the
+   * final options, because the server's own `filesInsertButtons` must lose the tab too.
+   */
+  _filesUploadWithoutUrlOff(options) {
+    const tabs = options.filesInsertButtons ?? FroalaEditor.DEFAULTS.filesInsertButtons;
+    if (
+      tabs &&
+      !options.filesManagerUploadURL &&
+      !options.filesManagerUploadToS3 &&
+      !options.filesManagerUploadToAzure
+    ) {
+      options.filesInsertButtons = tabs.filter((tab) => tab !== 'filesUpload');
+    }
   }
 
   _reportSelection() {

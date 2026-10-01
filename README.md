@@ -493,7 +493,8 @@ popover.addOpenedChangeListener(event -> editor.setCommandActive(reviewMode, eve
 Upload is off until the editor has somewhere to send the file. Froala would otherwise insert a
 `blob:` URL that is valid only in the browser tab that created it, so the stored HTML would
 point at nothing after a reload. Switched off means the upload button is gone from the insert
-popup, and a dropped or pasted image is not inserted.
+popup, and a dropped or pasted image is not inserted. The files manager has no upload handler of
+its own, so its upload tab only shows when Froala's `filesManagerUploadURL` option is set.
 
 An upload handler switches it on. It stores the file and returns the link the editor puts into
 the document:

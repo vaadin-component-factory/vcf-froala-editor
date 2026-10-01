@@ -649,11 +649,17 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @param command the command, not null
      * @param popover opens at the command's toolbar button in this editor, not null
      * @return a handle that removes the command from this editor again, and takes the popover out of the UI
-     * @throws IllegalArgumentException if this editor already has a command of the same name
+     * @throws IllegalArgumentException if this editor already has a command of the same name, or the popover already
+     *             has a target, for example because it belongs to another command
      */
     public Registration addCommand(FroalaCommand command, Popover popover) {
         Objects.requireNonNull(command, "command must not be null");
         Objects.requireNonNull(popover, "popover must not be null");
+        // Shared by two commands, removing one would take the target from the other
+        if (popover.getTarget() != null) {
+            throw new IllegalArgumentException(
+                    "The popover already has a target. Each command needs a popover of its own");
+        }
 
         AddedCommand added = new AddedCommand(command, event -> {
         }, popover);

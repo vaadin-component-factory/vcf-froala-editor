@@ -61,6 +61,30 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void textBeyondAscii_arrivesAsADelta() {
+        // The browser's diff-match-patch writes the patch and the server's reads it, two libraries that URI-escape
+        // the text each in their own way. A disagreement would end in a resync, which delivers the value all the same,
+        // so the resyncs are counted.
+        editableArea().waitFor();
+        page.evaluate("""
+                () => {
+                    window.__resyncs = 0;
+                    document.querySelector('#editor').addEventListener('_value-resync', () => window.__resyncs++);
+                }
+                """);
+
+        editableArea().click();
+        editableArea().type("Grüße 100% a+b € ");
+        page.keyboard().press("Enter");
+        editableArea().type("Zeile & <tag> ~!*'();:@=$,/?#[]");
+        page.locator("#viewer").click();
+
+        assertThat(page.locator("#viewer")).containsText("Grüße 100% a+b €");
+        assertThat(page.locator("#viewer")).containsText("Zeile & <tag> ~!*'();:@=$,/?#[]");
+        assertEquals(0, ((Number) page.evaluate("() => window.__resyncs")).intValue());
+    }
+
+    @Test
     void initialValue_isInTheEditorOnLoad() {
         // The view sets this value server side before the first attach, so it can only have arrived through the
         // `initialized` handler, which puts it in through Froala. Froala has no init option for its content.
@@ -252,6 +276,25 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     }
 
     @Test
+    void intervalPeriod_setsHowOftenTheIntervalSyncs() {
+        withFakeClock();
+        selectValueChangeMode("INTERVAL");
+        page.locator("#short-interval").click();
+        assertThat(page.locator("#short-interval")).isDisabled();
+
+        editableArea().click();
+        recordDeltaDispatches();
+
+        // One edit per tick of the short period. A tick with nothing new sends nothing, so each round is exactly one
+        // delta however the ticks fall. The 2000 ms default would send at most one in the whole time.
+        for (String letter : new String[] { "a", "b", "c" }) {
+            editableArea().type(letter);
+            page.clock().runFor(FroalaTestView.SHORT_INTERVAL_PERIOD + 50);
+        }
+        assertEquals(3, dispatchedDeltas(), deltaLog());
+    }
+
+    @Test
     void editorRendersWithToolbar() {
         assertThat(editableArea()).isVisible();
         assertThat(page.locator("vcf-froala-editor .fr-toolbar")).isVisible();
@@ -389,17 +432,19 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
     @Test
     void onBlurMode_syncsOnlyWhenFocusLeaves() {
+        withFakeClock();
         selectValueChangeMode("ON_BLUR");
 
         editableArea().click();
+        recordDeltaDispatches();
         editableArea().type("only after blur");
 
-        // still in the editor, so nothing may have reached the server yet
-        assertThat(page.locator("#viewer")).not().containsText("only after blur");
+        // well past Froala's typing debounce, where ON_CHANGE would have sent the edit
+        page.clock().runFor(2000);
+        assertEquals(0, dispatchedDeltas(), deltaLog());
 
-        page.locator("#focus-button").click();
         page.locator("#viewer").click();
-
+        assertEquals(1, dispatchedDeltas(), deltaLog());
         assertThat(page.locator("#viewer")).containsText("only after blur");
     }
 

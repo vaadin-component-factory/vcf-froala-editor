@@ -97,7 +97,7 @@ public final class FroalaPlugin {
      * Bundles the CryptoJS library, which the upload plugins use to sign uploads sent directly to Azure Blob Storage.
      * Has no toolbar button and no options of its own.
      */
-    public static final String CRYPTOJS = "cryptoJSPlugin";
+    public static final String CRYPTO_JS = "cryptoJSPlugin";
 
     /**
      * Dragging images and other embedded content to another position in the text.
@@ -134,7 +134,8 @@ public final class FroalaPlugin {
      * Uploads and inserts several files at once, or inserts them by URL without uploading. Uploads go to the endpoint
      * in Froala's {@code filesManagerUploadURL} option, which has no default, or to S3 or Azure when configured.
      * Deleting in its dialog removes a file from the batch waiting to be uploaded, not from a server. Set the option
-     * with {@link FroalaEditor#setOptions(String)}.
+     * with {@link FroalaEditor#setOptions(String)}. Without an upload target the popup has no upload tab, because
+     * Froala would insert a {@code blob:} URL that is dead after a reload.
      */
     public static final String FILES_MANAGER = "filesManager";
 
@@ -363,7 +364,7 @@ public final class FroalaPlugin {
      */
     public static Set<String> all() {
         return new LinkedHashSet<>(List.of(AI_ASSIST, ALIGN, CHAR_COUNTER, CODE_BEAUTIFIER, CODE_SNIPPET, CODE_VIEW,
-                COLLABORATIVE, COLORS, CRYPTOJS, DRAGGABLE, EMBEDLY, EMOTICONS, ENTITIES, EXPORT_TO_WORD, FILE,
+                COLLABORATIVE, COLORS, CRYPTO_JS, DRAGGABLE, EMBEDLY, EMOTICONS, ENTITIES, EXPORT_TO_WORD, FILE,
                 FILES_MANAGER, FILESTACK, FIND_AND_REPLACE, FONT_AWESOME, FONT_FAMILY, FONT_SIZE, FORMS, FULLSCREEN,
                 HELP, IMAGE, IMAGE_FILEROBOT, IMAGE_MANAGER, IMAGE_TUI, IMPORT_FROM_WORD, INLINE_CLASS, INLINE_STYLE,
                 LINE_BREAKER, LINE_HEIGHT, LINK, LINK_TO_ANCHOR, LISTS, MARKDOWN, PAGE_BREAK, PARAGRAPH_FORMAT,

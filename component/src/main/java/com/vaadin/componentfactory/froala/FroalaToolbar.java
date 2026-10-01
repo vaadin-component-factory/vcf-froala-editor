@@ -222,6 +222,7 @@ public final class FroalaToolbar implements Serializable {
      * @throws NullPointerException if any group is null
      */
     public static FroalaToolbar ofGroups(Collection<FroalaToolbarGroup> groups) {
+        Objects.requireNonNull(groups, "groups must not be null");
         Set<String> names = new LinkedHashSet<>();
 
         for (FroalaToolbarGroup group : groups) {
