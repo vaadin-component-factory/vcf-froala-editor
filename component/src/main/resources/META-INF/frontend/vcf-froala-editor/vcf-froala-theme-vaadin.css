@@ -1,107 +1,138 @@
 /* The vaadin Froala theme, active by default. Its rules in vcf-froala-theme-vaadin-rules.css take their values from
-   the properties below, so the editor is restyled by overriding them, without touching Lumo. Lumo's dark variant needs
-   nothing of its own here for the same reason. Only the hues Lumo has no colour for, such as the purple and teal of
-   the track changes and collaboration plugins, keep their own tone.
+   the properties below, so the editor is restyled by overriding them, without touching the Vaadin theme. A dark colour
+   scheme needs nothing of its own here for the same reason. Only the hues the Vaadin themes have no colour for, such
+   as the purple and teal of the track changes and collaboration plugins, keep their own tone.
 
    The public --vcf-froala-* properties are not declared at all, only their private copies, and each copy falls back
-   to Lumo. The copies are resolved on the editor's own elements, so they pick up an override on any ancestor, and a
-   Lumo variant on any ancestor as well. Vaadin puts the dark variant on the UI's element when it is switched at
-   runtime, not on html. A copy resolved on html would keep the light colours. Froala puts its popups, modals,
-   tooltip and an inline toolbar into the body, outside the editor, so they get the copies too. */
+   to the Vaadin theme. That is a base style property (--vaadin-*) where Lumo and Aura both set one, and otherwise
+   the theme's own property, --lumo-* or --aura-*. Only one of the two themes is loaded, so only one of them answers.
+   The base styles set some properties themselves, such as the radii and the cursor, and Lumo leaves them alone. There
+   Lumo's own property comes first, or the editor would not look like Lumo's fields.
+
+   The copies are resolved on the editor's own elements, so they pick up an override on any ancestor, and a theme
+   variant or colour scheme on any ancestor as well. Vaadin puts Lumo's dark variant on the UI's element when it is
+   switched at runtime, not on html. A copy resolved on html would keep the light colours. Froala puts its popups,
+   modals, tooltip and an inline toolbar into the body, outside the editor, so they get the copies too. Inside the
+   editor they inherit them instead, because Aura puts a lighter surface on the field's input-field part, and a toolbar
+   that resolved them again there would be lighter than the editing area. */
 :where(
     vcf-froala-editor,
     vcf-froala-viewer,
-    .froala-vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal, .fr-overlay, .fr-tooltip)
+    .froala-vaadin-theme:is(.fr-toolbar, .fr-popup, .fr-modal, .fr-overlay, .fr-tooltip):not(vcf-froala-editor *)
   ) {
-  --_vcf-froala-background-color: var(--vcf-froala-background-color, var(--lumo-base-color));
-  --_vcf-froala-neutral-color: var(--vcf-froala-neutral-color, var(--lumo-contrast));
-  --_vcf-froala-accent-color: var(--vcf-froala-accent-color, var(--lumo-primary-color));
-  --_vcf-froala-accent-contrast-color: var(--vcf-froala-accent-contrast-color, var(--lumo-primary-contrast-color));
-  --_vcf-froala-error-color: var(--vcf-froala-error-color, var(--lumo-error-color));
-  --_vcf-froala-success-color: var(--vcf-froala-success-color, var(--lumo-success-color));
-  --_vcf-froala-warning-color: var(--vcf-froala-warning-color, var(--lumo-warning-color));
-  --_vcf-froala-border-color: var(--vcf-froala-border-color, var(--lumo-contrast-20pct));
+  --_vcf-froala-background-color: var(--vcf-froala-background-color, var(--vaadin-background-color));
+  --_vcf-froala-neutral-color: var(--vcf-froala-neutral-color, var(--lumo-contrast, var(--vaadin-text-color)));
+  --_vcf-froala-accent-color: var(--vcf-froala-accent-color, var(--lumo-primary-color, var(--aura-accent-color)));
+  --_vcf-froala-accent-contrast-color: var(
+    --vcf-froala-accent-contrast-color,
+    var(--lumo-primary-contrast-color, var(--aura-accent-contrast-color))
+  );
+  --_vcf-froala-error-color: var(--vcf-froala-error-color, var(--lumo-error-color, var(--aura-red)));
+  --_vcf-froala-success-color: var(--vcf-froala-success-color, var(--lumo-success-color, var(--aura-green)));
+  --_vcf-froala-warning-color: var(--vcf-froala-warning-color, var(--lumo-warning-color, var(--aura-orange)));
+  --_vcf-froala-border-color: var(--vcf-froala-border-color, var(--lumo-contrast-20pct, var(--vaadin-border-color)));
 
-  --_vcf-froala-text-color: var(--vcf-froala-text-color, var(--lumo-body-text-color));
-  --_vcf-froala-text-color-secondary: var(--vcf-froala-text-color-secondary, var(--lumo-secondary-text-color));
-  --_vcf-froala-text-color-tertiary: var(--vcf-froala-text-color-tertiary, var(--lumo-tertiary-text-color));
-  --_vcf-froala-text-color-disabled: var(--vcf-froala-text-color-disabled, var(--lumo-disabled-text-color));
+  --_vcf-froala-text-color: var(--vcf-froala-text-color, var(--vaadin-text-color));
+  --_vcf-froala-text-color-secondary: var(--vcf-froala-text-color-secondary, var(--vaadin-text-color-secondary));
+  --_vcf-froala-text-color-tertiary: var(
+    --vcf-froala-text-color-tertiary,
+    var(--lumo-tertiary-text-color, var(--vaadin-text-color-secondary))
+  );
+  --_vcf-froala-text-color-disabled: var(--vcf-froala-text-color-disabled, var(--vaadin-text-color-disabled));
   --_vcf-froala-value-color: var(
     --vcf-froala-value-color,
-    var(--vaadin-input-field-value-color, var(--lumo-body-text-color))
+    var(--vaadin-input-field-value-color, var(--vaadin-text-color))
   );
   --_vcf-froala-disabled-value-color: var(
     --vcf-froala-disabled-value-color,
-    var(--vaadin-input-field-disabled-value-color, var(--lumo-disabled-text-color))
+    var(
+      --vaadin-input-field-disabled-value-color,
+      var(--vaadin-input-field-disabled-text-color, var(--vaadin-text-color-disabled))
+    )
   );
   --_vcf-froala-placeholder-color: var(
     --vcf-froala-placeholder-color,
-    var(--vaadin-input-field-placeholder-color, var(--lumo-secondary-text-color))
+    var(--vaadin-input-field-placeholder-color, var(--vaadin-text-color-secondary))
   );
 
-  --_vcf-froala-font-family: var(--vcf-froala-font-family, var(--lumo-font-family));
+  --_vcf-froala-font-family: var(--vcf-froala-font-family, var(--lumo-font-family, var(--aura-font-family)));
   --_vcf-froala-content-font-size: var(
     --vcf-froala-content-font-size,
-    var(--vaadin-input-field-value-font-size, var(--lumo-font-size-m))
+    var(--vaadin-input-field-value-font-size, var(--lumo-font-size-m, var(--aura-font-size-m)))
   );
   --_vcf-froala-content-font-weight: var(
     --vcf-froala-content-font-weight,
     var(--vaadin-input-field-value-font-weight, 400)
   );
-  --_vcf-froala-content-line-height: var(--vcf-froala-content-line-height, var(--lumo-line-height-m));
-  --_vcf-froala-font-size-xxs: var(--vcf-froala-font-size-xxs, var(--lumo-font-size-xxs));
-  --_vcf-froala-font-size-xs: var(--vcf-froala-font-size-xs, var(--lumo-font-size-xs));
-  --_vcf-froala-font-size-s: var(--vcf-froala-font-size-s, var(--lumo-font-size-s));
-  --_vcf-froala-font-size-m: var(--vcf-froala-font-size-m, var(--lumo-font-size-m));
+  --_vcf-froala-content-line-height: var(
+    --vcf-froala-content-line-height,
+    var(--vaadin-input-field-value-line-height, var(--lumo-line-height-m, var(--aura-line-height-m)))
+  );
+  /* Aura has no size below xs */
+  --_vcf-froala-font-size-xxs: var(--vcf-froala-font-size-xxs, var(--lumo-font-size-xxs, var(--aura-font-size-xs)));
+  --_vcf-froala-font-size-xs: var(--vcf-froala-font-size-xs, var(--lumo-font-size-xs, var(--aura-font-size-xs)));
+  --_vcf-froala-font-size-s: var(--vcf-froala-font-size-s, var(--lumo-font-size-s, var(--aura-font-size-s)));
+  --_vcf-froala-font-size-m: var(--vcf-froala-font-size-m, var(--lumo-font-size-m, var(--aura-font-size-m)));
 
   --_vcf-froala-field-border-radius: var(
     --vcf-froala-field-border-radius,
-    var(--vaadin-input-field-border-radius, var(--lumo-border-radius-m))
+    var(--vaadin-input-field-border-radius, var(--lumo-border-radius-m, var(--vaadin-radius-m)))
   );
-  --_vcf-froala-radius-s: var(--vcf-froala-radius-s, var(--lumo-border-radius-s));
-  --_vcf-froala-radius-m: var(--vcf-froala-radius-m, var(--lumo-border-radius-m));
-  --_vcf-froala-radius-l: var(--vcf-froala-radius-l, var(--lumo-border-radius-l));
+  --_vcf-froala-radius-s: var(--vcf-froala-radius-s, var(--lumo-border-radius-s, var(--vaadin-radius-s)));
+  --_vcf-froala-radius-m: var(--vcf-froala-radius-m, var(--lumo-border-radius-m, var(--vaadin-radius-m)));
+  --_vcf-froala-radius-l: var(--vcf-froala-radius-l, var(--lumo-border-radius-l, var(--vaadin-radius-l)));
 
-  --_vcf-froala-shadow-xs: var(--vcf-froala-shadow-xs, var(--lumo-box-shadow-xs));
-  --_vcf-froala-shadow-s: var(--vcf-froala-shadow-s, var(--lumo-box-shadow-s));
-  --_vcf-froala-shadow-m: var(--vcf-froala-shadow-m, var(--lumo-box-shadow-m));
-  --_vcf-froala-shadow-l: var(--vcf-froala-shadow-l, var(--lumo-box-shadow-l));
+  /* Aura has no shadow above m */
+  --_vcf-froala-shadow-xs: var(--vcf-froala-shadow-xs, var(--lumo-box-shadow-xs, var(--aura-shadow-xs)));
+  --_vcf-froala-shadow-s: var(--vcf-froala-shadow-s, var(--lumo-box-shadow-s, var(--aura-shadow-s)));
+  --_vcf-froala-shadow-m: var(--vcf-froala-shadow-m, var(--lumo-box-shadow-m, var(--aura-shadow-m)));
+  --_vcf-froala-shadow-l: var(--vcf-froala-shadow-l, var(--lumo-box-shadow-l, var(--aura-shadow-m)));
 
+  /* Lumo sets the base property to initial, which falls through to its own colour */
   --_vcf-froala-focus-ring-color: var(
     --vcf-froala-focus-ring-color,
     var(--vaadin-focus-ring-color, var(--lumo-primary-color-50pct))
   );
   --_vcf-froala-focus-ring-width: var(--vcf-froala-focus-ring-width, var(--vaadin-focus-ring-width, 2px));
-  --_vcf-froala-clickable-cursor: var(--vcf-froala-clickable-cursor, var(--lumo-clickable-cursor));
+  --_vcf-froala-clickable-cursor: var(
+    --vcf-froala-clickable-cursor,
+    var(--lumo-clickable-cursor, var(--vaadin-clickable-cursor))
+  );
 
   --_vcf-froala-field-background: var(
     --vcf-froala-field-background,
-    var(--vaadin-input-field-background, var(--lumo-contrast-10pct))
+    var(--vaadin-input-field-background, var(--vaadin-background-container-strong))
   );
   --_vcf-froala-hover-highlight: var(
     --vcf-froala-hover-highlight,
-    var(--vaadin-input-field-hover-highlight, var(--lumo-contrast-50pct))
+    var(--vaadin-input-field-hover-highlight, var(--lumo-contrast-50pct, var(--vaadin-text-color)))
   );
   --_vcf-froala-hover-highlight-opacity: var(
     --vcf-froala-hover-highlight-opacity,
     var(--vaadin-input-field-hover-highlight-opacity, 0.1)
   );
-  --_vcf-froala-invalid-border-color: var(--vcf-froala-invalid-border-color, var(--lumo-error-color));
+  --_vcf-froala-invalid-border-color: var(--vcf-froala-invalid-border-color, var(--_vcf-froala-error-color));
   --_vcf-froala-invalid-background: var(
     --vcf-froala-invalid-background,
-    var(--vaadin-input-field-invalid-background, var(--lumo-error-color-10pct))
+    var(
+      --vaadin-input-field-invalid-background,
+      var(--lumo-error-color-10pct, color-mix(in srgb, var(--_vcf-froala-error-color) 10%, transparent))
+    )
   );
   --_vcf-froala-invalid-hover-highlight: var(
     --vcf-froala-invalid-hover-highlight,
-    var(--vaadin-input-field-invalid-hover-highlight, var(--lumo-error-color-50pct))
+    var(
+      --vaadin-input-field-invalid-hover-highlight,
+      var(--lumo-error-color-50pct, color-mix(in srgb, var(--_vcf-froala-error-color) 50%, transparent))
+    )
   );
   --_vcf-froala-readonly-border: var(
     --vcf-froala-readonly-border,
-    var(--vaadin-input-field-readonly-border, 1px dashed var(--lumo-contrast-30pct))
+    var(--vaadin-input-field-readonly-border, 1px dashed var(--vaadin-border-color))
   );
   --_vcf-froala-disabled-background: var(
     --vcf-froala-disabled-background,
-    var(--vaadin-input-field-disabled-background, var(--lumo-contrast-5pct))
+    var(--vaadin-input-field-disabled-background, var(--vaadin-background-container))
   );
 }
 

@@ -24,14 +24,18 @@ import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTheme;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 
-/** Fixture view for {@code FroalaThemeIT}, owned by the tests. */
+/** Fixture view for {@code FroalaThemeIT}, owned by the tests. Under {@link #AURA_ROUTE} it runs with Aura. */
 @Route(FroalaThemeTestView.ROUTE)
+@RouteAlias(value = FroalaThemeTestView.AURA_ROUTE, layout = AuraLayout.class)
 @AnonymousAllowed
 public class FroalaThemeTestView extends VerticalLayout {
 
     public static final String ROUTE = "it/froala-theme";
+
+    public static final String AURA_ROUTE = "it/froala-theme-aura";
 
     /** A heading, because Lumo colours headings globally and Froala's content sits in the light DOM (THM-12). */
     public static final String VALUE = "<h1>Heading</h1><p>Body text</p>";

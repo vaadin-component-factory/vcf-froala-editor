@@ -28,3 +28,9 @@ vcf-froala-viewer {
   height: 18px;
   transition: fill 0.5s;
 }
+
+/* Aura gives every input-field part in the page a shadow, which replaces the focus ring the field styles draw as a
+   shadow too. Drawn here again, in the field styles' colour and width, so that it wins. */
+vcf-froala-editor[focus-ring]::part(input-field) {
+  box-shadow: 0 0 0 var(--_focus-ring-width) var(--_focus-ring-color);
+}

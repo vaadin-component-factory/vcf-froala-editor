@@ -13,17 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.vaadin.componentfactory.froala.it;
+package com.vaadin.componentfactory.froala.it.views;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.router.RouterLayout;
+import com.vaadin.flow.theme.aura.Aura;
 
-import com.vaadin.flow.component.page.AppShellConfigurator;
-
-/**
- * The app the e2e tests boot. It holds only the test views in {@code views}, nothing of the demo. Test code in
- * {@code src/main/java}, see ADR-0006. The views' layouts load the theme, so that a page never loads both. A view gets
- * Lumo from {@code LumoLayout}, unless it names {@code AuraLayout}.
- */
-@SpringBootApplication
-public class E2eApplication implements AppShellConfigurator {
+/** Loads Aura instead of Lumo, for the test views that name it as their layout. */
+@StyleSheet(Aura.STYLESHEET)
+public class AuraLayout extends Div implements RouterLayout {
 }

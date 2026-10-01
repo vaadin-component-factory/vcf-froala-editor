@@ -207,10 +207,16 @@ class FroalaEditorElement extends SlotStylesMixin(
           flex-direction: column;
           box-sizing: border-box;
 
-          /* Vaadin's focus ring and disabled value colour, taken from the theme's properties */
-          --vaadin-focus-ring-color: var(--_vcf-froala-focus-ring-color);
-          --vaadin-focus-ring-width: var(--_vcf-froala-focus-ring-width);
-          --vaadin-input-field-disabled-value-color: var(--_vcf-froala-disabled-value-color);
+          /* The field styles' focus ring and disabled value colour, taken from the theme's properties. The copies
+             read Vaadin's public properties, so setting those here would be a cycle. This sets the private ones. */
+          --_focus-ring-color: var(--_vcf-froala-focus-ring-color);
+          --_focus-ring-width: var(--_vcf-froala-focus-ring-width);
+          --_disabled-value-color: var(--_vcf-froala-disabled-value-color);
+        }
+
+        /* The field styles' ring of an invalid field is Lumo's, so without Lumo it keeps the usual colour */
+        :host([invalid]) {
+          --_focus-ring-color: var(--lumo-error-color-50pct, var(--_vcf-froala-focus-ring-color));
         }
 
         .vcf-froala-editor-container {
