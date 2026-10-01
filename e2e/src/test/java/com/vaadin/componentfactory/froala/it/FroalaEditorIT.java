@@ -63,7 +63,17 @@ class FroalaEditorIT extends SpringPlaywrightIT {
     @Test
     void initialValue_isInTheEditorOnLoad() {
         // The view sets this value server side before the first attach, so it can only have arrived through the
-        // innerHTML seeding in _initEditor. Froala has no init option for its content.
+        // `initialized` handler, which puts it in through Froala. Froala has no init option for its content.
+        assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT);
+    }
+
+    @Test
+    void undoRightAfterLoad_keepsTheServerValue() {
+        // The value goes in through Froala once it is built. Undo must not take the editor back to the empty state
+        // before that.
+        editableArea().click();
+        page.keyboard().press("ControlOrMeta+Z");
+
         assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT);
     }
 
@@ -339,9 +349,9 @@ class FroalaEditorIT extends SpringPlaywrightIT {
                 () => {
                     const el = document.querySelector('#editor');
                     el.editor.html.set('<p>first</p>');
-                    el.onValueChangeThrottled();
+                    el._onValueChangeThrottled();
                     el.editor.html.set('<p>second</p>');
-                    el.onValueChangeThrottled();
+                    el._onValueChangeThrottled();
                 }
                 """);
 
@@ -428,13 +438,13 @@ class FroalaEditorIT extends SpringPlaywrightIT {
 
                     el._lastSyncedValue = '<p>drifted</p>';
                     el.editor.html.set('<p>base plus one</p>');
-                    el.onValueChangeThrottled();
+                    el._onValueChangeThrottled();
 
                     el.editor.html.set('<p>base plus one plus two</p>');
-                    el.onValueChangeThrottled();
+                    el._onValueChangeThrottled();
 
                     window.__deltasAfterResync = 0;
-                    el.resyncValue();
+                    el._resyncValue();
                     el.addEventListener('_value-delta', () => window.__deltasAfterResync++);
 
                     // a server-side setValue lands here, and html.set fires no contentChanged of its own, so a
@@ -591,6 +601,83 @@ class FroalaEditorIT extends SpringPlaywrightIT {
         assertThat(editableArea().locator("strong")).hasText(FroalaTestView.SNIPPET_TEXT);
         assertThat(editableArea()).containsText(FroalaTestView.INITIAL_TEXT + FroalaTestView.SNIPPET_TEXT);
         assertThat(page.locator("#viewer")).containsText(FroalaTestView.INITIAL_TEXT + FroalaTestView.SNIPPET_TEXT);
+    }
+
+    @Test
+    void replaceSelectionContent_whileReadOnly_insertsNothing() {
+        editableArea().click();
+        page.locator("#readonly-toggle input").check();
+        assertThat(page.locator("#editor .fr-element")).hasAttribute("contenteditable", "false");
+
+        page.locator("#insert-snippet-once").click();
+
+        assertThat(page.locator("#insert-snippet-once")).isDisabled();
+        assertThat(page.locator("#editor .fr-element strong")).hasCount(0);
+    }
+
+    @Test
+    void replaceSelectionContent_whileDisabled_insertsNothing() {
+        editableArea().click();
+        page.locator("#enabled-toggle input").uncheck();
+        assertThat(page.locator("#editor .fr-element")).hasAttribute("contenteditable", "false");
+
+        page.locator("#insert-snippet-once").click();
+
+        assertThat(page.locator("#insert-snippet-once")).isDisabled();
+        assertThat(page.locator("#editor .fr-element strong")).hasCount(0);
+    }
+
+    @Test
+    void editSplittingAnEmoji_stillReachesTheServer() {
+        page.locator("#emoji-value").click();
+        assertThat(editableArea()).hasText("\uD83D\uDE00");
+
+        // 😀 to 😁 changes only the second half of the surrogate pair, the case that breaks diff-match-patch's
+        // patch_toText. Set through Froala and flushed directly, because typing an emoji is not possible from
+        // Playwright's keyboard.
+        page.evaluate("""
+                () => {
+                    const el = document.querySelector('#editor');
+                    el.editor.html.set('<p>\uD83D\uDE01</p>');
+                    el._onValueChange();
+                }
+                """);
+
+        assertThat(page.locator("#viewer")).hasText("\uD83D\uDE01");
+    }
+
+    @Test
+    void hostileValue_runsNoScript_whenSetOrSeeded() {
+        page.locator("#editor .fr-element").waitFor();
+
+        page.locator("#hostile-value").click();
+        assertThat(editableArea()).containsText("hostile");
+        // a re-attach builds the editor anew and seeds it with the server value
+        page.locator("#attach-toggle").click();
+        page.locator("#attach-toggle").click();
+        assertThat(editableArea()).containsText("hostile");
+        // the broken image has had its chance to fire its error handler
+        page.waitForFunction("() => [...document.querySelectorAll('#editor img')].every(img => img.complete)");
+
+        assertEquals(Boolean.FALSE, page.evaluate("() => window.__xss === true"));
+    }
+
+    @Test
+    void valueSetWhileFroalaIsStillBuilding_isShownOnceItIsDone() {
+        page.locator("#editor .fr-element").waitFor();
+
+        // Froala's constructor returns before its modules exist, which happens in a timeout of its own. A value from
+        // the server can arrive in between. Driven directly, because the window is too short to hit with a round trip.
+        page.evaluate("""
+                async () => {
+                    const el = document.querySelector('#editor');
+                    el._destroyEditor();
+                    await el._initEditor();
+                    el.value = '<p>arrived early</p>';
+                }
+                """);
+
+        assertThat(editableArea()).hasText("arrived early");
     }
 
     @Test

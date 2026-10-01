@@ -26,7 +26,7 @@ import com.vaadin.flow.component.EventData;
  * @see FroalaEditor#addSelectionChangeListener(com.vaadin.flow.component.ComponentEventListener)
  */
 @DomEvent("selection-change")
-public class SelectionChangeEvent extends ComponentEvent<FroalaEditor> {
+public class FroalaSelectionChangeEvent extends ComponentEvent<FroalaEditor> {
 
     private final boolean hasSelection;
 
@@ -37,7 +37,7 @@ public class SelectionChangeEvent extends ComponentEvent<FroalaEditor> {
      * @param fromClient whether the event originated in the browser
      * @param hasSelection whether something is selected in the editor now
      */
-    public SelectionChangeEvent(FroalaEditor source, boolean fromClient,
+    public FroalaSelectionChangeEvent(FroalaEditor source, boolean fromClient,
             @EventData("event.detail.hasSelection") boolean hasSelection) {
         super(source, fromClient);
         this.hasSelection = hasSelection;

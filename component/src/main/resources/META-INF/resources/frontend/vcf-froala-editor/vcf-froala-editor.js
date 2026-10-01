@@ -11,6 +11,8 @@ import { inputFieldShared } from '@vaadin/vaadin-lumo-styles/mixins/input-field-
 import { SlotStylesMixin } from '@vaadin/component-base/src/slot-styles-mixin.js';
 import { diff_match_patch } from 'diff-match-patch';
 
+const DIFF_MATCH_PATCH = new diff_match_patch();
+
 // Froala draws an icon from a template string, filling in each [NAME] from the icon's definition. An own command's
 // icon is a <vaadin-icon> with the attributes the server sent, already escaped by registerCommands.
 FroalaEditor.DefineIconTemplate('vcfVaadinIcon', '<vaadin-icon [ATTRS]></vaadin-icon>');
@@ -34,7 +36,9 @@ function commandPlugin(name) {
  */
 function registerCommands(commands) {
   for (const { name, title, icon, shortcut, toggle } of commands) {
+    // The names go into Froala's HTML unescaped, so only plain attribute names pass
     const attributes = Object.entries(icon)
+      .filter(([attribute]) => /^[a-z][a-z0-9-]*$/.test(attribute))
       .map(([attribute, value]) => `${attribute}="${escapeHtml(value)}"`)
       .join(' ');
     FroalaEditor.DefineIcon(name, { template: 'vcfVaadinIcon', ATTRS: attributes });
@@ -109,6 +113,7 @@ class FroalaEditorElement extends SlotStylesMixin(
   // default nobody asked for.
   _valueChangeTimeout = null;
 
+  // The defaults and the 250 ms minimum below mirror the constants in FroalaEditor.java, keep them in step
   _intervalPeriod = 2_000;
 
   // replaceSelectionContent calls that arrived before the editor was initialized, applied from its `initialized` event
@@ -282,6 +287,9 @@ class FroalaEditorElement extends SlotStylesMixin(
     // FocusMixin, ControllerMixin and Vaadin's ResizeMixin all call super first and tear down afterwards
     super.disconnectedCallback();
 
+    // A move in the DOM disconnects and connects again, and the editor is rebuilt from the last synced value. What was
+    // typed since then has to be sent first, like before a rebuild.
+    this._onValueChange();
     this._destroyEditor();
   }
 
@@ -358,9 +366,13 @@ class FroalaEditorElement extends SlotStylesMixin(
    * selection, scroll position, undo history). A detach and re-attach makes the same trade.
    */
   _rebuildEditor() {
-    this.onValueChange();
-    this._destroyEditor();
-    this._initEditor();
+    this._onValueChange();
+    try {
+      this._destroyEditor();
+    } finally {
+      // _destroyEditor cleans up even if Froala's destroy throws, and the field must not stay dead after that
+      this._initEditor();
+    }
   }
 
   async _initEditor() {
@@ -392,10 +404,6 @@ class FroalaEditorElement extends SlotStylesMixin(
     }
 
     this.editorElement = document.createElement('div');
-
-    // Froala adopts the content of the element it initializes on, so seeding it here is what applies the
-    // server's initial value. There is no init option for the content.
-    this.editorElement.innerHTML = this._lastSyncedValue;
     this.append(this.editorElement); // will be put into the default slot
 
     // The server's options first, ours on top. Where this add-on owns a setter for something Froala also has as
@@ -449,6 +457,10 @@ class FroalaEditorElement extends SlotStylesMixin(
         initialized: fromCurrentEditor(() => {
           this._editorInitialized = true;
 
+          // The server's value goes in through Froala, which cleans it first. Seeding the element's innerHTML instead
+          // would let the browser parse it raw, and an event handler such as an image's onerror would run.
+          this.editor.html.set(this._lastSyncedValue);
+
           // FieldMixin points the target at the label, helper text and error message with aria-labelledby and
           // aria-describedby, and keeps it up to date. Set here on every build, because each build brings a new
           // editable area and the target has to move to it.
@@ -485,10 +497,10 @@ class FroalaEditorElement extends SlotStylesMixin(
 
           // anything touching editor modules has to wait for this event, so re-apply what the server may
           // already have set while Froala was still building
-          this.updateReadonlyMode();
+          this._updateReadonlyMode();
 
           if (this.valueChangeMode === 'interval') {
-            this.startValueChangeInterval();
+            this._startValueChangeInterval();
           }
 
           this._pendingInserts.splice(0).forEach((html) => this.replaceSelectionContent(html));
@@ -519,7 +531,7 @@ class FroalaEditorElement extends SlotStylesMixin(
         blur: fromCurrentEditor(() => {
           // Flush in every mode, not just ON_BLUR. The click that moved focus can detach the component, which
           // clears pending timers and would take the last edit with it. An empty delta sends nothing.
-          this.onValueChange();
+          this._onValueChange();
           this.dispatchEvent(new CustomEvent('blur'));
         }),
         focus: fromCurrentEditor(() => {
@@ -527,7 +539,7 @@ class FroalaEditorElement extends SlotStylesMixin(
         }),
         contentChanged: fromCurrentEditor(() => {
           if (this.valueChangeMode === 'change') {
-            this.onValueChangeThrottled();
+            this._onValueChangeThrottled();
           }
         }),
       },
@@ -616,7 +628,8 @@ class FroalaEditorElement extends SlotStylesMixin(
   set value(value) {
     this._lastSyncedValue = value ?? '';
 
-    if (this.editor) {
+    // Before that, the `initialized` handler puts the value in, because Froala's modules do not exist yet
+    if (this._editorInitialized) {
       this.editor.html.set(this._lastSyncedValue);
     }
   }
@@ -632,18 +645,18 @@ class FroalaEditorElement extends SlotStylesMixin(
    * deferred call is the only one left to carry that change.
    *
    * Only this mode needs it. INTERVAL limits its own rate already, and a flush (from a blur, a mode switch or an
-   * elapsed timer) must never be held back. That is why the throttle lives here and not in #onValueChange().
+   * elapsed timer) must never be held back. That is why the throttle lives here and not in #_onValueChange().
    */
-  onValueChangeThrottled() {
+  _onValueChangeThrottled() {
     const sinceLastSync = Date.now() - this._lastSyncedValueTimestamp;
 
     if (sinceLastSync < 50) {
       clearTimeout(this._throttleHandle);
-      this._throttleHandle = setTimeout(() => this.onValueChange(), 50 - sinceLastSync);
+      this._throttleHandle = setTimeout(() => this._onValueChange(), 50 - sinceLastSync);
       return;
     }
 
-    this.onValueChange();
+    this._onValueChange();
   }
 
   /**
@@ -651,15 +664,21 @@ class FroalaEditorElement extends SlotStylesMixin(
    * dispatches the event. Sends nothing if the delta is empty. Always immediate, because rate limiting is the
    * caller's business.
    */
-  onValueChange() {
+  _onValueChange() {
     clearTimeout(this._throttleHandle);
     this._lastSyncedValueTimestamp = Date.now();
 
     const currentValue = this.editor?.html?.get() ?? this._lastSyncedValue;
 
-    const dmp = new diff_match_patch();
-    const patch = dmp.patch_make(this._lastSyncedValue, currentValue);
-    const delta = dmp.patch_toText(patch);
+    let delta;
+    try {
+      delta = DIFF_MATCH_PATCH.patch_toText(DIFF_MATCH_PATCH.patch_make(this._lastSyncedValue, currentValue));
+    } catch (e) {
+      // patch_toText encodes with encodeURI, which throws for a diff that splits an emoji's surrogate pair, e.g. 😀
+      // to 😁. The full value carries the same change.
+      this._resyncValue();
+      return;
+    }
 
     this._lastSyncedValue = currentValue;
 
@@ -678,7 +697,7 @@ class FroalaEditorElement extends SlotStylesMixin(
    * Sends the full current value to the server, bypassing the delta channel. The server calls this when a delta did
    * not apply, which means the two sides drifted apart and only a full value can bring them back together.
    */
-  resyncValue() {
+  _resyncValue() {
     clearTimeout(this._throttleHandle);
     this._lastSyncedValue = this.editor?.html?.get() ?? this._lastSyncedValue;
     this._lastSyncedValueTimestamp = Date.now();
@@ -700,9 +719,9 @@ class FroalaEditorElement extends SlotStylesMixin(
       this._valueChangeMode = newValueChangeMode;
 
       if (this._valueChangeMode === 'interval') {
-        this.startValueChangeInterval();
+        this._startValueChangeInterval();
       } else if (this._valueChangeHandleForInterval) {
-        this.stopValueChangeInterval();
+        this._stopValueChangeInterval();
       }
     }
   }
@@ -738,7 +757,7 @@ class FroalaEditorElement extends SlotStylesMixin(
 
   /** The time between two syncs in INTERVAL mode, in milliseconds. */
   set intervalPeriod(newPeriod) {
-    if (!newPeriod || newPeriod < 0) {
+    if (!newPeriod || newPeriod <= 0) {
       throw new Error('intervalPeriod must be greater than 0');
     }
 
@@ -746,7 +765,7 @@ class FroalaEditorElement extends SlotStylesMixin(
       this._intervalPeriod = newPeriod;
 
       if (this._valueChangeHandleForInterval) {
-        this.startValueChangeInterval(); // also stops the current interval
+        this._startValueChangeInterval(); // also stops the current interval
       }
     }
   }
@@ -755,18 +774,18 @@ class FroalaEditorElement extends SlotStylesMixin(
     return this._intervalPeriod;
   }
 
-  stopValueChangeInterval() {
-    this.onValueChange();
-    window.clearInterval(this._valueChangeHandleForInterval);
+  _stopValueChangeInterval() {
+    this._onValueChange();
+    clearInterval(this._valueChangeHandleForInterval);
     delete this._valueChangeHandleForInterval;
   }
 
-  startValueChangeInterval() {
+  _startValueChangeInterval() {
     if (this._valueChangeHandleForInterval) {
-      this.stopValueChangeInterval();
+      this._stopValueChangeInterval();
     }
 
-    this._valueChangeHandleForInterval = setInterval(this.onValueChange.bind(this), this.intervalPeriod);
+    this._valueChangeHandleForInterval = setInterval(this._onValueChange.bind(this), this.intervalPeriod);
   }
 
   /**
@@ -779,6 +798,11 @@ class FroalaEditorElement extends SlotStylesMixin(
    * until the editor is initialized. The editor's modules do not exist before that.
    */
   replaceSelectionContent(html) {
+    // Both lock the value against the client, and the snippet would reach the server as a change from it
+    if (this.disabled || this.readonly) {
+      return;
+    }
+
     if (!this._editorInitialized) {
       this._pendingInserts.push(html);
       return;
@@ -787,7 +811,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     this.editor.html.insert(html);
 
     // Reported at once rather than left to the value change mode, because the change came from the server.
-    this.onValueChange();
+    this._onValueChange();
   }
 
   /**
@@ -820,7 +844,7 @@ class FroalaEditorElement extends SlotStylesMixin(
     super.updated(changedProperties);
 
     if (changedProperties.has('disabled') || changedProperties.has('readonly')) {
-      this.updateReadonlyMode();
+      this._updateReadonlyMode();
     }
 
     // Froala refreshes its buttons on a selection change only, so a state the server switched shows right away
@@ -839,7 +863,7 @@ class FroalaEditorElement extends SlotStylesMixin(
    * Applies `disabled` / `readonly` to the editor. Froala has no mode API. `edit.off()` drops the contenteditable
    * attribute and disables the toolbar, `edit.on()` restores both.
    */
-  updateReadonlyMode() {
+  _updateReadonlyMode() {
     if (!this._editorInitialized) {
       // re-applied from the `initialized` handler, so a component that starts out disabled is not lost
       return;

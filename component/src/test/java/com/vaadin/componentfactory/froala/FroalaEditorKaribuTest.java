@@ -18,12 +18,15 @@ package com.vaadin.componentfactory.froala;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import com.github.mvysny.kaributesting.v10.ElementUtilsKt;
 import com.github.mvysny.kaributesting.v10.MockVaadin;
 import elemental.json.Json;
+import elemental.json.JsonArray;
 import elemental.json.JsonObject;
+import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,13 +73,6 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void viewer_carriesFroalasViewClassAndTheVaadinTheme() {
-        FroalaViewer viewer = new FroalaViewer();
-
-        assertEquals(Set.of("fr-view", "vaadin-theme"), viewer.getClassNames());
-    }
-
-    @Test
     void setValue_reachesTheClientProperty() {
         FroalaEditor editor = attachedEditor();
 
@@ -87,56 +83,139 @@ class FroalaEditorKaribuTest {
     }
 
     @Test
-    void valueChangeListener_firesOnServerSideChange() {
-        FroalaEditor editor = attachedEditor();
-        String[] seen = new String[1];
-        editor.addValueChangeListener(event -> seen[0] = event.getValue());
-
-        editor.setValue("<p>observed</p>");
-
-        assertEquals("<p>observed</p>", seen[0]);
+    void nullValue_isRefusedLikeInATextField() {
+        // A delta cannot be applied to null, so a null value would turn the next edit into garbage
+        assertThrows(NullPointerException.class, () -> attachedEditor().setValue(null));
     }
 
     @Test
-    void licenseKey_isSetAsElementProperty() {
+    void clientDelta_updatesTheValueAsAChangeFromTheClient() {
+        FroalaEditor editor = attachedEditor();
+        editor.setValue("<p>hello world</p>");
+        List<String> seen = new ArrayList<>();
+        editor.addValueChangeListener(event -> seen.add(event.getValue() + " " + event.isFromClient()));
+
+        fireDelta(editor, "<p>hello world</p>", "<p>hello brave world</p>");
+
+        assertEquals("<p>hello brave world</p>", editor.getValue());
+        assertEquals(List.of("<p>hello brave world</p> true"), seen);
+    }
+
+    @Test
+    void driftedDelta_asksTheClientToResendInsteadOfApplyingIt() {
+        FroalaEditor editor = attachedEditor();
+        editor.setValue("<p>the server's text</p>");
+        drainPendingJavaScript();
+
+        fireDelta(editor, "<p>something the server never had</p>", "<p>something the server never had, edited</p>");
+
+        assertEquals("<p>the server's text</p>", editor.getValue());
+        assertTrue(hasPendingJavaScript("_resyncValue"));
+    }
+
+    @Test
+    void malformedDelta_asksTheClientToResend() {
+        FroalaEditor editor = attachedEditor();
+        drainPendingJavaScript();
+
+        fireClientEvent(editor, "_value-delta", "event.detail.delta", "@@ not a patch");
+
+        assertTrue(hasPendingJavaScript("_resyncValue"));
+    }
+
+    @Test
+    void resync_replacesTheValueAsAChangeFromTheClient() {
+        FroalaEditor editor = attachedEditor();
+        editor.setValue("<p>stale</p>");
+        List<Boolean> fromClient = new ArrayList<>();
+        editor.addValueChangeListener(event -> fromClient.add(event.isFromClient()));
+
+        fireClientEvent(editor, "_value-resync", "event.detail.value", "<p>what the user sees</p>");
+
+        assertEquals("<p>what the user sees</p>", editor.getValue());
+        assertEquals(List.of(true), fromClient);
+    }
+
+    @Test
+    void readOnly_revertsAClientDelta() {
+        FroalaEditor editor = attachedEditor();
+        editor.setValue("<p>locked</p>");
+        editor.setReadOnly(true);
+
+        fireDelta(editor, "<p>locked</p>", "<p>locked, edited anyway</p>");
+
+        assertEquals("<p>locked</p>", editor.getValue());
+    }
+
+    @Test
+    void licenseKey_isSetAsElementPropertyAndNullRemovesIt() {
         FroalaEditor editor = attachedEditor();
 
         editor.setLicenseKey("test-key");
-
-        assertEquals("test-key", editor.getLicenseKey());
         assertEquals("test-key", editor.getElement().getProperty("licenseKey"));
+
+        editor.setLicenseKey(null);
+        assertFalse(editor.getElement().hasProperty("licenseKey"));
     }
 
     @Test
     void uploadHandler_givesTheElementAnUploadUrlAndNullTakesItAway() {
         FroalaEditor editor = attachedEditor();
 
+        // one at a time, so that two setters writing each other's attribute would show
         editor.setImageUploadHandler(event -> "/images/1");
-
-        assertTrue(editor.getElement().hasAttribute("image-upload-url"));
-
+        assertEquals(List.of("image-upload-url"), uploadAttributesOn(editor));
         editor.setImageUploadHandler(null);
 
-        assertFalse(editor.getElement().hasAttribute("image-upload-url"));
+        editor.setFileUploadHandler(event -> "/files/1");
+        assertEquals(List.of("file-upload-url"), uploadAttributesOn(editor));
+        editor.setFileUploadHandler(null);
+
+        editor.setVideoUploadHandler(event -> "/videos/1");
+        assertEquals(List.of("video-upload-url"), uploadAttributesOn(editor));
+        editor.setVideoUploadHandler(null);
+
+        assertEquals(List.of(), uploadAttributesOn(editor));
     }
 
     @Test
-    void licenseKey_nullRemovesTheProperty() {
+    void detach_reportsThatAReportedSelectionIsGone() {
         FroalaEditor editor = attachedEditor();
-        editor.setLicenseKey("test-key");
+        List<Boolean> seen = new ArrayList<>();
+        editor.addSelectionChangeListener(event -> seen.add(event.hasSelection()));
+        fireClientEvent(editor, "selection-change", "event.detail.hasSelection", true);
 
-        editor.setLicenseKey(null);
+        layout.remove(editor);
 
-        assertNull(editor.getLicenseKey());
+        assertEquals(List.of(true, false), seen);
+    }
+
+    @Test
+    void replaceSelectionContent_rejectsNull() {
+        assertThrows(NullPointerException.class, () -> attachedEditor().replaceSelectionContent(null));
+    }
+
+    @Test
+    void themeVariant_reachesTheThemeAttributeTheStylesheetSelectsOn() {
+        FroalaEditor editor = attachedEditor();
+
+        // the literals vcf-froala-theme-vaadin.css selects on, not the enum's own names
+        editor.addThemeVariants(FroalaEditorVariant.OUTLINED, FroalaEditorVariant.NO_HOVER_HIGHLIGHT);
+
+        assertEquals(Set.of("outlined", "no-hover-highlight"), Set.copyOf(editor.getElement().getThemeList()));
     }
 
     @Test
     void valueChangeMode_roundTripsAndDefaults() {
         FroalaEditor editor = attachedEditor();
 
-        editor.setValueChangeMode(ValueChangeMode.INTERVAL);
-        assertEquals(ValueChangeMode.INTERVAL, editor.getValueChangeMode());
-        assertEquals("interval", editor.getElement().getProperty("valueChangeMode"));
+        // the strings the client compares against
+        Map.of(FroalaValueChangeMode.ON_CHANGE, "change", FroalaValueChangeMode.ON_BLUR, "blur",
+                FroalaValueChangeMode.INTERVAL, "interval").forEach((mode, clientValue) -> {
+                    editor.setValueChangeMode(mode);
+                    assertEquals(mode, editor.getValueChangeMode());
+                    assertEquals(clientValue, editor.getElement().getProperty("valueChangeMode"));
+                });
 
         editor.setValueChangeMode(null);
         assertEquals(FroalaEditor.DEFAULT_VALUE_CHANGE_MODE, editor.getValueChangeMode());
@@ -175,9 +254,9 @@ class FroalaEditorKaribuTest {
 
     @Test
     void setValueRepeatingTheLastServerValue_queuesAnExplicitClientPush() {
-        ProbeEditor editor = attachedProbeEditor();
+        FroalaEditor editor = attachedEditor();
         editor.setValue("<p>A</p>");
-        editor.simulateClientEdit("<p>B</p>");
+        fireDelta(editor, "<p>A</p>", "<p>B</p>");
         drainPendingJavaScript();
 
         editor.setValue("<p>A</p>");
@@ -189,7 +268,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void detach_doesNotQueueAValuePushForTheNextAttach() {
-        ProbeEditor editor = attachedProbeEditor();
+        FroalaEditor editor = attachedEditor();
         editor.setValue("<p>A</p>");
         drainPendingJavaScript();
 
@@ -221,29 +300,10 @@ class FroalaEditorKaribuTest {
         assertEquals("<p>edited in the editor</p>", note.getBody());
 
         // asRequired works off the field's empty value, which is the empty string for this one. That is what makes
-        // AbstractSinglePropertyField the right base (API-1).
+        // AbstractSinglePropertyField the right base.
         editor.setValue("");
         assertFalse(binder.writeBeanIfValid(note));
         assertEquals("<p>edited in the editor</p>", note.getBody());
-    }
-
-    private FroalaEditor attachedEditor() {
-        FroalaEditor editor = new FroalaEditor();
-        layout.add(editor);
-
-        return editor;
-    }
-
-    private ProbeEditor attachedProbeEditor() {
-        ProbeEditor editor = new ProbeEditor();
-        layout.add(editor);
-
-        return editor;
-    }
-
-    private void drainPendingJavaScript() {
-        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
-        UI.getCurrent().getInternals().dumpPendingJavaScriptInvocations();
     }
 
     @Test
@@ -297,7 +357,7 @@ class FroalaEditorKaribuTest {
 
     @Test
     void rawOptions_takeTheSamePath() {
-        // The three overloads exist so that anything FroalaOptions does not type yet is still reachable. They have to
+        // The two overloads exist so that anything FroalaOptions does not type yet is still reachable. They have to
         // end in the same property, or "not typed yet" would mean "behaves differently".
         FroalaEditor typed = new FroalaEditor(FroalaOptions.defaults().withCharCounterMax(10));
         FroalaEditor raw = new FroalaEditor();
@@ -331,6 +391,10 @@ class FroalaEditorKaribuTest {
 
         assertThrows(IllegalArgumentException.class, () -> editor.setOptions("{not json"));
         assertThrows(IllegalArgumentException.class, () -> editor.setOptions("[1, 2, 3]"));
+        assertThrows(IllegalArgumentException.class, () -> editor.setOptions(""));
+
+        // elemental's own parser would take this and drop the rest
+        assertThrows(IllegalArgumentException.class, () -> editor.setOptions("{\"tabSpaces\": 4} trailing"));
     }
 
     @Test
@@ -378,7 +442,8 @@ class FroalaEditorKaribuTest {
         FroalaEditor editor = attachedEditor();
         FroalaCommand first = new FroalaCommand("first", "First", VaadinIcon.STAR.create());
         List<String> seen = new ArrayList<>();
-        editor.addCommand(first, event -> seen.add("first " + event.getCommand().name() + " " + event.isFromClient()));
+        editor.addCommand(first,
+                event -> seen.add("first " + event.getCommand().getName() + " " + event.isFromClient()));
         editor.addCommand(new FroalaCommand("second", "Second", VaadinIcon.STAR.create()), event -> seen.add("second"));
 
         fireCommand(editor, "first");
@@ -525,38 +590,77 @@ class FroalaEditorKaribuTest {
         assertEquals("[\"fi\"]", localeLanguagesOn(editor));
     }
 
+    private FroalaEditor attachedEditor() {
+        FroalaEditor editor = new FroalaEditor();
+        layout.add(editor);
+
+        return editor;
+    }
+
+    private void drainPendingJavaScript() {
+        UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
+        UI.getCurrent().getInternals().dumpPendingJavaScriptInvocations();
+    }
+
     /** Fires the event the client sends when one of the editor's commands was triggered in the browser. */
     private void fireCommand(FroalaEditor editor, String name) {
+        fireClientEvent(editor, "_command", "event.detail.name", name);
+    }
+
+    /** Fires the delta the client sends for an edit from one value to another, computed the way the client does. */
+    private void fireDelta(FroalaEditor editor, String from, String to) {
+        DiffMatchPatch diffMatchPatch = new DiffMatchPatch();
+
+        fireClientEvent(editor, "_value-delta", "event.detail.delta",
+                diffMatchPatch.patchToText(diffMatchPatch.patchMake(from, to)));
+    }
+
+    /** Fires a DOM event from the client with one entry of event data, the way Flow delivers it. */
+    private void fireClientEvent(FroalaEditor editor, String type, String key, String value) {
         JsonObject data = Json.createObject();
-        data.put("event.detail.name", name);
-        ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), "_command", data));
+        data.put(key, value);
+        ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), type, data));
+    }
+
+    private void fireClientEvent(FroalaEditor editor, String type, String key, boolean value) {
+        JsonObject data = Json.createObject();
+        data.put(key, value);
+        ElementUtilsKt._fireDomEvent(editor.getElement(), new DomEvent(editor.getElement(), type, data));
     }
 
     /** The commands as they sit on the element, which is what the client registers with Froala. */
     private String commandsOn(FroalaEditor editor) {
-        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("commands")).toJson();
+        return ((JsonArray) editor.getElement().getPropertyRaw("commands")).toJson();
     }
 
     /** The names of the pressed toggle commands as they sit on the element. */
     private String activeCommandsOn(FroalaEditor editor) {
-        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("activeCommands")).toJson();
+        return ((JsonArray) editor.getElement().getPropertyRaw("activeCommands")).toJson();
     }
 
     /** The options as they sit on the element, which is what the client will read them from. */
     private String optionsOn(FroalaEditor editor) {
-        return ((elemental.json.JsonObject) editor.getElement().getPropertyRaw("options")).toJson();
+        return ((JsonObject) editor.getElement().getPropertyRaw("options")).toJson();
     }
 
     /** The locale's language file names as they sit on the element, best first. */
     private String localeLanguagesOn(FroalaEditor editor) {
-        return ((elemental.json.JsonArray) editor.getElement().getPropertyRaw("localeLanguages")).toJson();
+        return ((JsonArray) editor.getElement().getPropertyRaw("localeLanguages")).toJson();
+    }
+
+    private List<String> uploadAttributesOn(FroalaEditor editor) {
+        return editor.getElement().getAttributeNames().filter(name -> name.endsWith("-upload-url")).sorted().toList();
+    }
+
+    private boolean hasPendingValuePush() {
+        return hasPendingJavaScript("this.value = $0");
     }
 
     /** The invocations only exist once the before-client-response tasks have run, so run them first. */
-    private boolean hasPendingValuePush() {
+    private boolean hasPendingJavaScript(String fragment) {
         UI.getCurrent().getInternals().getStateTree().runExecutionsBeforeClientResponse();
 
-        return UI.getCurrent().getInternals().containsPendingJavascript("this.value = $0");
+        return UI.getCurrent().getInternals().containsPendingJavascript(fragment);
     }
 
     /** Minimal bean for the Binder test, a field this add-on would realistically be bound to. */
@@ -570,15 +674,6 @@ class FroalaEditorKaribuTest {
 
         void setBody(String body) {
             this.body = body;
-        }
-    }
-
-    /**
-     * Exposes the client-originated model update the delta listener performs, which no browserless test can trigger.
-     */
-    private static class ProbeEditor extends FroalaEditor {
-        void simulateClientEdit(String value) {
-            setModelValue(value, true);
         }
     }
 }

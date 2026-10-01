@@ -22,7 +22,7 @@ import com.vaadin.flow.component.ComponentEvent;
  *
  * @see FroalaEditor#addCommand(FroalaCommand, com.vaadin.flow.component.ComponentEventListener)
  */
-public class CommandEvent extends ComponentEvent<FroalaEditor> {
+public class FroalaCommandEvent extends ComponentEvent<FroalaEditor> {
 
     private final FroalaCommand command;
 
@@ -33,7 +33,7 @@ public class CommandEvent extends ComponentEvent<FroalaEditor> {
      * @param fromClient whether the event originated in the browser
      * @param command the command that was triggered
      */
-    public CommandEvent(FroalaEditor source, boolean fromClient, FroalaCommand command) {
+    public FroalaCommandEvent(FroalaEditor source, boolean fromClient, FroalaCommand command) {
         super(source, fromClient);
         this.command = command;
     }

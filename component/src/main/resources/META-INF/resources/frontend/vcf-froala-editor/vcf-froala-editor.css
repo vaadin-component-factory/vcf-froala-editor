@@ -1,6 +1,6 @@
 /* Stretch Froala to the field's height so no gap is left above the helper text. */
 /* https://github.com/froala/wysiwyg-editor/issues/2249 */
-.fr-box {
+vcf-froala-editor .fr-box {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -13,8 +13,6 @@
 vcf-froala-viewer {
   display: block;
   overflow: auto;
-
-  background-color: var(--vcf-froala-viewer-bg-color, inherit);
 }
 
 /* The icon of an own command, see FroalaCommand. The button is as big as one with Froala's 24px svg icons and 8px 7px

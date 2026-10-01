@@ -90,7 +90,15 @@ class FroalaToolbarTest {
         FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "|", "italic", "-", "underline"));
 
         // and a group with no buttons has nothing to hide, whatever the count says
-        FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup").withButtonsVisible(-1));
+        FroalaToolbar.ofGroups(FroalaToolbarGroup.named("myGroup").withButtonsVisible(0));
+    }
+
+    @Test
+    void negativeButtonsVisible_isRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> FroalaToolbarGroup.named("myGroup", "bold").withButtonsVisible(-1));
+        assertThrows(IllegalArgumentException.class, () -> FroalaToolbar
+                .ofGroups(FroalaToolbarGroup.named("myGroup", "bold", "italic")).withButtonsVisible("myGroup", -1));
     }
 
     @Test

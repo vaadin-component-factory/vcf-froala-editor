@@ -126,16 +126,21 @@ public final class FroalaToolbarGroup implements Serializable {
      * <p>
      * The overflow panel cannot be switched off. Froala enables it for every grouped toolbar and ignores
      * {@code showMoreButtons}. To show all of a group's buttons, set a count equal to or greater than the number of
-     * buttons in the group. A count of {@code 0} or less moves every button into the panel.
+     * buttons in the group. A count of {@code 0} moves every button into the panel.
      *
      * <p>
      * Separators are not counted, because {@code "|"} and {@code "-"} are drawn as lines and never move into the panel.
      * An unknown button name is counted, although Froala does not draw it.
      *
-     * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest
+     * @param buttonsVisible how many buttons are shown before the overflow panel takes the rest, 0 or more
      * @return a new instance
+     * @throws IllegalArgumentException if the count is negative
      */
     public FroalaToolbarGroup withButtonsVisible(int buttonsVisible) {
+        if (buttonsVisible < 0) {
+            throw new IllegalArgumentException("buttonsVisible must be 0 or more, but got " + buttonsVisible);
+        }
+
         return new FroalaToolbarGroup(name, buttons, align, buttonsVisible);
     }
 
@@ -161,7 +166,7 @@ public final class FroalaToolbarGroup implements Serializable {
 
         int drawn = countButtons();
 
-        // A group with no buttons has nothing to hide, not even at a negative count.
+        // A group with no buttons has nothing to hide, not even at a count of 0.
         return drawn > 0 && drawn > (buttonsVisible == null ? DEFAULT_BUTTONS_VISIBLE : buttonsVisible);
     }
 
@@ -203,6 +208,7 @@ public final class FroalaToolbarGroup implements Serializable {
         if (this == other) {
             return true;
         }
+
         if (!(other instanceof FroalaToolbarGroup group)) {
             return false;
         }

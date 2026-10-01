@@ -36,7 +36,7 @@ import com.vaadin.componentfactory.froala.FroalaPlugin;
 import com.vaadin.componentfactory.froala.FroalaTextDirection;
 import com.vaadin.componentfactory.froala.FroalaTheme;
 import com.vaadin.componentfactory.froala.FroalaToolbar;
-import com.vaadin.componentfactory.froala.ValueChangeMode;
+import com.vaadin.componentfactory.froala.FroalaValueChangeMode;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
@@ -110,7 +110,7 @@ public class DemoToolbar extends ToolbarLayout {
 
         menu.add(new Hr());
         // the underscore has to go first, capitalizeFully only splits on whitespace -- ON_BLUR would read "On_blur"
-        choice(menu.addItem("Value change mode").getSubMenu(), List.of(ValueChangeMode.values()),
+        choice(menu.addItem("Value change mode").getSubMenu(), List.of(FroalaValueChangeMode.values()),
                 editor.getValueChangeMode(), mode -> WordUtils.capitalizeFully(mode.name().replace('_', ' ')),
                 editor::setValueChangeMode);
     }

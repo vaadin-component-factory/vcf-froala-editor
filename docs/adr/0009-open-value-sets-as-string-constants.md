@@ -14,7 +14,7 @@ is then just another string in the same call. This covers `FroalaPlugin`, `Froal
 
 A closed set, Froala's or the add-on's own, stays an enum, because an application cannot add to
 it and the compiler can then catch a typo. These are `FroalaTextDirection`, `FroalaToolbarAlign`,
-`FroalaEditorVariant` and `ValueChangeMode` (maintainer, 2026-09-29).
+`FroalaEditorVariant` and `FroalaValueChangeMode` (maintainer, 2026-09-29).
 
 ## Consequences
 

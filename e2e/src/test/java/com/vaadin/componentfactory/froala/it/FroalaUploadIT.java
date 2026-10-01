@@ -122,12 +122,27 @@ class FroalaUploadIT extends SpringPlaywrightIT {
         assertEquals(500, postPixel().status());
     }
 
+    @Test
+    void handlersSizeLimit_appliesWhereTheServletContainerParsesTheRequest() {
+        // Spring Boot has the container parse the multipart request, and Flow then skips the handler's limits. The
+        // add-on checks the size itself, so this is where a missing check would show.
+        page.locator("#limited .fr-element").waitFor();
+
+        assertEquals(200, postTo("#limited", new FilePayload("small.png", "image/png", new byte[4])).status());
+        assertEquals(500, postTo("#limited", PIXEL).status());
+    }
+
     /** Posts the pixel to the image handler's URL as Froala does, a multipart request with the file as {@code file}. */
     private APIResponse postPixel() {
-        String url = (String) page.evaluate(
-                "() => new URL(document.querySelector('#editor').getAttribute('image-upload-url'), document.baseURI).href");
+        return postTo("#editor", PIXEL);
+    }
 
-        return page.request().post(url, RequestOptions.create().setMultipart(FormData.create().set("file", PIXEL)));
+    private APIResponse postTo(String editor, FilePayload file) {
+        String url = (String) page.evaluate(
+                "selector => new URL(document.querySelector(selector).getAttribute('image-upload-url'), document.baseURI).href",
+                editor);
+
+        return page.request().post(url, RequestOptions.create().setMultipart(FormData.create().set("file", file)));
     }
 
     @Test

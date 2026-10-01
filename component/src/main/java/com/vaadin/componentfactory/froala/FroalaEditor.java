@@ -28,7 +28,6 @@ import java.util.Set;
 
 import elemental.json.Json;
 import elemental.json.JsonArray;
-import elemental.json.JsonException;
 import elemental.json.JsonObject;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 
@@ -78,7 +77,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         Focusable<FroalaEditor>, HasLabel, HasHelper, HasThemeVariant<FroalaEditorVariant> {
 
     /** The value change mode of a new editor. */
-    public static final ValueChangeMode DEFAULT_VALUE_CHANGE_MODE = ValueChangeMode.ON_CHANGE;
+    public static final FroalaValueChangeMode DEFAULT_VALUE_CHANGE_MODE = FroalaValueChangeMode.ON_CHANGE;
 
     /** The lowest accepted value change timeout. */
     public static final int MIN_VALUE_CHANGE_TIMEOUT = 250;
@@ -86,7 +85,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     /** The default value change timeout in milliseconds. Same as Froala's {@code typingTimer} default. */
     public static final int DEFAULT_VALUE_CHANGE_TIMEOUT = 500;
 
-    /** The default interval period in milliseconds, used by {@link ValueChangeMode#INTERVAL}. */
+    /** The default interval period in milliseconds, used by {@link FroalaValueChangeMode#INTERVAL}. */
     public static final int DEFAULT_INTERVAL_PERIOD = 2000;
 
     private static final String VALUE_PROPERTY = "value";
@@ -96,7 +95,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     private static final String COMMANDS_PROPERTY = "commands";
     private static final String ACTIVE_COMMANDS_PROPERTY = "activeCommands";
 
-    private static final DiffMatchPatch DIFF_MATCH_PATCH = new DiffMatchPatch();
+    private static final DiffMatchPatch DIFF_MATCH_PATCH = exactDiffMatchPatch();
 
     /**
      * Whether the browser has been told about this component's element. Deliberately not {@link #isAttached()}, which
@@ -207,8 +206,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     public FroalaEditor() {
         // The three arg constructor registers Flow's listener for a "value-changed" DOM event, which the client never
         // dispatches. Changes arrive as deltas over `_value-delta`, and a notifying `value` property on the client
-        // would open a second update path next to it.
-        super(VALUE_PROPERTY, "", true);
+        // would open a second update path next to it. Null is refused like in a text field, because a delta cannot be
+        // applied to it.
+        super(VALUE_PROPERTY, "", false);
         setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         setIntervalPeriod(DEFAULT_INTERVAL_PERIOD);
 
@@ -229,7 +229,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             } catch (DeltaMismatchException e) {
                 // Both sides have drifted apart, so this delta and every following one is unusable. The client holds
                 // the user's text and has to resend it. Pushing our stale value would throw that text away.
-                element.callJsFunction("resyncValue");
+                element.callJsFunction("_resyncValue");
                 return;
             }
 
@@ -247,7 +247,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             AddedCommand added = commands.get(event.getEventData().get("event.detail.name").asString());
             // null for a command removed while the click was on its way
             if (added != null) {
-                added.listener().onComponentEvent(new CommandEvent(this, true, added.command()));
+                added.listener().onComponentEvent(new FroalaCommandEvent(this, true, added.command()));
             }
         }).addEventData("event.detail.name");
 
@@ -259,7 +259,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         addSelectionChangeListener(event -> hasSelection = event.hasSelection());
         addDetachListener(event -> {
             if (hasSelection) {
-                fireEvent(new SelectionChangeEvent(this, false, false));
+                fireEvent(new FroalaSelectionChangeEvent(this, false, false));
             }
         });
 
@@ -299,18 +299,22 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Applies a delta to the value it was computed against and returns the result.
      *
      * <p>
-     * A delta is a diff-match-patch patch text, the format the editor's client uses to send changes. The editor applies
-     * incoming deltas and handles a mismatch itself, by asking the client to resend its value, so using the editor
-     * never requires calling this method.
+     * A delta is a diff-match-patch patch text, the format the editor's client uses to send changes. A mismatch is
+     * answered by asking the client to resend its value.
      *
      * @param oldValue the value the delta was computed against
      * @param delta the patch text
      * @return the value with the delta applied
-     * @throws DeltaMismatchException if the delta does not apply to the given old value, or if diff-match-patch returns
-     *             a result of an unexpected shape
+     * @throws DeltaMismatchException if the delta is no patch text, does not apply exactly to the given old value, or
+     *             if diff-match-patch returns a result of an unexpected shape
      */
-    public static String applyDelta(String oldValue, String delta) {
-        List<DiffMatchPatch.Patch> patches = DIFF_MATCH_PATCH.patchFromText(delta);
+    static String applyDelta(String oldValue, String delta) {
+        List<DiffMatchPatch.Patch> patches;
+        try {
+            patches = DIFF_MATCH_PATCH.patchFromText(delta);
+        } catch (IllegalArgumentException e) {
+            throw new DeltaMismatchException("Not a patch text: " + e.getMessage());
+        }
 
         Object[] results = DIFF_MATCH_PATCH
                 .patchApply(patches instanceof LinkedList<DiffMatchPatch.Patch> alreadyLinkedList ? alreadyLinkedList
@@ -337,6 +341,19 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
+     * diff-match-patch applies a patch fuzzily by default, at a nearby place or to a slightly different text. A delta
+     * that does not fit the server value exactly means both sides drifted apart, so it has to fail and trigger a resync
+     * instead of landing somewhere else.
+     */
+    private static DiffMatchPatch exactDiffMatchPatch() {
+        DiffMatchPatch diffMatchPatch = new DiffMatchPatch();
+        diffMatchPatch.matchThreshold = 0;
+        diffMatchPatch.patchDeleteThreshold = 0;
+
+        return diffMatchPatch;
+    }
+
+    /**
      * Configures the underlying Froala editor.
      *
      * <p>
@@ -357,17 +374,19 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @param options Froala options, or null for Froala's defaults
      */
     public void setOptions(FroalaOptions options) {
-        setOptions(options == null ? null : options.toJson());
+        applyOptions(options == null ? null : options.toJson());
     }
 
-    /**
-     * Configures the underlying Froala editor from a JSON object, for options {@link FroalaOptions} has no method for.
-     * Identical to {@link #setOptions(FroalaOptions)} in every other respect.
-     *
-     * @param options Froala options as JSON, or null for Froala's defaults
-     * @throws IllegalArgumentException if the options contain Froala's {@code events} option
-     */
-    public void setOptions(JsonObject options) {
+    private void applyOptions(JsonObject options) {
+        // Froala's `events` option is a map of callbacks, and JSON has no functions. Whatever arrived here under that
+        // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped,
+        // because the options were written to do something and silently doing nothing is worse.
+        if (options != null && options.hasKey("events")) {
+            throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
+                    + " it cannot be set from the server. Froala events reach the server only through the listeners"
+                    + " FroalaEditor offers, such as addValueChangeListener.");
+        }
+
         // new options build the editor again, and that build reads the locale as it is now
         sendLocaleLanguages();
 
@@ -375,15 +394,6 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
             optionsJson = null;
             getElement().removeProperty(OPTIONS_PROPERTY);
             return;
-        }
-
-        // Froala's `events` option is a map of callbacks, and JSON has no functions. Whatever arrived here under that
-        // name would reach Froala as data and blow up the first time it fires one. Rejected rather than dropped,
-        // because the options were written to do something and silently doing nothing is worse.
-        if (options.hasKey("events")) {
-            throw new IllegalArgumentException("Froala's `events` option takes callbacks, which JSON cannot carry, so"
-                    + " it cannot be set from the server. Froala events reach the server only through the listeners"
-                    + " FroalaEditor offers, such as addValueChangeListener.");
         }
 
         optionsJson = options.toJson();
@@ -409,7 +419,9 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         if (language.isEmpty()) {
             return List.of();
         }
+
         String country = locale.getCountry().toLowerCase(Locale.ROOT);
+
         return country.isEmpty() ? List.of(language) : List.of(language + "_" + country, language);
     }
 
@@ -418,24 +430,16 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * Identical to {@link #setOptions(FroalaOptions)} in every other respect.
      *
      * @param options Froala options as a JSON object literal, or null for Froala's defaults
-     * @throws IllegalArgumentException if the given string is not parseable as a JSON object
+     * @throws IllegalArgumentException if the given string is not parseable as a JSON object, or if it contains
+     *             Froala's {@code events} option
      */
     public void setOptions(String options) {
         if (options == null) {
-            setOptions((JsonObject) null);
+            applyOptions(null);
             return;
         }
 
-        JsonObject parsed;
-        try {
-            parsed = Json.parse(options);
-        } catch (JsonException | ClassCastException e) {
-            // ClassCastException is elemental's answer to valid JSON that is not an object. Json.parse is typed as
-            // returning one and only fails on the way out.
-            throw new IllegalArgumentException("Froala options must be a JSON object: " + e.getMessage(), e);
-        }
-
-        setOptions(parsed);
+        applyOptions(FroalaOptions.parseObject(options, "Froala options"));
     }
 
     /**
@@ -486,7 +490,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <pre>
      * editor.setImageUploadHandler(event -&gt; {
-     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     String id = storage.save(event.getInputStream()); // an id of its own, never the client's file name
      *     return "/images/" + id;
      * });
      * </pre>
@@ -516,7 +520,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <pre>
      * editor.setFileUploadHandler(event -&gt; {
-     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     String id = storage.save(event.getInputStream()); // an id of its own, never the client's file name
      *     return "/files/" + id;
      * });
      * </pre>
@@ -544,7 +548,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <pre>
      * editor.setVideoUploadHandler(event -&gt; {
-     *     String id = storage.save(event.getInputStream(), event.getFileName());
+     *     String id = storage.save(event.getInputStream()); // an id of its own, never the client's file name
      *     return "/videos/" + id;
      * });
      * </pre>
@@ -607,7 +611,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @return a handle that removes the command from this editor again
      * @throws IllegalArgumentException if this editor already has a command of the same name
      */
-    public Registration addCommand(FroalaCommand command, ComponentEventListener<CommandEvent> listener) {
+    public Registration addCommand(FroalaCommand command, ComponentEventListener<FroalaCommandEvent> listener) {
         Objects.requireNonNull(command, "command must not be null");
         Objects.requireNonNull(listener, "listener must not be null");
 
@@ -652,11 +656,12 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         Registration registration = addCommand(added);
         popover.setTarget(this);
         sendPopover(added);
+
         return registration;
     }
 
     private Registration addCommand(AddedCommand added) {
-        String name = added.command().name();
+        String name = added.command().getName();
         if (commands.containsKey(name)) {
             throw new IllegalArgumentException("This editor already has a command named '" + name + "'");
         }
@@ -698,7 +703,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public void setCommandActive(FroalaCommand command, boolean active) {
         requireToggle(command);
-        if (active ? activeCommands.add(command.name()) : activeCommands.remove(command.name())) {
+        if (active ? activeCommands.add(command.getName()) : activeCommands.remove(command.getName())) {
             sendActiveCommands();
         }
     }
@@ -713,17 +718,19 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     public boolean isCommandActive(FroalaCommand command) {
         requireToggle(command);
-        return activeCommands.contains(command.name());
+
+        return activeCommands.contains(command.getName());
     }
 
     private void requireToggle(FroalaCommand command) {
         Objects.requireNonNull(command, "command must not be null");
-        AddedCommand added = commands.get(command.name());
+        AddedCommand added = commands.get(command.getName());
         if (added == null) {
-            throw new IllegalArgumentException("This editor has no command named '" + command.name() + "'");
+            throw new IllegalArgumentException("This editor has no command named '" + command.getName() + "'");
         }
-        if (!added.command().toggle()) {
-            throw new IllegalArgumentException("The command '" + command.name() + "' is not a toggle");
+
+        if (!added.command().isToggle()) {
+            throw new IllegalArgumentException("The command '" + command.getName() + "' is not a toggle");
         }
     }
 
@@ -739,7 +746,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      */
     private void sendPopover(AddedCommand added) {
         if (added.popover() != null) {
-            getElement().callJsFunction("_setCommandPopover", added.command().name(), added.popover().getElement());
+            getElement().callJsFunction("_setCommandPopover", added.command().getName(), added.popover().getElement());
         }
     }
 
@@ -764,8 +771,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * @param listener the listener, not null
      * @return a handle to remove the listener
      */
-    public Registration addSelectionChangeListener(ComponentEventListener<SelectionChangeEvent> listener) {
-        return addListener(SelectionChangeEvent.class, listener);
+    public Registration addSelectionChangeListener(ComponentEventListener<FroalaSelectionChangeEvent> listener) {
+        return addListener(FroalaSelectionChangeEvent.class, listener);
     }
 
     /**
@@ -798,16 +805,16 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the value change mode of this instance. By default the editor uses {@link ValueChangeMode#ON_CHANGE}. Null
-     * resets the mode to the default.
+     * Sets the value change mode of this instance. By default the editor uses {@link FroalaValueChangeMode#ON_CHANGE}.
+     * Null resets the mode to the default.
      *
      * @param valueChangeMode the new value change mode, or null for the default
      */
-    public void setValueChangeMode(ValueChangeMode valueChangeMode) {
+    public void setValueChangeMode(FroalaValueChangeMode valueChangeMode) {
         if (valueChangeMode == null) {
             setValueChangeMode(DEFAULT_VALUE_CHANGE_MODE);
         } else {
-            getElement().setProperty("valueChangeMode", valueChangeMode.getClientSideRepresentation());
+            getElement().setProperty("valueChangeMode", valueChangeMode.getClientValue());
         }
     }
 
@@ -816,15 +823,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * @return value change mode
      */
-    public ValueChangeMode getValueChangeMode() {
-        return ValueChangeMode.fromClientSide(
-                getElement().getProperty("valueChangeMode", DEFAULT_VALUE_CHANGE_MODE.getClientSideRepresentation()));
+    public FroalaValueChangeMode getValueChangeMode() {
+        return FroalaValueChangeMode.fromClientValue(
+                getElement().getProperty("valueChangeMode", DEFAULT_VALUE_CHANGE_MODE.getClientValue()));
     }
 
     /**
      * Sets the idle time in milliseconds after the last keystroke before the editor reports the change. This is
      * Froala's {@code typingTimer} option, not a timer of this component. Froala restarts it on every keystroke, which
-     * is why {@link ValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
+     * is why {@link FroalaValueChangeMode#ON_CHANGE} reports once the user pauses rather than per keystroke.
      *
      * <p>
      * The default is 500, the minimum {@value #MIN_VALUE_CHANGE_TIMEOUT}. Froala reports changes after at least that
@@ -835,8 +842,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      * again after a keystroke, so a long timeout delays that as well.
      *
      * <p>
-     * Only {@link ValueChangeMode#ON_CHANGE} uses this value. {@link ValueChangeMode#ON_BLUR} and
-     * {@link ValueChangeMode#INTERVAL} are triggered by something else and are not delayed by it.
+     * Only {@link FroalaValueChangeMode#ON_CHANGE} uses this value. {@link FroalaValueChangeMode#ON_BLUR} and
+     * {@link FroalaValueChangeMode#INTERVAL} are triggered by something else and are not delayed by it.
      *
      * @param timeoutInMilliseconds idle time before a change is reported, at least {@value #MIN_VALUE_CHANGE_TIMEOUT}
      * @throws IllegalArgumentException if the given timeout is below {@value #MIN_VALUE_CHANGE_TIMEOUT}
@@ -856,7 +863,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
      *
      * <p>
      * This returns what {@link #setValueChangeTimeout(int)} was given, not what the editor runs on. A
-     * {@code typingTimer} passed through {@link #setOptions(FroalaOptions)} takes effect as long as the setter was
+     * {@code typingTimer} passed as raw JSON through {@link #setOptions(String)} takes effect as long as the setter was
      * never called, but is not reported here.
      *
      * @return idle time in milliseconds
@@ -866,8 +873,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Sets the time in milliseconds between two value syncs in {@link ValueChangeMode#INTERVAL}. Also the time before
-     * the first one. Has no effect in any other mode.
+     * Sets the time in milliseconds between two value syncs in {@link FroalaValueChangeMode#INTERVAL}. Also the time
+     * before the first one. Has no effect in any other mode.
      *
      * <p>
      * The default is 2000. The value must be greater than zero.
@@ -884,7 +891,8 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /**
-     * Returns the time in milliseconds between two value syncs in {@link ValueChangeMode#INTERVAL}. Default is 2000.
+     * Returns the time in milliseconds between two value syncs in {@link FroalaValueChangeMode#INTERVAL}. Default is
+     * 2000.
      *
      * @return time between two value syncs
      */
@@ -905,6 +913,11 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
         }
 
         @Override
+        public long getFileSizeMax() {
+            return handler.getFileSizeMax();
+        }
+
+        @Override
         public void handleUploadRequest(UploadEvent event) throws IOException {
             // a form field such as Froala's imageUploadParams, not a file
             if (event.getFileName() == null) {
@@ -919,6 +932,15 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
                 }
             });
 
+            // Flow applies getFileSizeMax only when it parses the request itself. Where the servlet container has
+            // parsed
+            // it already, as under Spring Boot, the limit would otherwise not apply.
+            long max = handler.getFileSizeMax();
+            if (max >= 0 && event.getFileSize() > max) {
+                throw new IllegalStateException(
+                        "Upload refused, " + event.getFileSize() + " bytes is more than the limit of " + max);
+            }
+
             String link = Objects.requireNonNull(handler.upload(event), "The upload handler returned no link");
 
             JsonObject body = Json.createObject();
@@ -929,7 +951,7 @@ public class FroalaEditor extends AbstractSinglePropertyField<FroalaEditor, Stri
     }
 
     /** A command together with the listener it was added with, and its popover or null for none. */
-    private record AddedCommand(FroalaCommand command, ComponentEventListener<CommandEvent> listener,
+    private record AddedCommand(FroalaCommand command, ComponentEventListener<FroalaCommandEvent> listener,
             Popover popover) implements Serializable {
     }
 }

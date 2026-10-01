@@ -15,12 +15,15 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
+import elemental.json.JsonArray;
 import org.junit.jupiter.api.Test;
 
 import com.vaadin.flow.shared.Registration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +33,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * test runs through Java's regex engine, because both read an escaped non-alphanumeric character as literal.
  */
 class FroalaViewerTest {
+
+    @Test
+    void viewer_carriesFroalasViewClassAndTheVaadinTheme() {
+        assertEquals(Set.of("fr-view", "vaadin-theme"), new FroalaViewer().getClassNames());
+    }
+
+    @Test
+    void content_reachesTheElementUnchanged() {
+        FroalaViewer viewer = new FroalaViewer();
+
+        viewer.setContent("<p>shown <b>as is</b></p>");
+
+        assertEquals("<p>shown <b>as is</b></p>", viewer.getElement().getProperty("innerHTML"));
+        assertEquals("<p>shown <b>as is</b></p>", viewer.getContent());
+    }
+
+    @Test
+    void routerIgnorePaths_replaceTheEarlierOnesAndNoneClearsThem() {
+        FroalaViewer viewer = new FroalaViewer();
+
+        viewer.setRouterIgnorePaths("/a");
+        viewer.setRouterIgnorePaths("/b");
+        assertEquals("[\"" + FroalaViewer.toRegex("/b").replace("\\", "\\\\") + "\"]",
+                ((JsonArray) viewer.getElement().getPropertyRaw("vcfRouterIgnorePatterns")).toJson());
+
+        viewer.setRouterIgnorePaths();
+        assertFalse(viewer.getElement().hasProperty("vcfRouterIgnorePatterns"));
+    }
 
     @Test
     void pathWithoutWildcard_coversEverythingBelowItButNotItsNeighbours() {

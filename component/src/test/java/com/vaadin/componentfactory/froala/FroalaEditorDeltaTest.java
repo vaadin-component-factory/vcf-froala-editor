@@ -59,6 +59,15 @@ class FroalaEditorDeltaTest {
         assertEquals("Patch 1 of 1 did not apply to the current value", exception.getMessage());
     }
 
+    @Test
+    void applyDelta_slightlyDifferentBase_throwsInsteadOfApplyingItNearby() {
+        // The server changed the value while this delta was on its way. Applied fuzzily, it would land in the new text
+        // and leave the server holding something the browser never shows.
+        String delta = deltaBetween("<p>the lazy dog sleeps</p>", "<p>the sleepy dog sleeps</p>");
+
+        assertThrows(DeltaMismatchException.class, () -> FroalaEditor.applyDelta("<p>the lazzy dog sleeps</p>", delta));
+    }
+
     private String deltaBetween(String oldValue, String newValue) {
         return DIFF_MATCH_PATCH.patchToText(DIFF_MATCH_PATCH.patchMake(oldValue, newValue));
     }

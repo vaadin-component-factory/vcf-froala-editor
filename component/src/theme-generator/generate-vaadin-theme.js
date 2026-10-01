@@ -141,6 +141,9 @@ const COLOR_TOKEN = new RegExp(
 );
 const SANS_SERIF_FONT = /arial|helvetica|sans-serif|-apple-system/i;
 
+/** What the generator skipped and a Froala update may have made relevant, reported once at the end. */
+const skipped = new Set();
+
 /**
  * Walks the text and calls visit(c, i, depth) for each character outside quotes, where depth counts the brackets
  * around it. A visit that returns true stops the walk and returns its index.
@@ -203,7 +206,9 @@ function* styleRules(css, media = null) {
 
     if (head.startsWith('@media') || head.startsWith('@supports')) {
       yield* styleRules(body, head);
-    } else if (!head.startsWith('@')) {
+    } else if (head.startsWith('@')) {
+      if (!/^@(-[a-z]+-)?(keyframes|font-face)\b/.test(head)) skipped.add(`at-rule ${head}`);
+    } else {
       const declarations = splitTopLevel(body, ';')
         .map((declaration) => declaration.trim())
         .filter((declaration) => declaration.includes(':'))
@@ -300,7 +305,8 @@ function themed(token, onTone, border, text) {
 /** Whether a colour is a tone rather than white, grey or black. */
 const isTone = (token) => !isGrey(parseColor(token).slice(0, 3));
 
-const isColor = (token) => new RegExp(`^(?:${COLOR_TOKEN.source})$`, 'i').test(token);
+const WHOLE_COLOR_TOKEN = new RegExp(`^(?:${COLOR_TOKEN.source})$`, 'i');
+const isColor = (token) => WHOLE_COLOR_TOKEN.test(token);
 
 const isFocusAccent = (token) => roleOf(parseColor(token).slice(0, 3)) === 'var(--vcf-froala-accent-color)';
 
@@ -417,25 +423,39 @@ const cursorOf = (property, plain) => [
   plain === 'pointer' ? set(property, 'var(--vcf-froala-clickable-cursor)') : keep(property, plain),
 ];
 
+const OTHER_THEMED = { 'font-size': fontSizeOf, 'box-shadow': shadowOf, 'font-family': fontFamilyOf, cursor: cursorOf };
+
+/** What turns a declaration of this property into the theme's, or undefined for one the theme leaves alone. */
+const themerOf = (property) =>
+  COLOR_LONGHAND[property]
+    ? colorOf
+    : /^border(-(top|bottom)-(left|right))?-radius$/.test(property)
+    ? radiusOf
+    : OTHER_THEMED[property];
+
 /** Returns what the theme makes of one declaration, as a list of values set or kept. */
 function themedDeclaration([property, value], context) {
   const important = /!important/.test(value) ? ' !important' : '';
   const plain = value.replace(/!important/, '').trim();
 
   // A function this generator does not know, such as a preprocessor call Froala left in its CSS, is not read at all.
-  if ((plain.match(/[a-z-]+\(/gi) ?? []).some((name) => !/^(rgba?|url|[a-z-]*gradient)\($/i.test(name))) {
+  const unknown = (plain.match(/[a-z-]+\(/gi) ?? []).filter((name) => !/^(rgba?|url|[a-z-]*gradient)\($/i.test(name));
+  if (unknown.length > 0) {
+    if (themerOf(property)) skipped.add(`function ${unknown.join(', ')} in ${property}: ${plain}`);
     return [];
   }
 
-  let result = [];
+  // rgb(0 0 0 / 50%) would be read as opaque, its alpha taken as 50
+  if (/rgba?\([^)]*\//i.test(plain)) {
+    skipped.add(`space-separated colour in ${property}: ${plain}`);
+    return [];
+  }
+
   // Froala picks these classes itself after measuring a dark content background, so their colours already fit it
   if (COLOR_LONGHAND[property] && context.subjects.some((name) => name.endsWith('--on-dark'))) return [];
-  if (COLOR_LONGHAND[property]) result = colorOf(property, plain, context);
-  else if (/^border(-(top|bottom)-(left|right))?-radius$/.test(property)) result = radiusOf(property, plain, context);
-  else if (property === 'font-size') result = fontSizeOf(property, plain, context);
-  else if (property === 'box-shadow') result = shadowOf(property, plain, context);
-  else if (property === 'font-family') result = fontFamilyOf(property, plain);
-  else if (property === 'cursor') result = cursorOf(property, plain);
+
+  const themer = themerOf(property);
+  const result = themer ? themer(property, plain, context) : [];
 
   return result.map((entry) => ({ ...entry, value: entry.value + important }));
 }
@@ -522,3 +542,4 @@ fs.writeFileSync(
 ` + output.join('\n')
 );
 console.log(`wrote ${target}`);
+skipped.forEach((entry) => console.warn(`skipped ${entry}`));

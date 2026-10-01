@@ -19,7 +19,13 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import elemental.json.Json;
 import elemental.json.JsonArray;
 import elemental.json.JsonObject;
@@ -61,6 +67,9 @@ import elemental.json.JsonValue;
  * only through the listeners {@link FroalaEditor} offers, such as {@link FroalaEditor#addValueChangeListener}.
  */
 public final class FroalaOptions implements Serializable {
+
+    private static final ObjectMapper STRICT_JSON = new ObjectMapper()
+            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
     private static final FroalaOptions EMPTY = new FroalaOptions(Json.createObject());
 
@@ -115,7 +124,8 @@ public final class FroalaOptions implements Serializable {
         }
 
         JsonArray array = Json.createArray();
-        values.forEach(value -> array.set(array.length(), value));
+        values.forEach(value -> array.set(array.length(),
+                Objects.requireNonNull(value, () -> option + " must not contain null")));
 
         return with(option, array);
     }
@@ -242,11 +252,36 @@ public final class FroalaOptions implements Serializable {
      * <p>
      * The shape is defined by Toast UI, not by Froala, so it is passed as JSON.
      *
-     * @param imageTuiOptions options for the Toast UI image editor, or null to leave Froala's default
+     * @param imageTuiOptions options for the Toast UI image editor as a JSON object literal, or null to leave Froala's
+     *            default
      * @return a new instance
+     * @throws IllegalArgumentException if the given string is not parseable as a JSON object
      */
-    public FroalaOptions withImageTuiOptions(JsonObject imageTuiOptions) {
-        return with("imageTUIOptions", imageTuiOptions);
+    public FroalaOptions withImageTuiOptions(String imageTuiOptions) {
+        if (imageTuiOptions == null) {
+            return with("imageTUIOptions", (JsonValue) null);
+        }
+
+        return with("imageTUIOptions", parseObject(imageTuiOptions, "imageTUIOptions"));
+    }
+
+    /**
+     * Parses a JSON object literal strictly, so that what passes is valid JSON and not whatever elemental's lenient
+     * parser accepts, such as text after the object.
+     */
+    static JsonObject parseObject(String json, String what) {
+        JsonNode node;
+        try {
+            node = STRICT_JSON.readTree(json);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(what + " must be a JSON object: " + e.getOriginalMessage(), e);
+        }
+
+        if (!node.isObject()) {
+            throw new IllegalArgumentException(what + " must be a JSON object, but got: " + json);
+        }
+
+        return Json.parse(node.toString());
     }
 
     private static JsonObject toJsonObject(Map<String, String> entries) {
@@ -254,8 +289,10 @@ public final class FroalaOptions implements Serializable {
             return null;
         }
 
+        // Sorted, so that equal maps give equal JSON whatever order they iterate in, which equals relies on
         JsonObject object = Json.createObject();
-        entries.forEach(object::put);
+        new TreeMap<>(entries).forEach((key, value) -> object.put(key,
+                Objects.requireNonNull(value, () -> "The value for '" + key + "' must not be null")));
 
         return object;
     }
@@ -1148,21 +1185,6 @@ public final class FroalaOptions implements Serializable {
         return with("saveInterval", saveInterval);
     }
 
-    /**
-     * Sets the idle time in milliseconds after the last keystroke before Froala reports a change. Froala's
-     * {@code typingTimer}.
-     *
-     * @param typingTimer idle time in milliseconds. Froala reports a change after at least
-     *            {@value FroalaEditor#MIN_VALUE_CHANGE_TIMEOUT} ms, whatever smaller value is given here.
-     * @return a new instance
-     * @deprecated Use {@link FroalaEditor#setValueChangeTimeout(int)}, which sets the same Froala option. This option
-     *             takes effect as long as the setter is never called. Once it is, the setter wins.
-     */
-    @Deprecated
-    public FroalaOptions withTypingTimer(int typingTimer) {
-        return with("typingTimer", typingTimer);
-    }
-
     // -----------------------------------------------------------------------------------------------------------
 
     /**
@@ -1170,7 +1192,7 @@ public final class FroalaOptions implements Serializable {
      *
      * @return a new JSON object, never null
      */
-    public JsonObject toJson() {
+    JsonObject toJson() {
         return copyOf(values);
     }
 
@@ -1194,6 +1216,7 @@ public final class FroalaOptions implements Serializable {
         if (this == other) {
             return true;
         }
+
         if (!(other instanceof FroalaOptions options) || values.keys().length != options.values.keys().length) {
             return false;
         }

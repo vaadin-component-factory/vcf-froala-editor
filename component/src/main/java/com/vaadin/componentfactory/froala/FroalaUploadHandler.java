@@ -46,4 +46,19 @@ public interface FroalaUploadHandler extends Serializable {
      * @throws IOException if reading or storing the file fails. The editor then shows Froala's upload error.
      */
     String upload(UploadEvent event) throws IOException;
+
+    /**
+     * Returns the largest file in bytes this handler accepts. A larger upload is refused before {@link #upload} runs,
+     * and the editor shows Froala's upload error. Froala's own limits, such as {@code imageMaxSize}, are checked in the
+     * browser only.
+     *
+     * <p>
+     * The default is -1, no limit of its own, as for any Flow upload handler. A servlet container or Spring Boot may
+     * still apply theirs. Override it in a class rather than a lambda to set a limit.
+     *
+     * @return the maximum file size in bytes, or -1 for no limit
+     */
+    default long getFileSizeMax() {
+        return -1;
+    }
 }

@@ -17,8 +17,8 @@ package com.vaadin.componentfactory.froala.it.views;
 
 import com.vaadin.componentfactory.froala.FroalaEditor;
 import com.vaadin.componentfactory.froala.FroalaOptions;
+import com.vaadin.componentfactory.froala.FroalaValueChangeMode;
 import com.vaadin.componentfactory.froala.FroalaViewer;
-import com.vaadin.componentfactory.froala.ValueChangeMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Span;
@@ -68,6 +68,15 @@ public class FroalaTestView extends VerticalLayout {
     public static final String SNIPPET_VALUE = "<strong>inserted by the server</strong>";
     public static final String SNIPPET_TEXT = "inserted by the server";
 
+    /** An emoji, whose UTF-16 surrogate pair an edit can split. A neighbouring emoji shares its first half. */
+    public static final String EMOJI_VALUE = "<p>\uD83D\uDE00</p>";
+
+    /**
+     * Runs script through an event handler if it reaches the page as markup without Froala's cleaning. Not in the
+     * viewer, which shows every value unsanitized by design.
+     */
+    public static final String HOSTILE_VALUE = "<p>hostile<img src=\"x\" onerror=\"if (!this.closest('#viewer')) window.__xss = true\"></p>";
+
     /** Clearly above Froala's own 500 ms default, so a test can tell the two apart. */
     public static final int SLOW_TYPING_TIMEOUT = 1500;
 
@@ -107,11 +116,11 @@ public class FroalaTestView extends VerticalLayout {
         });
         otherLicenseKey.setId("other-license-key");
 
-        Select<ValueChangeMode> valueChangeMode = new Select<>("Value change mode",
+        Select<FroalaValueChangeMode> valueChangeMode = new Select<>("Value change mode",
                 event -> editor.setValueChangeMode(event.getValue()));
-        valueChangeMode.setItems(ValueChangeMode.values());
+        valueChangeMode.setItems(FroalaValueChangeMode.values());
         // the enum name verbatim, so a test never depends on a label formatter
-        valueChangeMode.setItemLabelGenerator(ValueChangeMode::name);
+        valueChangeMode.setItemLabelGenerator(FroalaValueChangeMode::name);
         valueChangeMode.setValue(editor.getValueChangeMode());
         valueChangeMode.setId("value-change-mode");
 
@@ -148,6 +157,20 @@ public class FroalaTestView extends VerticalLayout {
 
         Button insertSnippet = new Button("Insert snippet", event -> editor.replaceSelectionContent(SNIPPET_VALUE));
         insertSnippet.setId("insert-snippet");
+
+        // Disables itself, so a test can tell the call has reached the client before it asserts that nothing happened
+        Button insertSnippetOnce = new Button("Insert snippet once");
+        insertSnippetOnce.addClickListener(event -> {
+            editor.replaceSelectionContent(SNIPPET_VALUE);
+            insertSnippetOnce.setEnabled(false);
+        });
+        insertSnippetOnce.setId("insert-snippet-once");
+
+        Button emojiValue = new Button("Set emoji value", event -> editor.setValue(EMOJI_VALUE));
+        emojiValue.setId("emoji-value");
+
+        Button hostileValue = new Button("Set hostile value", event -> editor.setValue(HOSTILE_VALUE));
+        hostileValue.setId("hostile-value");
 
         // Detach, attach and insert in one round trip, so the insert reaches a client editor Froala is still building
         Button reattachAndInsert = new Button("Re-attach and insert", event -> {
@@ -188,8 +211,8 @@ public class FroalaTestView extends VerticalLayout {
         rebuild.setId("rebuild");
 
         add(focus, focusLog, selectionLog, valueChangeMode, readOnly, enabled, slowTyping, resetValue, messyValue,
-                otherLicenseKey, toggleAttached, insertSnippet, reattachAndInsert, selectAll, reattachAndSelectAll,
-                otherFieldTexts, rebuild, editor, viewer);
+                otherLicenseKey, toggleAttached, insertSnippet, insertSnippetOnce, emojiValue, hostileValue,
+                reattachAndInsert, selectAll, reattachAndSelectAll, otherFieldTexts, rebuild, editor, viewer);
 
         // set last, so the value is on the server before the first attach reaches the client
         editor.setValue(INITIAL_VALUE);

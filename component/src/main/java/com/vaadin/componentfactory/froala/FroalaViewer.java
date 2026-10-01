@@ -101,10 +101,19 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
      * and a value taken from {@link FroalaEditor} was not sanitized on the server either. Pass trusted HTML, or
      * sanitize it before calling this method.
      *
-     * @param text the HTML to display
+     * @param html the HTML to display
      */
-    public void setContent(String text) {
-        getElement().setProperty("innerHTML", text);
+    public void setContent(String html) {
+        getElement().setProperty("innerHTML", html);
+    }
+
+    /**
+     * Returns the HTML given to {@link #setContent(String)}.
+     *
+     * @return the HTML, or null if none was set
+     */
+    public String getContent() {
+        return getElement().getProperty("innerHTML");
     }
 
     /**

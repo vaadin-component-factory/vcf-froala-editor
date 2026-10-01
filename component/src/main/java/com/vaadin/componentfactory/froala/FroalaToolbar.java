@@ -342,6 +342,7 @@ public final class FroalaToolbar implements Serializable {
         if (this == other) {
             return true;
         }
+
         if (!(other instanceof FroalaToolbar toolbar)) {
             return false;
         }

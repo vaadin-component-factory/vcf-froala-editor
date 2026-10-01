@@ -43,7 +43,7 @@ public enum FroalaTextDirection {
      *
      * @return the option value, for example {@code "rtl"}
      */
-    public String getOptionValue() {
+    String getOptionValue() {
         return optionValue;
     }
 }

@@ -15,12 +15,17 @@
  */
 package com.vaadin.componentfactory.froala;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -63,7 +68,6 @@ class FroalaOptionsTest {
         assertEquals("{\"emoticonsUseImage\":false}", FroalaOptions.defaults().withEmoticonsUseImage(false).toString());
         assertEquals("{\"saveInterval\":0}", FroalaOptions.defaults().withSaveInterval(0).toString());
         assertEquals("{\"spellcheck\":false}", FroalaOptions.defaults().withSpellcheck(false).toString());
-        // THM-6
         assertEquals("{\"theme\":\"dark\"}", FroalaOptions.defaults().withTheme(FroalaTheme.DARK).toString());
         assertEquals("{\"theme\":\"brand\"}", FroalaOptions.defaults().withTheme("brand").toString());
     }
@@ -131,7 +135,7 @@ class FroalaOptionsTest {
 
     @Test
     void themeNone_isAnEmptyString() {
-        // THM-5. The add-on's own default only applies to a missing key, so "no theme" has to be sent as a value that
+        // The add-on's own default only applies to a missing key, so "no theme" has to be sent as a value that
         // Froala reads as none.
         assertEquals("{\"theme\":\"\"}", FroalaOptions.defaults().withTheme(FroalaTheme.NONE).toString());
     }
@@ -142,11 +146,47 @@ class FroalaOptionsTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    void typingTimer_isStillWritten() {
-        // Deprecated in favour of the setter, which is a hint and not a removal. Anyone who prefers the option must
-        // still be able to use it.
-        assertEquals("{\"typingTimer\":800}", FroalaOptions.defaults().withTypingTimer(800).toString());
+    void mapAndJsonOptions_useFroalasOwnNames() {
+        assertEquals("{\"imageUploadParams\":{\"id\":\"a\"}}",
+                FroalaOptions.defaults().withImageUploadParams(Map.of("id", "a")).toString());
+        assertEquals("{\"requestHeaders\":{\"X-Token\":\"t\"}}",
+                FroalaOptions.defaults().withRequestHeaders(Map.of("X-Token", "t")).toString());
+        assertEquals("{\"imageTUIOptions\":{\"includeUI\":{\"menu\":[\"crop\"]}}}",
+                FroalaOptions.defaults().withImageTuiOptions("{\"includeUI\": {\"menu\": [\"crop\"]}}").toString());
+    }
+
+    @Test
+    void equalMaps_giveEqualOptionsWhateverTheirOrder() {
+        Map<String, String> ab = new LinkedHashMap<>();
+        ab.put("a", "1");
+        ab.put("b", "2");
+        Map<String, String> ba = new LinkedHashMap<>();
+        ba.put("b", "2");
+        ba.put("a", "1");
+
+        assertEquals(FroalaOptions.defaults().withRequestHeaders(ab), FroalaOptions.defaults().withRequestHeaders(ba));
+    }
+
+    @Test
+    void nullEntries_areRejectedWithTheOptionsName() {
+        Map<String, String> withNullValue = new HashMap<>();
+        withNullValue.put("X-Token", null);
+
+        NullPointerException inList = assertThrows(NullPointerException.class,
+                () -> FroalaOptions.defaults().withHtmlAllowedTags(Arrays.asList("p", null)));
+        NullPointerException inMap = assertThrows(NullPointerException.class,
+                () -> FroalaOptions.defaults().withRequestHeaders(withNullValue));
+
+        assertTrue(inList.getMessage().contains("htmlAllowedTags"));
+        assertTrue(inMap.getMessage().contains("X-Token"));
+    }
+
+    @Test
+    void imageTuiOptions_mustBeAJsonObject() {
+        assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("[1]"));
+        assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{"));
+        assertThrows(IllegalArgumentException.class, () -> FroalaOptions.defaults().withImageTuiOptions("{} {}"));
+        assertEquals("{}", FroalaOptions.defaults().withImageTuiOptions("{}").withImageTuiOptions(null).toString());
     }
 
     @Test

@@ -48,20 +48,8 @@ import com.vaadin.flow.dom.Element;
  * with a URL or a {@code FontIcon}. The button draws a {@code <vaadin-icon>} with the icon's attributes and properties,
  * read when the command is added. An {@code SvgIcon} whose source is a {@code DownloadHandler} has no URL before it is
  * attached, so it draws nothing.
- *
- * @param name the command name, letters, digits and underscores, starting with a letter
- * @param title the button's tooltip and accessible name
- * @param icon the button's icon
- * @param shortcutKeyCode the key code that triggers the command together with Ctrl, or Cmd on a Mac, as Froala expects
- *            it: the keyboard event's {@code keyCode}. 0 for no shortcut.
- * @param shortcutLabel the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code T} or
- *            {@code F2}. Null for no shortcut.
- * @param shortcutModifiers {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT} on top of Ctrl or Cmd, or empty.
- *            {@link KeyModifier#CONTROL} and {@link KeyModifier#META} are dropped, because Froala always adds them.
- * @param toggle whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}
  */
-public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int shortcutKeyCode, String shortcutLabel,
-        Set<KeyModifier> shortcutModifiers, boolean toggle) implements Serializable {
+public final class FroalaCommand implements Serializable {
 
     /** What Froala puts into a {@code data-cmd} attribute and its button ids unescaped, so nothing else is allowed. */
     private static final Pattern NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_]*");
@@ -72,13 +60,35 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
     /** A function key from F1 to F12 as a {@link Key} names it. Their key codes are 112 to 123, on every layout. */
     private static final Pattern FUNCTION_KEY = Pattern.compile("F([1-9]|1[0-2])");
 
+    private final String name;
+    private final String title;
+    private final AbstractIcon<?> icon;
+
+    /** The keyboard event's {@code keyCode} Froala matches, together with Ctrl or Cmd. 0 for no shortcut. */
+    private final int shortcutKeyCode;
+
+    /** The key as the tooltip shows it after Ctrl, Shift and Alt. Null for no shortcut. */
+    private final String shortcutLabel;
+
+    /** Shift and Alt on top of Ctrl or Cmd. */
+    private final Set<KeyModifier> shortcutModifiers;
+
+    private final boolean toggle;
+
     /**
-     * Creates a command.
+     * Creates a command without a keyboard shortcut.
      *
-     * @throws IllegalArgumentException if the name is not a valid command name, or the shortcut is one Froala cannot
-     *             bind
+     * @param name the command name, letters, digits and underscores, starting with a letter
+     * @param title the button's tooltip and accessible name
+     * @param icon the button's icon
+     * @throws IllegalArgumentException if the name is not a valid command name
      */
-    public FroalaCommand {
+    public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
+        this(name, title, icon, 0, null, Set.of(), false);
+    }
+
+    private FroalaCommand(String name, String title, AbstractIcon<?> icon, int shortcutKeyCode, String shortcutLabel,
+            Set<KeyModifier> shortcutModifiers, boolean toggle) {
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(title, "title must not be null");
         Objects.requireNonNull(icon, "icon must not be null");
@@ -88,40 +98,103 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
         }
 
         // Froala always adds Ctrl, or Cmd on a Mac, so either one given here says nothing and is dropped
-        shortcutModifiers = shortcutModifiers == null ? Set.of()
-                : shortcutModifiers.stream()
-                        .filter(modifier -> modifier != KeyModifier.CONTROL && modifier != KeyModifier.META)
-                        .collect(Collectors.toUnmodifiableSet());
+        Set<KeyModifier> modifiers = shortcutModifiers.stream()
+                .filter(modifier -> modifier != KeyModifier.CONTROL && modifier != KeyModifier.META)
+                .collect(Collectors.toUnmodifiableSet());
+
         if (shortcutKeyCode == 0 && shortcutLabel == null) {
-            if (!shortcutModifiers.isEmpty()) {
+            if (!modifiers.isEmpty()) {
                 throw new IllegalArgumentException("Shortcut modifiers need a shortcut key");
             }
         } else {
             if (shortcutKeyCode < 1) {
                 throw new IllegalArgumentException("A shortcut key code must be 1 or more, but got " + shortcutKeyCode);
             }
+
             // Froala's tooltip hint ends with the label, and would read "Ctrl+undefined" without one
             if (shortcutLabel == null || shortcutLabel.isBlank()) {
                 throw new IllegalArgumentException("A shortcut needs a label for the button's tooltip");
             }
         }
+
         // Froala's shortcuts can add Shift and Alt to Ctrl or Cmd. Nothing else.
-        if (!Set.of(KeyModifier.SHIFT, KeyModifier.ALT).containsAll(shortcutModifiers)) {
+        if (!Set.of(KeyModifier.SHIFT, KeyModifier.ALT).containsAll(modifiers)) {
             throw new IllegalArgumentException(
                     "A shortcut is Ctrl or Cmd plus a key, with Shift or Alt optionally on top."
-                            + " Other modifiers are not possible, but got " + shortcutModifiers);
+                            + " Other modifiers are not possible, but got " + modifiers);
         }
+
+        this.name = name;
+        this.title = title;
+        this.icon = icon;
+        this.shortcutKeyCode = shortcutKeyCode;
+        this.shortcutLabel = shortcutLabel;
+        this.shortcutModifiers = modifiers;
+        this.toggle = toggle;
     }
 
     /**
-     * Creates a command without a keyboard shortcut.
+     * Returns the command name, the one a toolbar or popup refers to it by.
      *
-     * @param name the command name, letters, digits and underscores, starting with a letter
-     * @param title the button's tooltip and accessible name
-     * @param icon the button's icon
+     * @return the command name
      */
-    public FroalaCommand(String name, String title, AbstractIcon<?> icon) {
-        this(name, title, icon, 0, null, Set.of(), false);
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Returns the button's tooltip and accessible name.
+     *
+     * @return the title
+     */
+    public String getTitle() {
+        return title;
+    }
+
+    /**
+     * Returns the button's icon.
+     *
+     * @return the icon
+     */
+    public AbstractIcon<?> getIcon() {
+        return icon;
+    }
+
+    /**
+     * Returns the key code that triggers the command together with Ctrl, or Cmd on a Mac, the keyboard event's
+     * {@code keyCode} Froala matches.
+     *
+     * @return the key code, or 0 for no shortcut
+     */
+    public int getShortcutKeyCode() {
+        return shortcutKeyCode;
+    }
+
+    /**
+     * Returns the key as the button's tooltip shows it after Ctrl, Shift and Alt, e.g. {@code T} or {@code F2}.
+     *
+     * @return the label, or null for no shortcut
+     */
+    public String getShortcutLabel() {
+        return shortcutLabel;
+    }
+
+    /**
+     * Returns the modifiers on top of Ctrl or Cmd, {@link KeyModifier#SHIFT} and {@link KeyModifier#ALT}.
+     *
+     * @return the modifiers, empty for none
+     */
+    public Set<KeyModifier> getShortcutModifiers() {
+        return shortcutModifiers;
+    }
+
+    /**
+     * Returns whether the button shows a pressed state, see {@link FroalaEditor#setCommandActive}.
+     *
+     * @return whether the command is a toggle
+     */
+    public boolean isToggle() {
+        return toggle;
     }
 
     /**
@@ -150,11 +223,14 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
      */
     public FroalaCommand withShortcut(Key key, KeyModifier... modifiers) {
         Objects.requireNonNull(key, "key must not be null");
+
         Matcher functionKey = FUNCTION_KEY.matcher(key.getKeys().get(0));
         if (functionKey.matches()) {
             return withShortcut(111 + Integer.parseInt(functionKey.group(1)), functionKey.group(), modifiers);
         }
+
         String letter = shortcutLetter(key);
+
         // Froala matches the event's keyCode, which for a letter or digit is the code of the upper case character
         return withShortcut(letter.charAt(0), letter, modifiers);
     }
@@ -175,6 +251,12 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
      *             Shift, Alt, Ctrl or Cmd
      */
     public FroalaCommand withShortcut(int keyCode, String shortcutLabel, KeyModifier... modifiers) {
+        // The constructor reads 0 and null as "no shortcut", which this method must not silently produce
+        if (keyCode < 1 || shortcutLabel == null) {
+            throw new IllegalArgumentException("A shortcut needs a key code of 1 or more and a label, but got "
+                    + keyCode + " and " + shortcutLabel);
+        }
+
         return new FroalaCommand(name, title, icon, keyCode, shortcutLabel, Set.copyOf(Arrays.asList(modifiers)),
                 toggle);
     }
@@ -206,6 +288,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
             shortcut.put("alt", shortcutModifiers.contains(KeyModifier.ALT));
             json.put("shortcut", shortcut);
         }
+
         return json;
     }
 
@@ -229,6 +312,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
                 attributes.put(property.replaceAll("([A-Z])", "-$1").toLowerCase(Locale.ROOT), value);
             }
         });
+
         return attributes;
     }
 
@@ -238,6 +322,7 @@ public record FroalaCommand(String name, String title, AbstractIcon<?> icon, int
             throw new IllegalArgumentException(
                     "A shortcut key must be a letter, a digit or F1 to F12, but got " + key.getKeys().get(0));
         }
+
         return matcher.group(1).toUpperCase(Locale.ROOT);
     }
 }

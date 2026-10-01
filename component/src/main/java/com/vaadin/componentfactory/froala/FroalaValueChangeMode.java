@@ -17,13 +17,13 @@ package com.vaadin.componentfactory.froala;
 
 /**
  * Determines when the editor sends its value from the browser to the server. Set with
- * {@link FroalaEditor#setValueChangeMode(ValueChangeMode)}.
+ * {@link FroalaEditor#setValueChangeMode(FroalaValueChangeMode)}.
  *
  * <p>
- * Not {@link com.vaadin.flow.data.value.ValueChangeMode}, which shares this name. There is no equivalent of Vaadin's
- * {@code EAGER} or {@code LAZY}. See {@link #INTERVAL}.
+ * Not to be confused with Vaadin's {@link com.vaadin.flow.data.value.ValueChangeMode}. There is no equivalent of
+ * Vaadin's {@code EAGER} or {@code LAZY}. See {@link #INTERVAL}.
  */
-public enum ValueChangeMode implements ClientSideReference {
+public enum FroalaValueChangeMode {
 
     /**
      * Sends the value on every change event the editor reports. Froala debounces typing itself, so while the user types
@@ -47,30 +47,25 @@ public enum ValueChangeMode implements ClientSideReference {
      */
     INTERVAL("interval");
 
-    private final String clientSideRepresentation;
+    private final String clientValue;
 
-    ValueChangeMode(String clientSideRepresentation) {
-        this.clientSideRepresentation = clientSideRepresentation;
+    FroalaValueChangeMode(String clientValue) {
+        this.clientValue = clientValue;
     }
 
-    @Override
-    public String getClientSideRepresentation() {
-        return clientSideRepresentation;
+    /** The string the client element's {@code valueChangeMode} property expects. */
+    String getClientValue() {
+        return clientValue;
     }
 
-    /**
-     * Returns the mode whose client side representation equals the given string.
-     *
-     * @param clientSide the client side representation to match, for example {@code "change"}
-     * @return the matching mode
-     * @throws IllegalArgumentException if no mode has that representation
-     */
-    public static ValueChangeMode fromClientSide(String clientSide) {
-        for (ValueChangeMode mode : values()) {
-            if (mode.clientSideRepresentation.equals(clientSide)) {
+    /** The mode for a {@code valueChangeMode} property value. */
+    static FroalaValueChangeMode fromClientValue(String clientValue) {
+        for (FroalaValueChangeMode mode : values()) {
+            if (mode.clientValue.equals(clientValue)) {
                 return mode;
             }
         }
-        throw new IllegalArgumentException("Unknown value change mode: " + clientSide);
+
+        throw new IllegalArgumentException("Unknown value change mode: " + clientValue);
     }
 }

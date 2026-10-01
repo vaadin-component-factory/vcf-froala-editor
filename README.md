@@ -87,18 +87,15 @@ Froala's own minimum, it throws. For example `setValueChangeTimeout(100)` throws
 Toolbar commands, paste, cut and undo are sent at once. `INTERVAL` is the only mode that sends
 anything while the user types without pausing.
 
-This is the add-on's own `ValueChangeMode`, not Vaadin's
-`com.vaadin.flow.data.value.ValueChangeMode`:
+The modes are the add-on's own `FroalaValueChangeMode`, not Vaadin's `ValueChangeMode`:
 
 ```java
-import com.vaadin.componentfactory.froala.ValueChangeMode;
-
-editor.setValueChangeMode(ValueChangeMode.ON_BLUR);
+editor.setValueChangeMode(FroalaValueChangeMode.ON_BLUR);
 ```
 
 ### Froala options
 
-Froala options are set with `setOptions`, or passed to the constructor. There are three
+Froala options are set with `setOptions`, or passed to the constructor. There are two
 ways to write them:
 
 ```java
@@ -110,9 +107,6 @@ editor.setOptions(options);
 
 // raw JSON, for options without a with… method
 editor.setOptions("{\"tabSpaces\": 4}");
-
-// an elemental.json.JsonObject you already have
-editor.setOptions(jsonObject);
 ```
 
 `FroalaOptions` is immutable, so one instance can be shared between editors. Not every Froala
@@ -506,7 +500,7 @@ the document:
 
 ```java
 editor.setImageUploadHandler(event -> {
-    String id = storage.save(event.getInputStream(), event.getFileName());
+    String id = storage.save(event.getInputStream()); // an id of its own, never the client's file name
     return "/images/" + id;
 });
 editor.setFileUploadHandler(...);
@@ -556,6 +550,23 @@ Froala's form fields next to the file, so give it a little more room than the fi
 # images and files up to Froala's own limit of 10 MB
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=11MB
+```
+
+An upload handler can also set a limit of its own, with or without Spring. Froala's own limits,
+such as `imageMaxSize`, are checked in the browser only:
+
+```java
+editor.setImageUploadHandler(new FroalaUploadHandler() {
+    @Override
+    public String upload(UploadEvent event) throws IOException {
+        return "/images/" + storage.save(event.getInputStream());
+    }
+
+    @Override
+    public long getFileSizeMax() {
+        return 10 * 1024 * 1024; // a larger image is refused before upload runs
+    }
+});
 ```
 
 Froala checks its own limits in the browser before it uploads. They are 10 MB for an image or
