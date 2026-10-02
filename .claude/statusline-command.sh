@@ -53,4 +53,10 @@ if [ -n "$model" ]; then
   printf ' \033[36m%s\033[0m' "$model"
 fi
 
+# app segment: where the app on 8080 is reachable, e.g. a devcontainer's own IP
+if ss -ltnH 'sport = :8080' 2>/dev/null | grep -q .; then
+  ip=$(hostname -I 2>/dev/null | cut -d' ' -f1)
+  printf ' | \033[35mhttp://%s:8080\033[0m' "${ip:-localhost}"
+fi
+
 printf '\n'
