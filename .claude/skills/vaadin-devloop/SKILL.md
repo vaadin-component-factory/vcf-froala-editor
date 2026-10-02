@@ -12,8 +12,8 @@ last change?" `apply` proves the bytes are live; only the browser proves the UI 
 you intended.
 
 The `vaadin-dev` script belongs to a **target application** — the module holding the Vaadin
-app's `pom.xml`, its Maven wrapper and its `.vaadin/` — and by default acts on that one. Run it
-from there as `.vaadin/vaadin-dev`, or from any directory with `--app <dir>` (or
+app's `pom.xml`, its Maven wrapper and its `../../../demo/.vaadin` — and by default acts on that one. Run it
+from there as `../../../demo/.vaadin`, or from any directory with `--app <dir>` (or
 `VAADIN_DEV_APP=<dir>`), which is also how a single copy of the script drives another Vaadin
 application in the same reactor.
 
@@ -102,7 +102,7 @@ assets through its `src/main/resources/META-INF/frontend`, which is already the 
 not depend on, and edits there are invisible to `apply`.**
 
 A reactor can hold more than one Vaadin application, and each gets its own daemon, its own
-`.vaadin/` handshake and its own `target/devloop/` — so `--app` picks which one a command acts
+`../../../demo/.vaadin` handshake and its own `target/devloop/` — so `--app` picks which one a command acts
 on: `.vaadin/vaadin-dev --app ../admin apply`. Whenever the target is not the script's own
 application, every command prints the application it answered for on stderr. **Check that line
 before trusting the answer.**
@@ -184,6 +184,6 @@ took.
   `./mvnw -q dependency:sources` once and read the sources. Reading `javap` output out of
   `~/.m2` is the last resort — one method name per call, it spends minutes on what either of the
   other two answers at once.
-- **Windows.** A checkout carries no executable bit, so `.vaadin/vaadin-dev` may refuse to run:
+- **Windows.** A checkout carries no executable bit, so `../../../demo/.vaadin` may refuse to run:
   use `bash .vaadin/vaadin-dev` in the Bash tool, or the `.cmd` launcher beside it from
   `cmd`/PowerShell. Same arguments, same exit codes.
