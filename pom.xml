@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Reactor root: aggregates the standalone add-on, the demo app and the e2e
-     module.
+<!-- Reactor root: aggregates the standalone add-on and the demo app, and with
+     the profile `e2e` the e2e module as well.
 
      Spring Boot is consumed as a BOM (import), NOT as the parent, so the project
      stays free to adopt its own parent later. Consequence: Spring Boot no longer
@@ -61,7 +61,6 @@
     <modules>
         <module>component</module>
         <module>demo</module>
-        <module>e2e</module>
     </modules>
 
     <dependencyManagement>
@@ -212,4 +211,14 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <!-- The Playwright tests. Only with -Pe2e, because the module builds a production bundle and starts a
+             browser, which a plain install or verify does not need. -->
+        <profile>
+            <id>e2e</id>
+            <modules>
+                <module>e2e</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

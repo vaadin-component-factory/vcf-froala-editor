@@ -90,11 +90,12 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
 - **Vaadin** 25.3.0 (Core) on **Spring Boot** 4.1.1, **JDK** 21+. This is main, add-on 2.x. The
   branch `v1` carries add-on 1.x on Vaadin 24.10.7, Spring Boot 3.5.14 and JDK 17 (ADR-0010).
 - Base package: `com.vaadin.componentfactory.froala`
-- Build/verify gate: `mvn clean verify`. `-Pproduction` additionally builds the demo's
+- Build/verify gate: `mvn clean verify -Pe2e`. Without `-Pe2e` the reactor leaves `e2e/` out, so a
+  plain `mvn clean install` runs no browser tests. `-Pproduction` additionally builds the demo's
   production bundle.
 - The frontend build uses Vaadin's own Node.js in `~/.vaadin` (`vaadin.require.home.node=true` in
   the root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
-  `-Dvaadin.require.home.node=false`, e.g. `mvn clean verify -Dvaadin.require.home.node=false`.
+  `-Dvaadin.require.home.node=false`, e.g. `mvn clean verify -Pe2e -Dvaadin.require.home.node=false`.
   Vaadin 25 renamed the property. On `v1` it is still called `require.home.node`.
 
 Spring Boot 4.1.1 is not "the latest 4.x". It is the version `com.vaadin:vaadin-spring:25.3.0`
@@ -130,7 +131,7 @@ Froala's stylesheet (ADR-0007):
   it off. Holds everything Spring-shaped (`Application`, `@Service` beans) and **no tests
   at all**. It shows how to use the add-on, not how to configure Spring, so it binds no
   license key (maintainer, 2026-10-01).
-- **`e2e/`** — Playwright tests in a real browser, run by failsafe on every `verify`,
+- **`e2e/`** — Playwright tests in a real browser, run by failsafe on every `verify` with `-Pe2e`,
   always against a production bundle. **Completely independent of `demo/`**
   (maintainer, 2026-09-28). It has no dependency on the demo, and its own app
   (`E2eApplication`), views, frontend bundle and test data. It depends on `component/`
@@ -162,7 +163,7 @@ in #49.
 
 ## Testing
 
-License-free stack, all run by `mvn clean verify`.
+License-free stack, all run by `mvn clean verify -Pe2e`.
 
 - **JUnit 6** — unit tests, in `component/`, pinned to the version
   `spring-boot-dependencies` manages in the reactor root, so a standalone build of the
@@ -175,7 +176,7 @@ License-free stack, all run by `mvn clean verify`.
   **executes no JavaScript** — it can assert server-side state and element attributes, never
   the Froala editor itself.
 - **Browser e2e — plain Playwright** (`*IT` extending `SpringPlaywrightIT`), real
-  headless Chromium, run by failsafe on every `verify`. No DramaFinder
+  headless Chromium, run by failsafe on every `verify` with `-Pe2e`. No DramaFinder
   (ADR-0010). **Every Froala behaviour that needs the JS to run must be tested here.**
 
 **Test our wiring, not Froala.** The add-on's job is the connection between Flow and
@@ -196,9 +197,9 @@ the bug deliberately put back. They are written out under *Testing standards* in
 
 Mirror existing tests when adding new ones. When a module's Java or frontend changes,
 rebuild that module before running the demo or e2e tests so they don't run against a
-stale jar. The e2e module always builds with `forceProductionBuild`. No profile is
-needed, and the e2e run exercises the true optimized bundle rather than a precompiled
-one.
+stale jar. The e2e module always builds with `forceProductionBuild`. It needs `-Pe2e` to
+be in the reactor, but no `production` profile, and the e2e run exercises the true
+optimized bundle rather than a precompiled one.
 
 After switching between main and `v1`, delete the generated frontend files in `e2e/` and
 `demo/` (`node_modules`, `package.json`, `package-lock.json`, `src/main/frontend/generated`
