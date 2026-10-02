@@ -1,0 +1,8 @@
+{
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": false,
+    "figma@claude-plugins-official": true,
+    "vaadin-skills@vaadin-marketplace": true
+  },
+  "outputStyle": "default"
+}

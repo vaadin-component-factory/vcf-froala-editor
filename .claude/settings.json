@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./claude-server-start.sh:*)",
+      "Bash(./claude-server-stop.sh:*)",
+      "Bash(./claude-print-server-logs.sh:*)",
+      "Bash(./mvnw:*)",
+      "Bash(mvn test:*)",
+      "Bash(mvn clean install:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(mvn compile:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn install:*)",
+      "Bash(mvn -pl:*)",
+      "Bash(mvn spotless:check:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npm test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "vaadin"
+  ],
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/scripts/housekeeper-cleanup.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "f=\"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/statusline-command.sh\"; [ -f \"$f\" ] && [ -r \"$f\" ] && exec sh \"$f\"; cat >/dev/null; printf 'statusline: %s not found\\n' \"$f\"",
+    "refreshInterval": 15
+  },
+
+  "enabledPlugins": {
+    "commit-commands@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "jdtls-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "ponytail@ponytail": true
+  }
+}
