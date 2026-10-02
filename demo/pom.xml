@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.vaadin.addons.componentfactory</groupId>
         <artifactId>vcf-froala-editor-parent</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
+        <version>2.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <vcf-froala-editor.version>2.0.0-SNAPSHOT</vcf-froala-editor.version>
+        <vcf-froala-editor.version>2.0.0</vcf-froala-editor.version>
     </properties>
 
     <dependencies>

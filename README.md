@@ -18,7 +18,7 @@ There is one add-on line per Vaadin major version.
 | 2.x | 25.3, built and tested against 25.3.0 | 21 or newer | `main` |
 | 1.x | 24.10, built and tested against 24.10.7 | 17 or newer | `v1` |
 
-Both lines use Froala 5.4.0, pulled in as the `froala-editor` npm package. 2.x is not released yet.
+Both lines use Froala 5.4.0, pulled in as the `froala-editor` npm package.
 
 ## Installation
 
@@ -26,7 +26,7 @@ Both lines use Froala 5.4.0, pulled in as the `froala-editor` npm package. 2.x i
 <dependency>
     <groupId>org.vaadin.addons.componentfactory</groupId>
     <artifactId>vcf-froala-editor</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
