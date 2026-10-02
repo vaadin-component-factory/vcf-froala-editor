@@ -16,16 +16,18 @@ vcf-froala-viewer {
 }
 
 /* The icon of an own command, see FroalaCommand. The button is as big as one with Froala's 24px svg icons and 8px 7px
-   margin. The icon is smaller, because a Vaadin icon fills its whole box where Froala's leave a border inside. Its
-   colour changes as slowly as that of Froala's icons, whose paths have a transition of 0.5s. Only the fill, because
-   the element's size would take part in Froala's `all`. */
+   margin. The icon is smaller, because a Vaadin icon fills its whole box where Froala's leave a border inside. That
+   holds only at the full visual size, which Aura lowers. Flex rather than block keeps the icon's own centring of its
+   svg. The icon's colour changes as slowly as that of Froala's icons, whose paths have a transition of 0.5s. Only the
+   fill, because the element's size would take part in Froala's `all`. */
 .fr-toolbar .fr-command.fr-btn vaadin-icon,
 .fr-popup .fr-command.fr-btn vaadin-icon,
 .fr-modal .fr-command.fr-btn vaadin-icon {
-  display: block;
+  display: flex;
   margin: 11px 10px;
   width: 18px;
   height: 18px;
+  --vaadin-icon-visual-size: 100%;
   transition: fill 0.5s;
 }
 
