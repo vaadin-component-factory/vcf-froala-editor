@@ -18,9 +18,13 @@ package com.vaadin.componentfactory.froala;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.github.mvysny.kaributesting.v10.MockVaadin;
 import org.junit.jupiter.api.Test;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.signals.BindingActiveException;
+import com.vaadin.flow.signals.local.ValueSignal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,6 +50,27 @@ class FroalaViewerTest {
 
         assertEquals("<p>shown <b>as is</b></p>", viewer.getElement().getProperty("innerHTML"));
         assertEquals("<p>shown <b>as is</b></p>", viewer.getContent());
+    }
+
+    @Test
+    void boundContent_followsTheSignalAndRefusesSetContent() {
+        // A binding acts only while the component is attached, which needs a UI
+        MockVaadin.setup();
+        try {
+            ValueSignal<String> signal = new ValueSignal<>("<p>first</p>");
+            FroalaViewer viewer = new FroalaViewer();
+            UI.getCurrent().add(viewer);
+
+            viewer.bindContent(signal);
+            assertEquals("<p>first</p>", viewer.getContent());
+
+            signal.set("<p>second</p>");
+            assertEquals("<p>second</p>", viewer.getContent());
+
+            assertThrows(BindingActiveException.class, () -> viewer.setContent("<p>manual</p>"));
+        } finally {
+            MockVaadin.tearDown();
+        }
     }
 
     @Test

@@ -752,11 +752,27 @@ For HTML you display some other way, the static method does the same for any com
 FroalaViewer.applyRouterIgnore(div, "/files");
 ```
 
+### Signals
+
+Signals are available in 2.x only, because Vaadin 24 has none. `FroalaEditor` is a Vaadin field
+and inherits Vaadin's bindings, such as `bindValue`, `bindEnabled`, `bindReadOnly`,
+`bindRequiredIndicatorVisible`, `bindVisible`, `bindHelperText`, `bindWidth` and `bindHeight`.
+`FroalaViewer` adds `bindContent`, which only reads the signal:
+
+```java
+ValueSignal<String> html = new ValueSignal<>("");
+editor.bindValue(html, html::set);
+viewer.bindContent(html);
+```
+
+While the viewer is bound, `setContent` throws a `BindingActiveException`, as Vaadin's own
+bindings do. `bindContent(null)` removes the binding.
+
 ### Sanitizing
 
 Nothing is sanitized on the server, neither the value `FroalaEditor` receives nor what
-`FroalaViewer.setContent` displays. Froala's own cleaning runs in the browser and does not
-protect a value that reaches the server any other way. Treat the value as untrusted input
+`FroalaViewer.setContent` or `bindContent` displays. Froala's own cleaning runs in the browser
+and does not protect a value that reaches the server any other way. Treat the value as untrusted input
 and sanitize it before storing or displaying it, for example with jsoup:
 
 ```java

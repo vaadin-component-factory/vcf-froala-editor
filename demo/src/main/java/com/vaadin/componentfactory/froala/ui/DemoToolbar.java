@@ -49,8 +49,8 @@ import com.vaadin.flow.component.menubar.MenuBar;
 @CssImport("froala-editor/css/themes/royal.min.css")
 public class DemoToolbar extends MenuBar {
 
-    private static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
-    private static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
+    static final String INITIAL_VALUE = "<p>Hello <b>World</b></p>";
+    static final String ALTERNATIVE_VALUE = "<p><em>Moi,&nbsp;</em><strong><span style=\"color: rgb(44, 130, 201);\"><em>Vaadin</em> }&gt;&nbsp;<span class=\"fr-emoticon fr-deletable fr-emoticon-img\" style=\"background: url(https://cdnjs.cloudflare.com/ajax/libs/emojione/2.0.1/assets/svg/1f601.svg);\">&nbsp;</span></span></strong></p>";
 
     /**
      * Deliberately not well-formed. It closes an {@code <em>} it never opened and leaves {@code <strong>} and

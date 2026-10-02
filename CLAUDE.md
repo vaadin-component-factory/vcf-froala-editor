@@ -164,8 +164,8 @@ the watermark as a defect. Where a key has to be exercised, a dummy string is en
 This project uses **classic state (component fields / Spring beans)**.
 
 Use plain component fields and Spring beans for state; wire UI updates explicitly.
-Do not introduce Signals. Vaadin 24 has none (ADR-0005), and whether main uses them is open
-in #49.
+Signals are allowed on main. They are not allowed on `v1`, because Vaadin 24 has none
+(ADR-0005), so a signal feature on main has no counterpart there (maintainer, 2026-10-02).
 
 ## Testing
 

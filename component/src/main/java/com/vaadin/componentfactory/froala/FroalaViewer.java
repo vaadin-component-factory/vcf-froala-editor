@@ -27,7 +27,9 @@ import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.NpmPackage;
+import com.vaadin.flow.dom.SignalBinding;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.signals.Signal;
 
 /**
  * Displays HTML written in a {@link FroalaEditor}, outside the editor. It imports Froala's stylesheet and carries
@@ -111,7 +113,32 @@ public class FroalaViewer extends Component implements HasSize, HasStyle {
     }
 
     /**
-     * Returns the HTML given to {@link #setContent(String)}.
+     * Binds the HTML to display to the given signal, so that the viewer shows the signal's value as
+     * {@link #setContent(String)} would. The binding is one-way, because the viewer never changes its content itself.
+     * As with Vaadin's own bindings, the content follows the signal only while the viewer is attached, and
+     * {@link #setContent(String)} throws a {@code BindingActiveException} while the binding is active. Passing null
+     * removes the binding.
+     *
+     * <pre>
+     * ValueSignal&lt;String&gt; html = new ValueSignal&lt;&gt;("");
+     * editor.bindValue(html, html::set);
+     * viewer.bindContent(html);
+     * </pre>
+     *
+     * <p>
+     * The HTML is written unchanged, as by {@link #setContent(String)}, so the same caution about untrusted HTML
+     * applies.
+     *
+     * @param contentSignal the signal holding the HTML to display, or null to remove the binding
+     * @return the binding, for example to react to its changes with {@code onChange}
+     */
+    public SignalBinding<String> bindContent(Signal<String> contentSignal) {
+        return getElement().bindProperty("innerHTML", contentSignal, null);
+    }
+
+    /**
+     * Returns the HTML given to {@link #setContent(String)}, or the signal's value while {@link #bindContent(Signal)}
+     * binds the content.
      *
      * @return the HTML, or null if none was set
      */
