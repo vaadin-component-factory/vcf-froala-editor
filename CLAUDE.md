@@ -97,6 +97,12 @@ Single-context: one `CONTEXT.md` and one `docs/adr/` at the repo root. See
   the root pom). In the devcontainer `~/.vaadin` is a read-only mount, so every build there adds
   `-Dvaadin.require.home.node=false`, e.g. `mvn clean verify -Pe2e -Dvaadin.require.home.node=false`.
   Vaadin 25 renamed the property. On `v1` it is still called `require.home.node`.
+- The dev loop (`demo/.vaadin/vaadin-dev`) runs where the agent runs, in the devcontainer. The host
+  opens the app at the container's own IP, which the status line shows. Host and container share
+  `demo/.vaadin` and `demo/target`, but neither sees the other's processes, so only one side runs
+  the loop at a time. Switching sides needs the other daemon killed and `demo/target/devloop`
+  deleted, whose cached classpath holds the other side's `~/.m2` paths. Run `vaadin-dev shutdown`
+  before the gate, since `mvn clean` deletes `demo/target` under the running app (2026-10-02).
 
 Spring Boot 4.1.1 is not "the latest 4.x". It is the version `com.vaadin:vaadin-spring:25.3.0`
 is built against. Derive it from the Vaadin release when bumping instead of taking the newest
